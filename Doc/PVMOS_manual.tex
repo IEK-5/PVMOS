@@ -1,0 +1,588 @@
+\documentclass[noshowpacs,preprintnumbers,amsmath,amssymb, letter]{revtex4}
+
+\usepackage{longtable}%
+\usepackage{stmaryrd}%
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+\usepackage{longtable}
+
+
+\usepackage{float}
+\floatstyle{ruled}
+\newfloat{codebox}{tb}{los}
+\floatname{codebox}{input}
+% \renewcommand{\arraystretch}{2}
+% \nofiles
+
+\renewcommand{\bfdefault}{b}
+\newcommand{\Un}[2]{\mbox{$\mathrm{#1}$ $\mathrm{#2}$}}
+\newcommand{\Und}[2]{\mbox{$\mathrm{#1}$-$\mathrm{#2}$}}
+\newcommand{\asa}{\textit{ASA}}
+\newcommand{\gpIII}{\textit{GENPRO3}}
+\newcommand{\ASI}{\lowercase{\emph{a}}-S\lowercase{i}:H}
+\newcommand{\CSI}{\emph{c}-Si}
+\newcommand{\USI}{$\mu$\lowercase{\emph{c}}-S\lowercase{i}:H}
+\newcommand{\Fig}[1]{Fig. \ref{#1}}
+\newcommand{\Tab}[1]{Table \ref{#1}}
+\newcommand{\Eq}[1]{Eq. (\ref{#1})}
+\newcommand{\Sec}[1]{Section \ref{#1}}
+\newcommand{\pin}{\emph{pin}}
+\newcommand{\ea}{\emph{et al.}}
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+
+\begin{document}
+\title{PVMOS manual}
+
+\author{B.E. Pieters}%
+\email{b.pieters@fz-juelich.de}
+\affiliation{Institut f\"ur Energie und Klimaforschung - IEK5 Photovoltaik, Forschungszentrum J\"ulich, 52425 J\"ulich, Germany}
+\date{\today}
+\maketitle
+
+\section{Introduction}
+This is (or rather will be as the current state of this document is far from finished) the manual for the PhotoVoltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{}. The purpose of this document is to document how PVMOS is operated.
+
+The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the filename describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this:
+\begin{verbatim}
+pvmos [verbose-option] <input-file>
+\end{verbatim}
+where \verb_[verbose-option]_ is an option which how much inpormation PVMOS outputs to stdout, and \verb_<input-file>_ is the plain text input file. We first describe the mesh data structure in more detail in the next section. 
+\section{The PVMOS mesh data structure}
+A large part of the commands implemented in PVMOS are to manipulate meshes. The following describes the data stored in a mesh structure in PVMOS. The mesh contains rectangular elements. For each element we store the coordinates of the lower left corner ($x_1,y_1$) and of the upper right corner ($x_2,y_2$). Furthermore each node has a unique ID number. In order to save memory space we do not store the electrical properties for every element. Instead, we store the electrical parameters per ``area''. To this end a mesh contains a list of area data-structures whcih contain parameters such as the electrode sheet resistances and the solar cell properties. Each element now refers to a certain area by means of an area-ID number. Each area also has a name for easy referencing by the user.
+
+In PVMOS we can define more than one mesh at the same time. In order to reference one particular mesh, each mesh has a name. To reference an area within a mesh you can refer to \verb_<mesh-name>.<area-name>_, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis. In the following section we discuss the PVMOS-input file syntax.
+
+\section{PVMOS-syntax}
+In the input file you can define meshes. Each mesh you define is a variable andthus has a name. You can define several meshes and join them together in new meshes. This way it becomes fairly simple to, for example, put several cells in series by defining a single cell and joining several single cells together to get them series connected. 
+
+The input file should contain commands. Each command takes a certain number of input parameters. In the following table all commands are listed.  
+
+\begin{longtable}{p{0.12\textwidth}p{0.9\textwidth}}
+\multicolumn{2}{l}{\textsc{Creating Meshes}} \\*
+\hline
+Keyword & Description \\
+\hline\\
+\texttt{newmesh} 	& Create a new, rectangular mesh. The command takes six arguments:
+\begin{enumerate}
+\item \texttt{x1}, x-coordinate of the lower left corner
+\item \texttt{y1}, y-coordinate of the lower left corner
+\item \texttt{x2}, x-coordinate of the upper right corner
+\item \texttt{y2}, y-coordinate of the upper right corner
+\item \texttt{Nx}, Number of elements in x direction
+\item \texttt{Ny}, Number of elements in y direction
+\item \texttt{mesh-name}, Name of the new mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{joinmesh}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes offset values as input which allow you to "shift" the second mesh to align it to the first. The command takes 5 arguments:
+\begin{enumerate}
+\item \texttt{x\_off}, x-offset in coordinate system of the second mesh
+\item \texttt{y\_off}, y-offset in coordinate system of the second mesh 
+\item \texttt{mesh1-name}, Name of the first mesh
+\item \texttt{mesh2-name}, Name of the second mesh
+\item \texttt{mesh3-name}, Name of the resulting mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{joinmesh\_h}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes a y-offset value as input which allow you to "shift" the second mesh in the y-direction to align it to the first. The x-offset value is the maximal x-value found in the first mesh. The command takes 4 arguments:
+\begin{enumerate}
+\item \texttt{y\_off}, y-offset in coordinate system of the second mesh 
+\item \texttt{mesh1-name}, Name of the first mesh
+\item \texttt{mesh2-name}, Name of the second mesh
+\item \texttt{mesh3-name}, Name of the resulting mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{joinmesh\_v}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes an x-offset value as input which allow you to "shift" the second mesh in the x-direction to align it to the first. The y-offset value is the maximal y-value found in the first mesh. The command takes 4 arguments:
+\begin{enumerate}
+\item \texttt{x\_off}, x-offset in coordinate system of the second mesh 
+\item \texttt{mesh1-name}, Name of the first mesh
+\item \texttt{mesh2-name}, Name of the second mesh
+\item \texttt{mesh3-name}, Name of the resulting mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Selecting Elements}} \\*
+\hline
+Keyword & Description \\
+\texttt{select\_rect}	& Select a rectangular area in a mesh. The command takes five arguments:
+\begin{enumerate}
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_circ}	& Select a circular area in a mesh. The command takes four arguments:
+\begin{enumerate}
+\item \texttt{x\_c}, center x-coordinate of the selected circle
+\item \texttt{y\_c}, center y-coordinate of the selected circle
+\item \texttt{r}, radius of the selected circle
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load a polygon from file with the \texttt{load\_poly} command. The command takes one argument.
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{load\_poly}	& Load a polygon from file. This command is used in conjunction with the \texttt{select\_poly} command. The command takes one argument.
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Manually changing the mesh topology}} \\*
+\hline
+Keyword & Description \\
+\texttt{split\_x}	& Split selected elements in x-direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{split\_y}	& Split selected elements in y-direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{split\_xy}	& Split selected elements in both x- and y-direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{split\_long}	& Split selected elements in thier longest direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{simplify}	&  Attempt to simplify a mesh. If elements are selected they are un-selected as the topology of the mesh changed. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Saving andloading meshes}} \\*
+\hline
+Keyword & Description \\
+\texttt{savemesh}	& Save a mesh to file in the PVMOS binary format, so it can be loaded again at a later time (see the \texttt{loadmesh} command). The command takes two arguments.
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of themesh to be saved.
+\item \texttt{file-name}, filename to save the mesh to.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{loadmesh}	& Load a mesh saved to file in the PVMOS binary format (see the \texttt{savemesh} command). The command takes two arguments.
+\begin{enumerate}
+\item \texttt{file-name}, filename of the file containing the mesh data.
+\item \texttt{mesh-name}, Name to assign to the loaded mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Element-wise export of data}} \\*
+\hline
+Keyword & Description \\
+\texttt{printmesh}	& Export the mesh in a manner that is plottable with the gnuplot program (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. The command takes two arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}
+The output file will contain coordinates in columns. For each element the file contains the coordinates of the lower left- and the upper right corners empty line:\newline 
+\begin{tabular}{cc}
+	\texttt{x1} & \texttt{y1} \\
+	\texttt{x2} & \texttt{y1} \\
+	\texttt{x2} & \texttt{y2} \\
+	\texttt{x1} & \texttt{y2} \\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+\end{tabular}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printconn}	& Print lateral connections in the electrodes in a format plottable with gnuplot (www.gnuplot.info/). When plotting the file (with vectors) a vector is drawn between the center of each element to the center of the adjacent elements to which it is connected. This routine may be useful when inspecting generated meshes. The command takes two arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}
+The output is coordinates in columns. For each element the file contains the following data where \texttt{xc}, \texttt{yc} is the center of the current element and \texttt{xca\_i}, \texttt{yca\_i} is the center coordinate of the i-th adjacent element: 
+\begin{tabular}{cccc}
+	\texttt{xc} & \texttt{yc} & \texttt{xca\_1} & \texttt{yca\_1} \\
+	\texttt{xc} & \texttt{yc} & \texttt{xca\_2} & \texttt{yca\_2} \\
+	... \\
+\end{tabular}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printarea}	& Print the geometry of the mesh which identifies each element and the area it belongs to. The fileformat is laid out such that it is plottable with a surface plot in gnuplot (www.gnuplot.info/).  The command takes two arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}
+The output file will contain data in columns. The file contains coordinates, the element ID and the corresponding area ID. Note that the parameters for each area can be exported with  the \texttt{printpars} command. For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each element in the mesh, which allows you to see the areas in the defined geometry. For each element the folowing data is printed to the file:\newline 
+\begin{tabular}{cccc}
+	\texttt{x1} & \texttt{y1} & element-ID & area-ID\\
+	\texttt{x1} & \texttt{y2} & element-ID & area-ID \\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+	\texttt{x2} & \texttt{y2} & element-ID & area-ID \\
+	\texttt{x2} & \texttt{y1} & element-ID & area-ID \\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+\end{tabular}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printV}		& Print the front and back electrode element voltages for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. The command takes two arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}
+The output file will contain data in columns. The file contains coordinates followed by the potential in the positive and negative electrodes for each solution.For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each element in the mesh. For each element the folowing data is printed to the file:\newline 
+\begin{tabular}{ccccccc}
+	\texttt{x1} & \texttt{y1} & $V_+^1$ & $V_-^1$ & $V_+^2$ & $V_-^2$ & ...\\
+	\texttt{x1} & \texttt{y2} & $V_+^1$ & $V_-^1$ & $V_+^2$ & $V_-^2$ & ...\\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+	\texttt{x2} & \texttt{y2} & $V_+^1$ & $V_-^1$ & $V_+^2$ & $V_-^2$ & ...\\
+	\texttt{x2} & \texttt{y1} & $V_+^1$ & $V_-^1$ & $V_+^2$ & $V_-^2$ & ...\\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+\end{tabular}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printpar}	& Print a summary of the parameters per area, including both area-name and area-ID. The command takes two arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printmesh\_sel}	& Same as \texttt{printmesh} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printconn\_sel}	& Same as \texttt{printconn} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printarea\_sel}	& Same as \texttt{printarea} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printV\_sel}		& Same as \texttt{printV} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arhuments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+printIV
+--------------------------------------------------------------------------------
+surfVplot
+--------------------------------------------------------------------------------
+surfPplot
+--------------------------------------------------------------------------------
+assign_properties
+--------------------------------------------------------------------------------
+set_Rp
+--------------------------------------------------------------------------------
+set_Rn
+--------------------------------------------------------------------------------
+set_Rpvp
+--------------------------------------------------------------------------------
+set_Rnvp
+--------------------------------------------------------------------------------
+set_Rpvn
+--------------------------------------------------------------------------------
+set_Rnvn
+--------------------------------------------------------------------------------
+set_JV
+--------------------------------------------------------------------------------
+set_2DJV
+--------------------------------------------------------------------------------
+set_1DJV
+--------------------------------------------------------------------------------
+set_R
+--------------------------------------------------------------------------------
+set_SplitX
+--------------------------------------------------------------------------------
+set_SplitY
+--------------------------------------------------------------------------------
+maxiter
+--------------------------------------------------------------------------------
+tol_V
+--------------------------------------------------------------------------------
+rel_tol_V
+--------------------------------------------------------------------------------
+tol_kcl
+--------------------------------------------------------------------------------
+rel_tol_kcl
+--------------------------------------------------------------------------------
+solve
+--------------------------------------------------------------------------------
+adaptive_solve
+--------------------------------------------------------------------------------
+out_quiet
+--------------------------------------------------------------------------------
+out_normal
+--------------------------------------------------------------------------------
+out_verbose
+--------------------------------------------------------------------------------
+out_debug
+--------------------------------------------------------------------------------
+
+\hline
+\\
+\end{longtable}
+
+\section{Example:monolithically series connected cells and a defect}
+
+\begin{small}
+\begin{verbatim}
+################################################################################################
+# This example demonstrates the simulation of a monolithically interconnected thin-film module 
+# The following meshes are created
+# cell_a:	mesh for the active part of a cell stripe (i.e., not including dead area)
+# p1:		mesh for the p1 laser line
+# da:		mesh for the area's between laser lines (for simplicity this mesh will be used
+#               between p1 and p2 aswell as between p2 and p3)
+# p2:		mesh for the p2 laser line
+# p3:		mesh for the p3 laser line
+# cp:		mesh for a contact trip connected to the positive electrode
+# cn:		mesh for a contact strip to the negative electrode
+################################################################################################
+#		x1  y1		x2  y2		Nx	Ny	name
+newmesh 	0.0 0.0 	0.5 30 		50 	30 	cell_a
+newmesh 	0.0 0.0 	8e-3 30 	1 	30 	p1
+newmesh 	0.0 0.0 	12e-3 30 	1 	30 	da
+newmesh 	0.0 0.0 	5e-3 30 	1 	30 	p2
+newmesh 	0.0 0.0 	5e-3 30 	1 	30 	p3
+newmesh 	0.0 0.0 	8e-3 30 	1 	30 	cp
+newmesh 	0.0 0.0 	8e-3 30 	1 	30 	cn
+
+################################################################################################
+# A mesh consists of elements. The elements in a mesh belong to areas. When a mesh is 
+# initialized, all elements are part of the samedefault area. All areas that are part of a mesh
+# must have a name. The nameof the default area is the same as the name of the mesh when it is 
+# initialized. You can change the properties of an area by using "set" commands. You can also 
+# define new areas and assign elements to these new areas. More on that later. We first define 
+# the properties of the default areas for each mesh. To refer to a certain area you must specify 
+# the mesh and the area name like so: <mesh-name>.<area-name>
+# Here we set the diode properties of the area cell_a in the mesh cell_a:
+################################################################################################
+#		mesh.area	J0	n	Jph	Rs	Rsh	Temp	Eg
+set_1DJV 	cell_a.cell_a 	1e-8 	1.5 	0.03 	1e-3 	1e4 	300 	1.12
+# here we set the sheet resistances for the same area, for the positive and negative electrodes
+set_Rp		cell_a.cell_a	20
+set_Rn		cell_a.cell_a	1
+
+# here follow various areas for the various meshes
+# set_R sets the resistance between front and back electrode, here we remove the contact
+set_R 		p1.p1 	 	1e90
+set_Rp		p1.p1		1e9
+set_Rn		p1.p1		1
+set_SplitX	p1.p1		0
+
+set_1DJV 	da.da 		1e-8 	1.5 	0.03 	1e-3 	1e4 	300 	1.12
+set_Rp		da.da		20
+set_Rn		da.da		1
+set_SplitX	da.da		0
+
+set_R 		p2.p2 	 	1e-5
+set_Rp		p2.p2		20
+set_Rn		p2.p2		1
+set_SplitX	p2.p2		0
+
+set_R 		p3.p3 	 	1e90
+set_Rp		p3.p3		1e-3
+set_Rn		p3.p3		1e9
+set_SplitX	p3.p3		0
+
+
+################################################################################################
+# We have two contact strips. Within the strips we remove the solar cell (define it as a 
+# resistors with a very high resistance). Either the positive or the negative electrode is made 
+# very conductive, and connected to the positive applied voltage or 0V, respectively.
+# we do not split elements in this mesh in the x direction.
+################################################################################################
+
+set_R 		cp.cp 	 	1e90
+set_Rp		cp.cp		1e-3
+set_Rpvp 	cp.cp 		1e-8
+set_SplitX	cp.cp		0
+
+set_R 		cn.cn 	 	1e90
+set_Rn		cn.cn		0.1
+set_Rpvn 	cn.cn 		1e-8
+set_SplitX	cn.cn		0
+
+################################################################################################
+# Now we start to assemble the complete mesh out of the various parts. When joining meshes we 
+# will use the coordinate system of the first mesh. The coordinate system of the second mesh can 
+# be shifted by using an x and y offset value. Note that you have to take care not to make the 
+# meshes overlap I have not (yet) inplemented error checking for this! Here I will use 
+# jointmesh_h, which joins meshes horizontally and keeps track of the x-offset value for me 
+# (i.e. the x-offset valueis computed as the maximum x-value in the first mesh).
+################################################################################################
+#	 xoff y_off	mesh1		mesh2	mesh_out
+joinmesh_h 	0.0 	cell_a		p1	cell_p1			
+# 0.5+0.008=0.508
+joinmesh_h 	0.0 	cell_p1		da	cell_p1da		
+# 0.508+0.012=0.52
+joinmesh_h 	0.0 	cell_p1da	p2	cell_p1dap2		
+# 0.52+0.005=0.525
+joinmesh_h 	 0.0 	cell_p1dap2	da	cell_p1dap2da		
+# 0.525+0.012=0.537
+joinmesh_h	0.0 	cell_p1dap2da	p3	cell_p1dap2dap3		
+# 0.537+0.005=0.542		
+
+################################################################################################
+# Note that we now have many meshes defined:
+# 1.  cell_a
+# 2.  p1
+# 3.  da
+# 4.  p3
+# 5.  p3
+# 6.  cp
+# 7.  cn
+# 8.  cell_p1	
+# 9.  cell_p1da	
+# 10. cell_p1dap2
+# 11. cell_p1dap2da	
+# 12. cell_p1dap2dap3
+# The last mesh is cell stripe including dead area. We can easily series connect several cells 
+# by joining several instances of the last mesh in a row. Here we series connect five cells
+################################################################################################
+joinmesh_h	0.0 	cell_p1dap2dap3		cell_p1dap2dap3	2cells			
+# 0.542+0.542=1.084
+joinmesh_h	0.0 	2cells			cell_p1dap2dap3	3cells			
+# 1.084+0.542=1.626
+joinmesh_h	0.0 	3cells			cell_p1dap2dap3	4cells			
+# 1.626+0.542=2.168
+joinmesh_h	0.0 	4cells			cell_p1dap2dap3	5cells			
+# 2.168+0.542=2.710
+
+################################################################################################
+# Now we add the contacts. Our final mesh will be called: cells
+################################################################################################
+joinmesh_h	0.0 	cp			5cells	cp5cells			
+# 8e-3+2.710=2.718
+joinmesh_h	0.0 	cp5cells		cn	cells				
+# 2.718+8e-3=2.726
+
+
+
+################################################################################################
+# Now we have three perfectly homogeneous cells. That is boring so we add a shunt in the middle 
+# cell. First we create a new area. This should be part of the cells mesh. We can create a new 
+# area simply by starting to specify its properties, a new area will automatically be created.
+################################################################################################
+# set_JV		cells.shunt	shunt.dat
+set_R 		cells.shunt 	1e-3
+set_Rp		cells.shunt	20
+set_Rn		cells.shunt	1
+
+################################################################################################
+# So far the creation of this area has no effect as no nodes are assigned to the area. However, 
+# before we assign nodes to this area we need a better resolution as the nodes in the cell area 
+# are now 0.01x1.0 cm^2, which is not sufficient to specify a small defect. I will add a defect
+# at the coordinate (0.7,15). Refining the mesh will be done by selecting nodes and subsequently 
+# splitting the nodes. As the nodes are long in the y direction we first split the nodes only in 
+# the y-direction. The select_circ creates a circular selection, Only nodes whose center fall 
+# within the specified circle are selected. The circle is specified by its center coordinates 
+# (xc,yc) and the radius, r. The split commands automatically use the selected nodes. Beware
+# that if no nodes are selected prior to giving a split command, all nodes in the mesh are split
+################################################################################################
+#           xc  yc r mesh
+select_circ 1.5 15 4 cells
+split_y cells
+
+select_circ 1.5 15 3 cells
+split_y cells
+
+select_circ 1.5 15 2 cells
+split_y cells
+
+select_circ 1.5 15 1 cells
+split_y cells
+
+select_circ 1.5 15 0.1 cells
+split_y cells
+
+select_circ 1.5 15 0.07 cells
+split_y cells
+
+select_circ 1.5 15 0.06 cells
+split_y cells
+
+################################################################################################
+# Note that I gradually reduced the radius of the circle to get a denser and senser mesh around 
+# the coordinate (0.7,15). The nodes at this coordinate are now about 0.01x0.0078 cm^2 large. As 
+# the nodes are now close enough to quadratic we now split the nodes three times in both x- and
+# y- direction to get a satifactory resolution with nodes of about 10µm x 10µm. Note that in a
+# regular, equidistant mesh such node sizes would result in meshes of almost 50 milion nodes 
+# where the mesh here is about 20000 nodes large.
+################################################################################################
+select_circ 1.5 15 0.05 cells
+split_xy cells
+
+
+################################################################################################
+# Now we have at the location of the shunt nodes of about 0.001x0.001 cm^2, this suffices for 
+# a defect with a radius of about 0.01 cm and up. As we already defined the shunt properties
+# of the area "shunt" we only need to assign nodes to this area. To this and we select the nodes 
+# and then assign them (note if you do not select nodes before you do this, all the nodes in the 
+# mesh will be assigned to the shunt area.
+################################################################################################
+select_circ 1.5 15 0.04 cells
+assign_properties cells.shunt
+
+
+
+################################################################################################
+# Now we print some stuff so we can check whether we made no mistakes.
+# printmesh prints the mesh (i.e. contour of each node)
+# printpars prints the name, id number and parameters for each area in a mesh
+# printarea prints the meah and adds element id and area id for each element
+# printconn prints the connections between nodes (verctors from center to center of a node 
+# (bi-directional)
+################################################################################################
+printmesh cells mesh_initial.dat
+printpars cells pars.dat
+printarea cells areas.dat
+printconn cells conn.dat
+
+################################################################################################
+# Finaly do some simulations, we start by adapting the mesh a few iterations (5). The adapttive
+# solve command expects as arguments:
+# 1: the mesh to adapt
+# 2: the applied voltage
+# 3: adaption factor, af,  (lower value means more nodes are adapted each iteration)
+# 4: number of iterations for the mesh adaption 
+# We also output the refined mesh
+################################################################################################
+# 		mesh	V	af	iterations
+adaptive_solve 	cells 	2.4 	0.3 	5
+printmesh cells mesh_refined.dat
+
+################################################################################################
+# Now we simulate an IV curve, save it to IV.dat and plot the spatial potential distribution
+# for the available simulation that is closest to 4.0 V
+################################################################################################
+solve cells -0.5 4.0 46
+printIV cells IV.dat
+printV cells checkpot.dat
+surfVplot cells 0.008 14.0 2.718 16 300 400 4.0 thin_film_detail.dat
+surfVplot cells 0.008 0 2.718 30 300 400 4.0 thin_film_wholedevice.dat
+\end{verbatim}
+\end{small}
+
+% that's all folks
+\end{document}

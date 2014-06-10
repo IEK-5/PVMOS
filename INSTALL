@@ -1,0 +1,11 @@
+PVMOS Installation:
+
+COMPILING:
+PVMOS depends the CHOLMOD library which is part of suitesparse (http://www.cise.ufl.edu/research/sparse/SuiteSparse/).
+To install PVMOS you should thus first install suitesparse. Once suitesparse is available you can compile PVMOS by
+typing make.
+
+For the best performance you also need an optimized BLAS. I used openblas (https://github.com/xianyi/OpenBLAS/). To 
+link to the optimized BLAS you may need to explicitely reference the optimized version in the LFLAGS variable in the 
+makefile. For example to link PVMOS to openblas in my system I compile with 
+LFLAGS=-lcholmod -lopenblas -lm
