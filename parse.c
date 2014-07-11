@@ -1479,12 +1479,12 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].J02=atof(word);
+						MV->M.P[P].J01=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].nid2=atof(word);
+						MV->M.P[P].nid1=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -1715,7 +1715,7 @@ void Parse (char *file)
 							verbose=DEBUG;
 						break;
 					case NONE:
-						Warning("Warning: Word \"%s\" is not recognized\n", word);			
+						Warning("* line %3d: Warning: Word \"%s\" is not recognized\n", line_nr, word);			
 					default:
 						break;
 premature_end:

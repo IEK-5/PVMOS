@@ -9,7 +9,7 @@ target=pvmos
 CFLAGS=-O3
 LFLAGS= -lcholmod -lm
 
-VERSION=0.31
+VERSION=0.32
 
 all: $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)
