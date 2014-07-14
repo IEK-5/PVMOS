@@ -60,7 +60,7 @@ In PVMOS we can define more than one mesh at the same time. In order to referenc
 
 \section{PVMOS-syntax}
 In the input file you can define meshes. Each mesh you define is a variable andthus has a name. You can define several meshes and join them together in new meshes. This way it becomes fairly simple to, for example, put several cells in series by defining a single cell and joining several single cells together to get them series connected. 
-
+\newpage
 The input file should contain commands. Each command takes a certain number of input parameters. In the following table all commands are listed.  
 
 \begin{longtable}{p{0.12\textwidth}p{0.9\textwidth}}
@@ -167,7 +167,7 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\multicolumn{2}{l}{\textsc{Saving andloading meshes}} \\*
+\multicolumn{2}{l}{\textsc{Saving and loading meshes}} \\*
 \hline
 Keyword & Description \\
 \texttt{savemesh}	& Save a mesh to file in the PVMOS binary format, so it can be loaded again at a later time (see the \texttt{loadmesh} command). The command takes two arguments.
@@ -185,9 +185,9 @@ Keyword & Description \\
 \multicolumn{2}{l}{\textsc{Element-wise export of data}} \\*
 \hline
 Keyword & Description \\
-\texttt{printmesh}	& Export the mesh in a manner that is plottable with the gnuplot program (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. The command takes two arhuments:
+\texttt{printmesh}	& Export the mesh in a manner that is plottable with the gnuplot program (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. The command takes two arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}
 The output file will contain coordinates in columns. For each element the file contains the coordinates of the lower left- and the upper right corners empty line:\newline 
@@ -199,9 +199,9 @@ The output file will contain coordinates in columns. For each element the file c
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printconn}	& Print lateral connections in the electrodes in a format plottable with gnuplot (www.gnuplot.info/). When plotting the file (with vectors) a vector is drawn between the center of each element to the center of the adjacent elements to which it is connected. This routine may be useful when inspecting generated meshes. The command takes two arhuments:
+\texttt{printconn}	& Print lateral connections in the electrodes in a format plottable with gnuplot (www.gnuplot.info/). When plotting the file (with vectors) a vector is drawn between the center of each element to the center of the adjacent elements to which it is connected. This routine may be useful when inspecting generated meshes. The command takes two arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}
 The output is coordinates in columns. For each element the file contains the following data where \texttt{xc}, \texttt{yc} is the center of the current element and \texttt{xca\_i}, \texttt{yca\_i} is the center coordinate of the i-th adjacent element: 
@@ -211,9 +211,9 @@ The output is coordinates in columns. For each element the file contains the fol
 	... \\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printarea}	& Print the geometry of the mesh which identifies each element and the area it belongs to. The fileformat is laid out such that it is plottable with a surface plot in gnuplot (www.gnuplot.info/).  The command takes two arhuments:
+\texttt{printarea}	& Print the geometry of the mesh which identifies each element and the area it belongs to. The fileformat is laid out such that it is plottable with a surface plot in gnuplot (www.gnuplot.info/).  The command takes two arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}
 The output file will contain data in columns. The file contains coordinates, the element ID and the corresponding area ID. Note that the parameters for each area can be exported with  the \texttt{printpars} command. For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each element in the mesh, which allows you to see the areas in the defined geometry. For each element the folowing data is printed to the file:\newline 
@@ -227,9 +227,9 @@ The output file will contain data in columns. The file contains coordinates, the
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printV}		& Print the front and back electrode element voltages for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. The command takes two arhuments:
+\texttt{printV}		& Print the front and back electrode element voltages for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. The command takes two arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}
 The output file will contain data in columns. The file contains coordinates followed by the potential in the positive and negative electrodes for each solution.For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each element in the mesh. For each element the folowing data is printed to the file:\newline 
@@ -243,15 +243,15 @@ The output file will contain data in columns. The file contains coordinates foll
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printpar}	& Print a summary of the parameters per area, including both area-name and area-ID. The command takes two arhuments:
+\texttt{printpar}	& Print a summary of the parameters per area, including both area-name and area-ID. The command takes two arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printmesh\_sel}	& Same as \texttt{printmesh} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arhuments:
+\texttt{printmesh\_sel}	& Same as \texttt{printmesh} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
 \item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
@@ -259,9 +259,9 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printconn\_sel}	& Same as \texttt{printconn} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arhuments:
+\texttt{printconn\_sel}	& Same as \texttt{printconn} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
 \item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
@@ -269,9 +269,9 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printarea\_sel}	& Same as \texttt{printarea} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arhuments:
+\texttt{printarea\_sel}	& Same as \texttt{printarea} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
 \item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
@@ -279,70 +279,171 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printV\_sel}		& Same as \texttt{printV} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arhuments:
+\texttt{printV\_sel}		& Same as \texttt{printV} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh mesh
+\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
 \item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
-printIV
---------------------------------------------------------------------------------
-surfVplot
---------------------------------------------------------------------------------
-surfPplot
---------------------------------------------------------------------------------
-assign_properties
---------------------------------------------------------------------------------
-set_Rp
---------------------------------------------------------------------------------
-set_Rn
---------------------------------------------------------------------------------
-set_Rpvp
---------------------------------------------------------------------------------
-set_Rnvp
---------------------------------------------------------------------------------
-set_Rpvn
---------------------------------------------------------------------------------
-set_Rnvn
---------------------------------------------------------------------------------
-set_JV
---------------------------------------------------------------------------------
-set_2DJV
---------------------------------------------------------------------------------
-set_1DJV
---------------------------------------------------------------------------------
-set_R
---------------------------------------------------------------------------------
-set_SplitX
---------------------------------------------------------------------------------
-set_SplitY
---------------------------------------------------------------------------------
-maxiter
---------------------------------------------------------------------------------
-tol_V
---------------------------------------------------------------------------------
-rel_tol_V
---------------------------------------------------------------------------------
-tol_kcl
---------------------------------------------------------------------------------
-rel_tol_kcl
---------------------------------------------------------------------------------
-solve
---------------------------------------------------------------------------------
-adaptive_solve
---------------------------------------------------------------------------------
-out_quiet
---------------------------------------------------------------------------------
-out_normal
---------------------------------------------------------------------------------
-out_verbose
---------------------------------------------------------------------------------
-out_debug
---------------------------------------------------------------------------------
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printIV}		& Export the IV characteristics of the device. Exports a file with two columns, the first contains all the simulated applied voltages and the second the corresponding total currents. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surfVplot}		& Export the front and back electrode voltages for a specific solution. Unlike the \texttt{print}-commands like \texttt{printV} the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surfPplot}		& Export the local power density for a specific solution. Just like in the \texttt{surfVplot} command the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Manipulating local properties}} \\*
+\hline
+Keyword & Description \\
+\texttt{assign\_properties}	&  Assign nodes to a defined area. If no nodes are selected all nodes in the mesh are assigned to the specified area. The command takes one arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\end{enumerate}\\
+\texttt{set\_Rp}	&  Set the electrode resistance for the positive electrode for a specified area. If the specified area does not exist it will be newly created. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{value}, Sheet resistance value ($\Omega$)
+\end{enumerate}\\
+\texttt{set\_Rn}	&  Set the electrode resistance for the negative electrode for a specified area. If the specified area does not exist it will be newly created. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{value}, Sheet resistance value ($\Omega$)
+\end{enumerate}\\
+\texttt{set\_Rpvn}	&  Set the contact resistance between the positive electrode and the negative node for the applied voltage. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_Rnvn}	&  Set the contact resistance between the negative electrode and the negative node for the applied voltage. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_Rpvp}	&  Set the contact resistance between the positive electrode and the positive node for the applied voltage. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_Rnvp}	&  Set the contact resistance between the negative electrode and the positive node for the applied voltage. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_JV}	&  Specify a tabular data set to use as a JV characteristics. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{file-name}, Name of a file containing two columns, voltage and current density ($V$, $A \text{cm}^{-2}$)
+\end{enumerate}\\
+\texttt{set\_2DJV}	&  Specify a two-diode model for the JV characteristics. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{J01}, Saturation current density for the first diode (ideality factor one)  ($A \text{cm}^{-2}$)
+\item \texttt{J02}, Saturation current density for the second diode (ideality factor two)  ($A \text{cm}^{-2}$)
+\item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{T}, Temperature ($K$)
+\item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_1DJV}	&  Specify a one-diode model for the JV characteristics. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{J0}, Saturation current density ($A \text{cm}^{-2}$)
+\item \texttt{nid}, Ideality factor
+\item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{T}, Temperature ($K$)
+\item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_R}	&  Specify a resistance for the JV characteristics. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{R}, Resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Numerical Settings}} \\*
+\hline
+Keyword & Description \\
+\texttt{set\_SplitX}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in x-direction for a specified area (per default all nodes can be split in all directions). The command takes one argument:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\end{enumerate}\\
+\texttt{set\_SplitY}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in y-direction for a specified area (per default all nodes can be split in all directions). The command takes one argument:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\end{enumerate}\\
+\texttt{maxiter}	&  Set the maximum number of iterations for solving the non-linear system. The command takes one argument:
+\begin{enumerate}
+\item \texttt{maxiter}, Maximum number of iterations (default: 25)
+\end{enumerate}\\
+\texttt{tol\_V}	&  Absolute voltage tolerance for the break-off criterion. The command takes one argument:
+\begin{enumerate}
+\item \texttt{tol\_V}, Absolute voltage tolerance $V$ (default: $10^{-5} \text{V}$)
+\end{enumerate}\\
+\texttt{rel\_tol\_V}	&  Relative voltage tolerance for the break-off criterion. The command takes one argument:
+\begin{enumerate}
+\item \texttt{tol\_V}, Relative voltage tolerance $-$ (default: $10^{-5}$)
+\end{enumerate}\\
+\texttt{tol\_kcl}	&  Absolute current tolerance for the break-off criterion (KCL stands for Kirchhoff's Current Law). The command takes one argument:
+\begin{enumerate}
+\item \texttt{tol\_kcl}, KCL tolerance $A$ (default: $10^{-5} \text{A}$)
+\end{enumerate}\\
+\texttt{rel\_tol\_kcl}	&  Relative current tolerance for the break-off criterion (KCL stands for Kirchhoff's Current Law). The command takes one argument:
+\begin{enumerate}
+\item \texttt{tol\_kcl}, Relative KCL tolerance $-$ (default: $10^{-5}$)
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Solving}} \\*
+\hline
+Keyword & Description \\
+\texttt{solve}	&  Solve the system (do a voltage sweep). The command takes four arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{V\_start}, Start voltage
+\item \texttt{V\_end}, End voltage
+\item \texttt{N\_step}, Number of voltage steps
+\end{enumerate}\\
+\texttt{adaptive\_solve}	&  Solve the system and adapt the mesh at one specified voltage. The command takes four arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{V\_a}, Applied voltage
+\item \texttt{threshold}, Ralative threshold for node splitting, a parameter between 0 and 1 that controls how agressive the mesh is adapted, where lower values lead to a more agressive mesh adaption (typical values betwwen 0.3 and 0.5).
+\item \texttt{N\_step}, Number adaptive meshing iterations
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Verbosity levels}} \\*
+\hline
+Keyword & Description \\
+\texttt{out\_quiet}	&  Set verbosity to the minimum (only says something when it crashes). The command takes no arguments.\\
+\texttt{out\_normal}	&  Set verbosity to the normal level. The command takes no arguments.\\
+\texttt{out\_verbose}	&  Output additional data that may be interesting. The command takes no arguments.\\
+\texttt{out\_degug}	&  Output additional data that is only interesting for someone who is chasing bugs in the code. The command takes no arguments.\\
 \hline
 \\
 \end{longtable}
