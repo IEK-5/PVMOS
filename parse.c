@@ -1104,7 +1104,7 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						Print(NORMAL,"* line %3d: Make rectangular selection of nodes\n", line_nr);
+						Print(NORMAL,"* line %3d: Make rectangular selection of nodes\n", line_nr, word);
 						fflush(stdout);
 						SelectRectNodes (word,  Meshes, Nm, x1,y1,x2,y2);
 						break;
@@ -1128,7 +1128,7 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						Print(NORMAL,"* line %3d: Make circular selection of nodes\n", line_nr);
+						Print(NORMAL,"* line %3d: Make circular selection of nodes\n", line_nr, word);
 						SelectCircNodes (word,  Meshes, Nm, x,y,r);
 						break;
 					}
@@ -1137,9 +1137,22 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						Print(NORMAL,"* line %3d: Make poly-selection of nodes\n", line_nr);
+						Print(NORMAL,"* line %3d: Make poly-selection of nodes in mesh %s\n", line_nr, word);
 						fflush(stdout);
 						SelectPolyNodes (word,  Meshes, Nm, P);
+						break;
+					}
+					case DESELECT:
+					{
+						meshvar *MV;
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;								
+						MV=LookupMesh (word,  Meshes, Nm);
+						if (!MV)
+							Error("Mesh %s does not exist\n",word);	
+						Print(NORMAL,"* line %3d: Deselecting selection in mesh %s\n", line_nr, MV->name);	
+						MV->nodes[0]=0;
 						break;
 					}
 					
