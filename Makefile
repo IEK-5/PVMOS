@@ -7,9 +7,9 @@ CC=gcc
 target=pvmos
 
 CFLAGS=-O3
-LFLAGS= -lcholmod -lm
-
-VERSION=0.32
+LFLAGS= -lcholmod -lopenblas -lm
+#LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
+VERSION=0.33
 
 all: $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)

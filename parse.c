@@ -243,6 +243,8 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 	if (!MV)
 		Error("Mesh %s is not defined\n", name);
 	MV->nodes=RectSelectNodes(x1, y1, x2, y2, MV->M, MV->nodes);
+	if (MV->nodes[0]==0)
+		Error("No nodes selected, try selecting a larger area or refine the mesh first\n");
 	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
 }
 /* select circular area in a mesh variable */
@@ -263,6 +265,8 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 	if (!MV)
 		Error("Mesh %s is not defined\n", name);
 	MV->nodes=CircSelectNodes(x, y, r, MV->M, MV->nodes);
+	if (MV->nodes[0]==0)
+		Error("No nodes selected, try selecting a larger area or refine the mesh first\n");
 	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
 }
 /* select area enclosed by a polygon in a mesh variable */
@@ -281,6 +285,8 @@ void SelectPolyNodes (char *name,  meshvar * meshes, int Nm, polygon P)
 	if (!MV)
 		Error("Mesh %s is not defined\n", name);
 	MV->nodes=PolySelectNodes(P, MV->M, MV->nodes);
+	if (MV->nodes[0]==0)
+		Error("No nodes selected, try selecting a larger area or refine the mesh first\n");
 	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
 }
 
