@@ -520,7 +520,7 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 {
 	cholmod_common c ;
 	cholmod_sparse *S;
-	double Ekcl, Ekcl_rel, Ev, Va;
+	double Ekcl, Ekcl_rel, Ev, Va, Vaf=1;
 	int i, j, k;
 	clock_t start, end;
 	Print(NORMAL, "________________________________________________________________\n");
@@ -552,9 +552,16 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 		M->res.Vn=realloc(M->res.Vn, (M->res.Nva+1)*sizeof(double *));		
 		M->res.Vn[M->res.Nva]=calloc(2*M->Nn,sizeof(double));
 		
+		/* do a linear extrapolation to the new applied voltage 
+		   (i.e.  scale all node voltages with a factor). We limit this
+		   to a sensible range to avoid problems. */
+		if (fabs(M->res.Va[i])>1e-4)
+			Vaf=Va/M->res.Va[i];
+		if (fabs(Vaf)>100)
+			Vaf=1;
 		if (i>=0)
-			for (j=0;j<2*M->Nn;j++)
-				M->res.Vn[M->res.Nva][j]=M->res.Vn[i][j];
+			for (j=0;j<2*M->Nn;j++)				
+				M->res.Vn[M->res.Nva][j]=M->res.Vn[i][j]*Vaf;
 		M->res.Nva++;
 				
 		i=0;

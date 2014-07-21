@@ -965,6 +965,35 @@ void SplitMeshXY(mesh *M)
 		SplitNodeXY(i-1, M);
 }
 
+void SplitMeshWhileCoarse(mesh *M, double d)
+{
+	int i, go=1;	
+	while (go)
+	{
+		for (i=M->Nn-1;i>=0;i--)
+		{
+			node *N;
+			N=SearchNode(*M, i);
+			go=0;
+			if (((N->x2-N->x1)>d)&&((N->y2-N->y1)>d))
+			{
+				SplitNodeXY(i, M);
+				go=1;
+			}
+			else if ((N->x2-N->x1)>d)
+			{
+				SplitNodeX(i, M);
+				go=1;
+			}
+			else if ((N->y2-N->y1)>d)
+			{
+				SplitNodeY(i, M);
+				go=1;
+			}
+		}
+	}
+}
+
 void SplitListX(mesh *M, int *list)
 {
 	int i;
@@ -997,6 +1026,47 @@ void SplitListLong(mesh *M, int *list)
 		else
 			SplitNodeY(N->id, M);
 	}
+}
+
+void SplitListWhileCoarse(mesh *M, int *list, double d)
+{
+	int i, go=1;
+	int *list_c;
+	
+	list_c=DuplicateList(list);
+	while (go)
+	{
+		for (i=list_c[0];i>0;i--) 
+		/* Careful: This loop walks backward through the list. The reason is that any newly created node will end up at the 
+		  back or the list (as the lists are sorted and newly created lists have indices at the end of the node list). By walking
+		  backward we prevent the loop from interfering with itself as list_c[0] changes during the execuation of the loop.*/
+		{
+			node *N;
+			N=SearchNode(*M, list_c[i]);
+			go=0;
+			if (((N->x2-N->x1)>d)&&((N->y2-N->y1)>d))
+			{
+				SplitNodeXY(list_c[i], M);
+				list_c=AddToList(list_c, M->Nn-1);
+				list_c=AddToList(list_c, M->Nn-2);
+				list_c=AddToList(list_c, M->Nn-3);
+				go=1;
+			}
+			else if ((N->x2-N->x1)>d)
+			{
+				SplitNodeX(list_c[i], M);
+				list_c=AddToList(list_c, M->Nn-1);
+				go=1;
+			}
+			else if ((N->y2-N->y1)>d)
+			{
+				SplitNodeY(list_c[i], M);
+				list_c=AddToList(list_c, M->Nn-1);
+				go=1;
+			}
+		}
+	}
+	free(list_c);
 }
 
 
@@ -1569,7 +1639,7 @@ void Chunkify_south(mesh *M)
 /************************************************/
 int *Chunkify_node(mesh *M, int id, int * merged)
 {
-	int i, j;
+	int j;
 	int *list;
 	int MRG;
 	double R;	
@@ -1968,7 +2038,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 
 int Chunkify_nodes(mesh *M, int skip, int offset)
 {
-	int i,j,Nold;
+	int i,Nold;
 	int *merged;
 	merged=malloc(LISTBLOCK*sizeof(int));
 	merged[0]=0;

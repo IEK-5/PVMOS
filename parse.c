@@ -414,7 +414,6 @@ void Parse (char *file)
 						char *name;
 						int len;
 						mesh *M1, *M2;
-						meshvar *MV;
 						/* read next word and process, if no next word trow an error */
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -455,9 +454,8 @@ void Parse (char *file)
 					{
 						double yoff;
 						char *name;
-						int len, i;
+						int len;
 						mesh *M1, *M2;
-						meshvar *MV;
 						/* read next word and process, if no next word trow an error */
 												
 						begin=GetWord (begin, word);
@@ -497,7 +495,6 @@ void Parse (char *file)
 						char *name;
 						int len;
 						mesh *M1, *M2;
-						meshvar *MV;
 						/* read next word and process, if no next word trow an error */
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -530,6 +527,31 @@ void Parse (char *file)
 						break;
 					
 					}
+					case DUPMESH:
+					{
+						int len;
+						char *name;
+						mesh Mnew;
+						mesh *M;
+						
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Duplicating mesh %s",line_nr, word);	
+						M=FetchMesh (word,  Meshes, Nm);			
+						Mnew=DuplicateMesh((*M));
+						
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;	
+						len=strlen(word);
+						name=malloc((len+2)*sizeof(char));
+						name=strncpy(name,word,len+1);	
+						Print(NORMAL, ", storing duplicate in %s\n",word);						
+						
+						AddMeshVar (Mnew, &name,  &Meshes, &Nm);
+						break;					
+					}
 					case SPLITX:
 					{
 						meshvar *MV;
@@ -553,7 +575,8 @@ void Parse (char *file)
 							fflush(stdout);
 							SplitListX(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
-						}					
+						}	
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);				
 						break;
 					}
 					case SPLITY:
@@ -579,7 +602,8 @@ void Parse (char *file)
 							fflush(stdout);
 							SplitListY(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
-						}					
+						}	
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);					
 						break;
 					}
 					case SPLITXY:
@@ -605,7 +629,8 @@ void Parse (char *file)
 							fflush(stdout);
 							SplitListXY(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
-						}					
+						}	
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);					
 						break;
 					}
 					case SPLITLONG:
@@ -631,7 +656,41 @@ void Parse (char *file)
 							fflush(stdout);
 							SplitListLong(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
-						}					
+						}
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);						
+						break;
+					}
+					case SPLITCOARSE:
+					{
+						meshvar *MV;
+						double d;
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;								
+						MV=LookupMesh (word,  Meshes, Nm);
+						if (!MV)
+							Error("Mesh %s does not exist\n",word);		
+							
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;	
+						d=atof(word);
+											
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							Print(NORMAL,"* line %3d: Splitting all nodes in %s until all\n            edges shorter than %e\n",line_nr, MV->name, d);
+							fflush(stdout);
+							SplitMeshWhileCoarse(&(MV->M), d);
+						}
+						else
+						{
+							Print(NORMAL,"* line %3d: Splitting selected nodes in %s until all\n            edges shorter than %e\n",line_nr, MV->name, d);
+							fflush(stdout);
+							SplitListWhileCoarse(&(MV->M), MV->nodes, d);
+							MV->nodes[0]=0;
+						}	
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);					
 						break;
 					}
 					case SIMPLIFY_MESH:
@@ -644,8 +703,8 @@ void Parse (char *file)
 						Print(NORMAL,"* line %3d: Simplifying mesh of %d nodes\n",line_nr, MV->M.Nn);
 						fflush(stdout);		
 						Chunkify(&(MV->M), 4);
-						Print(NORMAL,"            -->  Resulting mesh is %d nodes large\n", MV->M.Nn);
 						MV->nodes[0]=0;
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);	
 						break;
 					}
 					case LOADMESH:
@@ -1574,7 +1633,6 @@ void Parse (char *file)
 					{
 						meshvar *MV;
 						int P;
-						double S;
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;								
@@ -1602,7 +1660,6 @@ void Parse (char *file)
 					{
 						meshvar *MV;
 						int P;
-						double S;
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;								

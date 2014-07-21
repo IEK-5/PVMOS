@@ -162,6 +162,12 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{split\_coarse}	& Split selected elements until the node-edges are all smaller than a given length. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes two arguments 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{l}, Maximum edge length
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{simplify}	&  Attempt to simplify a mesh. If elements are selected they are un-selected as the topology of the mesh changed. The command takes one argument 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
