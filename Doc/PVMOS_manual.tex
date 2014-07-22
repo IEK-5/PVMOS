@@ -46,24 +46,46 @@
 \maketitle
 
 \section{Introduction}
-This is (or rather will be as the current state of this document is far from finished) the manual for the PhotoVoltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{}. The purpose of this document is to document how PVMOS is operated.
+This is (or rather will be as the current state of this document is far from finished) the manual for the Photo-Voltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{}. The purpose of this document is to document how PVMOS is operated and installed. In the following sections I discuss in order, the installation, basic usage and operating principles and finally a detailed discussion of all available functions.
 
+\section{Installation Instructions}	
+
+\begin{verbatim}
+DISCLAMER:
+PVMOS  Copyright (C) 2014  B. E. Pieters
+This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to
+redistribute under certain conditions. You should have received a copy of the GNU General 
+Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
+\end{verbatim}
+
+
+PVMOS is is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \verb_cholmod_, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to compile the source, for which a Makefile is provided. To install PVMOS you thus need to
+\begin{enumerate}
+\item{} Install PVMOS's dependencies
+\item{} Edit the Makefile
+\item{} Compile the code (type make)
+\item{} test the executable
+\end{enumerate}
+
+The performance of PVMOS is mostly determined by the performance of the sparse linear solver (i.e. \verb_cholmod_). For an optimal performance an optimized \verb_BLAS_ library must be used (the reference \verb_BLAS_ is comparatively slow). For an optimized \verb_BLAS_ there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \verb_Open-BLAS_, which gives a very good performance (\verb_Open-BLAS_ is an actively developed fork of the now unmaintained \verb_GoTo BLAS_). Some CPU manufacturers also publish their own optimized \verb_BLAS_ libraries for their CPU's (e.g. Intel and AMD). However, those libraries are usually provided under stricter conditions. For example Intel's Math Kernel Library is available commercially or under the condition that it is used for non-profit purposes (for that it provides a performance which was marginally better than \verb_Open BLAS_ in my tests).
+
+
+\section{Basic Usage and operating principles}
 The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the filename describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this:
 \begin{verbatim}
 pvmos [verbose-option] <input-file>
 \end{verbatim}
-where \verb_[verbose-option]_ is an option which how much inpormation PVMOS outputs to stdout, and \verb_<input-file>_ is the plain text input file. We first describe the mesh data structure in more detail in the next section. 
-\section{The PVMOS mesh data structure}
-A large part of the commands implemented in PVMOS are to manipulate meshes. The following describes the data stored in a mesh structure in PVMOS. The mesh contains rectangular elements. For each element we store the coordinates of the lower left corner ($x_1,y_1$) and of the upper right corner ($x_2,y_2$). Furthermore each node has a unique ID number. In order to save memory space we do not store the electrical properties for every element. Instead, we store the electrical parameters per ``area''. To this end a mesh contains a list of area data-structures whcih contain parameters such as the electrode sheet resistances and the solar cell properties. Each element now refers to a certain area by means of an area-ID number. Each area also has a name for easy referencing by the user.
+where \verb_[verbose-option]_ is an option which how much information PVMOS outputs to stdout, and \verb_<input-file>_ is the plain text input file. We first describe the mesh data structure in more detail in the next section. 
 
-In PVMOS we can define more than one mesh at the same time. In order to reference one particular mesh, each mesh has a name. To reference an area within a mesh you can refer to \verb_<mesh-name>.<area-name>_, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis. In the following section we discuss the PVMOS-input file syntax.
+More or less all functions implemented in PVMOS manipulate meshes in one way or another. To understand PVMOS one needs to understand PVMOS's mesh data-structure. A mesh in PVMOS consists of rectangular elements. For each element we store the coordinates of the lower left corner ($x_1,y_1$) and of the upper right corner ($x_2,y_2$). Furthermore each node has a unique ID number. In order to save memory space we do not store the electrical properties for every element. Instead, we store the electrical parameters per ``area''. To this end a mesh contains a list of area data-structures which contain parameters such as the electrode sheet resistances and the solar cell properties. Each element now refers to a certain area by means of an area-ID number. Each area also has a name for easy referencing by the user. Finally, once you solve the potentials within a mesh for certain applied bias voltages, the mesh will also contain arrays with the potentials in the front and back contact for each element for each of the applied bias voltages. 
 
-\section{PVMOS-syntax}
-In the input file you can define meshes. Each mesh you define is a variable andthus has a name. You can define several meshes and join them together in new meshes. This way it becomes fairly simple to, for example, put several cells in series by defining a single cell and joining several single cells together to get them series connected. 
-\newpage
-The input file should contain commands. Each command takes a certain number of input parameters. In the following table all commands are listed.  
+In PVMOS we can define more than one mesh at the same time (this is useful as you can build meshes from several meshes, e.g. join two meshes for single cells to one mesh with two series connected cells). In order to reference one particular mesh, each mesh has a name. To reference an area within a mesh you can refer to \verb_<mesh-name>.<area-name>_, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis. 
 
-\begin{longtable}{p{0.12\textwidth}p{0.9\textwidth}}
+The input file is parsed by PVMOS which sequentially processes the file. PVMOS provides functions to generate and manipulate meshes such that you can generate meshes describing the problem by a sequence of commands. To this end each mesh you define has a name to reference it by. The following section provides a command-reference.
+
+\section{\label{syntax}PVMOS command reference}
+
+\begin{longtable}{p{0.2\textwidth}p{0.8\textwidth}}
 \multicolumn{2}{l}{\textsc{Creating Meshes}} \\*
 \hline
 Keyword & Description \\
