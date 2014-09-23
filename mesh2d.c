@@ -520,6 +520,7 @@ void NewProperties(mesh *M, char *name)
 	M->P[M->Na-1].SplitY=1;
 }
 
+
 int FindProperties(mesh M, char *name)
 {
 	int i=0, l=0;
@@ -539,6 +540,26 @@ int FindProperties(mesh M, char *name)
 	return -1;
 }
 
+void ReInitResults(mesh M)
+/* re-initializes the results struct. To be used when the mesh changes */
+{
+	int i,j;
+	for (i=0;i<M.res.Nva;i++)
+	{
+		for (j=0;j<M.Nel;j++)
+			free(M.res.Vn[i][j]);
+		M.res.Vn[i];
+	}
+	free(M.res.Vn[i]);
+	free(M.res.Va);
+	free(M.res.I);
+	
+	M.res.Nva=0;
+	M.res.Va=malloc(sizeof(double));
+	M.res.I=malloc(sizeof(double));
+	M.res.Vn=malloc(sizeof(double ***));
+}
+
 void AssignProperties(mesh *M, int *select, int P)
 {
 	int j;
@@ -550,14 +571,7 @@ void AssignProperties(mesh *M, int *select, int P)
 		N=SearchNode(*M, select[j]);
 		N->P=P;
 	} 
-	for (j=0;j<M->res.Nva;j++)
-		free(M->res.Vn[j]);
-	free(M->res.Va);
-	free(M->res.I);
-	M->res.Nva=0;
-	M->res.Va=malloc(sizeof(double));
-	M->res.I=malloc(sizeof(double));
-	M->res.Vn=malloc(sizeof(double *));
+	ReInitResults(*M);
 }
 
 void AssignPropertiesMesh(mesh *M, int P)
@@ -567,14 +581,48 @@ void AssignPropertiesMesh(mesh *M, int P)
 		Error("Area %d not defined\n", P);
 	for (j=0;j<M->Nn;j++)
 		M->nodes[j].P=P;
-	for (j=0;j<M->res.Nva;j++)
-		free(M->res.Vn[j]);
-	free(M->res.Va);
-	free(M->res.I);
-	M->res.Nva=0;
-	M->res.Va=malloc(sizeof(double));
-	M->res.I=malloc(sizeof(double));
-	M->res.Vn=malloc(sizeof(double *));
+	ReInitResults(*M);
+}
+
+void AddElectrode(mesh *M)
+{
+	int i;
+	M->Nel++;
+	for (i=0;i<M->Na;i++)
+	{
+		/* extend the properties arrays to add the new electrode */
+		Print(NORMAL,"Please define the new electrode properties for electrode %d in area %s\n", M->Nel, M->P[i].name);	
+		M->P[i].Rel=realloc(M->P[i].Rel, (M->Nel+2)*sizeof(double));
+		M->P[i].Rvp=realloc(M->P[i].Rvp, (M->Nel+2)*sizeof(double));
+		M->P[i].Rvn=realloc(M->P[i].Rvn, (M->Nel+2)*sizeof(double));	
+		M->P[i].conn=realloc(M->P[i].conn, (M->Nel+1)*sizeof(ElCon));
+	
+		/* put in default values */
+		M->P[i].Rel[M->Nel]=1;
+		M->P[i].Rvp[M->Nel]=-1.0;
+		M->P[i].Rvn[M->Nel]=-1.0;
+		
+		M->P[i].conn[M->Nel-1].model=JVD;
+		M->P[i].conn[M->Nel-1].J01=1e-12;
+		M->P[i].conn[M->Nel-1].J02=1e-8;
+		M->P[i].conn[M->Nel-1].Jph=0;
+		M->P[i].conn[M->Nel-1].nid1=1;
+		M->P[i].conn[M->Nel-1].nid2=2;
+		M->P[i].conn[M->Nel-1].Eg=1.12;
+		M->P[i].conn[M->Nel-1].Rs=1e-5;
+		M->P[i].conn[M->Nel-1].Rsh=1e4;
+			
+		M->P[i].conn[M->Nel-1].V=malloc(2*sizeof(double));
+		M->P[i].conn[M->Nel-1].J=malloc(2*sizeof(double));
+		M->P[i].conn[M->Nel-1].V[0]=-1;
+		M->P[i].conn[M->Nel-1].J[0]=-1;
+		M->P[i].conn[M->Nel-1].V[1]=1;
+		M->P[i].conn[M->Nel-1].J[1]=1;
+		M->P[i].conn[M->Nel-1].N=2;			
+	}		
+	
+	ReInitResults(*M);
+	M->Nel++;
 }
 
 mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
@@ -584,6 +632,9 @@ mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
 	int *prop_out;
 	node *m1, *m2;
 	int i,j;
+	
+	if (M1->Nel!=M2->Nel)
+		Error("Cannot join meshes with unequal number of electrodes, M1:%d M2:%d\n",M1->Nel, M2->Nel);
 	
 	outl1=MeshOutline(M1);
 	outl2=MeshOutline(M2);
@@ -638,14 +689,7 @@ mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
 	}
 	free(outl1);
 	free(outl2);
-	for (i=0;i<res.res.Nva;i++)
-		free(res.res.Vn[i]);
-	free(res.res.Va);
-	free(res.res.I);
-	res.res.Nva=0;
-	res.res.Va=malloc(sizeof(double));
-	res.res.I=malloc(sizeof(double));
-	res.res.Vn=malloc(sizeof(double *));
+	ReInitResults(res);
 
 	return res;
 }
@@ -658,6 +702,8 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 	node *m1, *m2;
 	int i,j;
 	
+	if (M1->Nel!=M2->Nel)
+		Error("Cannot join meshes with unequal number of electrodes, M1:%d M2:%d\n",M1->Nel, M2->Nel);
 	outl1=MeshOutline(M1);
 	xoff=M1.nodes[0].x1;
 	for (i=1;i<=outl1[0];i++)
@@ -718,14 +764,7 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 	}
 	free(outl1);
 	free(outl2);
-	for (i=0;i<res.res.Nva;i++)
-		free(res.res.Vn[i]);
-	free(res.res.Va);
-	free(res.res.I);
-	res.res.Nva=0;
-	res.res.Va=malloc(sizeof(double));
-	res.res.I=malloc(sizeof(double));
-	res.res.Vn=malloc(sizeof(double *));
+	ReInitResults(res);
 
 	return res;
 }
@@ -738,6 +777,8 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 	node *m1, *m2;
 	int i,j;
 	
+	if (M1->Nel!=M2->Nel)
+		Error("Cannot join meshes with unequal number of electrodes, M1:%d M2:%d\n",M1->Nel, M2->Nel);
 	outl1=MeshOutline(M1);
 	yoff=M1.nodes[0].y1;
 	for (i=1;i<=outl1[0];i++)
@@ -798,21 +839,14 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 	}
 	free(outl1);
 	free(outl2);
-	for (i=0;i<res.res.Nva;i++)
-		free(res.res.Vn[i]);
-	free(res.res.Va);
-	free(res.res.I);
-	res.res.Nva=0;
-	res.res.Va=malloc(sizeof(double));
-	res.res.I=malloc(sizeof(double));
-	res.res.Vn=malloc(sizeof(double *));
+	ReInitResults(res);
 
 	return res;
 }
 
 void SplitNodeX(int id, mesh *M)
 {
-	int newid, i, *list;
+	int newid, i, j, *list;
 	node *old, *new, *a;
 	/* add a node */
 	newid=M->Nn;
@@ -822,12 +856,9 @@ void SplitNodeX(int id, mesh *M)
 	/* reallocate and copy node voltages */
 	for (i=0;i<M->res.Nva;i++)
 	{
-		int j;
-		M->res.Vn[i]=realloc(M->res.Vn[i],(2*M->Nn+1)*sizeof(double));
-		for (j=2*M->Nn-2;j>M->Nn-2;j--)
-			M->res.Vn[i][j]=M->res.Vn[i][j-1];
-		M->res.Vn[i][M->Nn-1]=M->res.Vn[i][id];
-		M->res.Vn[i][2*M->Nn-1]=M->res.Vn[i][id+M->Nn];
+		for (j=0;j<M->Nel;j++);
+			M->res.Vn[i][j]=realloc(M->res.Vn[i][j],(M->Nn+1)*sizeof(double));			
+		M->res.Vn[i][j][M->Nn-1]=M->res.Vn[i][j][id];
 	}
 	
 	old=SearchNode(*M, id);
@@ -899,12 +930,9 @@ void SplitNodeY(int id, mesh *M)
 	/* reallocate and copy node voltages */
 	for (i=0;i<M->res.Nva;i++)
 	{
-		int j;
-		M->res.Vn[i]=realloc(M->res.Vn[i],(2*M->Nn+1)*sizeof(double));
-		for (j=2*M->Nn-2;j>M->Nn-2;j--)
-			M->res.Vn[i][j]=M->res.Vn[i][j-1];
-		M->res.Vn[i][2*M->Nn-1]=M->res.Vn[i][id+M->Nn];
-		M->res.Vn[i][M->Nn-1]=M->res.Vn[i][id];
+		for (j=0;j<M->Nel;j++);
+			M->res.Vn[i][j]=realloc(M->res.Vn[i][j],(M->Nn+1)*sizeof(double));			
+		M->res.Vn[i][j][M->Nn-1]=M->res.Vn[i][j][id];
 	}
 	
 	old=SearchNode(*M, id);
@@ -1209,14 +1237,7 @@ void CleanUpMesh(mesh *M, int *merged)
 		i++;
 	} */
  	SortMesh(M);
-	for (i=0;i<M->res.Nva;i++)
-		free(M->res.Vn[i]);
-	free(M->res.Va);
-	free(M->res.I);
-	M->res.Nva=0;
-	M->res.Va=malloc(sizeof(double));
-	M->res.I=malloc(sizeof(double));
-	M->res.Vn=malloc(sizeof(double *));
+	ReInitResults(res);
 
 }
 
@@ -2218,102 +2239,83 @@ void ReadNodeArray(FILE *f, mesh *M)
 	for (i=0;i<M->Nn;i++)
 		M->nodes[i]=ReadNode(f);
 }
-
-/* write local properties array */
-void WriteProperties(FILE *f, local_prop P)
+void WriteElConn(FILE *f, ElConn conn)
 {
-	int len;
-	len=strlen(P.name)+1;
-	fwrite(&len, sizeof(int), 1, f);
-	fwrite(P.name, sizeof(char), len, f);
-	fwrite(&P.Rp, sizeof(double), 1, f);
-	fwrite(&P.Rn, sizeof(double), 1, f);
-	fwrite(&P.Rpvp, sizeof(double), 1, f);
-	fwrite(&P.Rpvn, sizeof(double), 1, f);
-	fwrite(&P.Rnvp, sizeof(double), 1, f);
-	fwrite(&P.Rnvn, sizeof(double), 1, f);
-	
-	fwrite(&P.model, sizeof(diode_model), 1, f);
-	fwrite(&P.J01, sizeof(double), 1, f);
-	fwrite(&P.J02, sizeof(double), 1, f);
-	fwrite(&P.Jph, sizeof(double), 1, f);
-	fwrite(&P.nid1, sizeof(double), 1, f);
-	fwrite(&P.nid2, sizeof(double), 1, f);
-	fwrite(&P.Eg, sizeof(double), 1, f);
-	fwrite(&P.T, sizeof(double), 1, f);
-	fwrite(&P.Rs, sizeof(double), 1, f);
-	fwrite(&P.Rsh, sizeof(double), 1, f);
-
-	
-	fwrite(&P.N, sizeof(int), 1, f);
-	fwrite(P.V, sizeof(double), P.N, f);
-	fwrite(P.J, sizeof(double), P.N, f);
-	fwrite(&P.SplitX, sizeof(int), 1, f);
-	fwrite(&P.SplitY, sizeof(int), 1, f);	
-}
-local_prop ReadProperties(FILE *f)
-{
-	local_prop P;
 	int i;
-	if (!fread(&i, sizeof(int), 1, f))
-		Error("Premature end of mesh file\n");
-	P.name=malloc(MAXNAMELEN*sizeof(char));
-	if (fread(P.name, sizeof(char), i, f)<i)
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Rp, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Rn, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Rpvp, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Rpvn, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Rnvp, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Rnvn, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	
-	if (!fread(&P.model, sizeof(diode_model), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.J01, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.J02, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Jph, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.nid1, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.nid2, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Eg, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.T, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");	
-	if (!fread(&P.Rs, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.Rsh, sizeof(double), 1, f))
-		Error("Premature end of mesh file\n");	
-	
-	if (!fread(&P.N, sizeof(int), 1, f))
-		Error("Premature end of mesh file\n");
-	P.V=malloc((P.N+1)*sizeof(double));	
-	if (fread(P.V, sizeof(double), P.N, f)<P.N)
-		Error("Premature end of mesh file\n");
-	P.J=malloc((P.N+1)*sizeof(double));	
-	if (fread(P.J, sizeof(double), P.N, f)<P.N)
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.SplitX, sizeof(int), 1, f))
-		Error("Premature end of mesh file\n");
-	if (!fread(&P.SplitY, sizeof(int), 1, f))
-		Error("Premature end of mesh file\n");
-	return P;		
+	fwrite(&conn.model, sizeof(diode_model), 1, f);
+	fwrite(&conn.J01, sizeof(double), 1, f);
+	fwrite(&conn.J02, sizeof(double), 1, f);
+	fwrite(&conn.Jph, sizeof(double), 1, f);
+	fwrite(&conn.nid1, sizeof(double), 1, f);
+	fwrite(&conn.nid2, sizeof(double), 1, f);
+	fwrite(&conn.Eg, sizeof(double), 1, f);
+	fwrite(&conn.Rs, sizeof(double), 1, f);
+	fwrite(&conn.Rsh, sizeof(double), 1, f);
+	fwrite(&conn.N, sizeof(int), 1, f);
+	fwrite(conn.V, sizeof(double), conn.N, f);
+	fwrite(conn.J, sizeof(double), conn.N, f);
 }
+
+ElConn ReadElConn(FILE *f)
+{
+	ElConn conn
+	
+	int i;	
+	if (!fread(&conn.model, sizeof(diode_model), 1, f))
+		Error("Premature end of mesh file\n");
+	if (!fread(&conn.J01, sizeof(double), 1, f))
+		Error("Premature end of mesh file\n");
+	if (!fread(&conn.J02, sizeof(double), 1, f))
+		Error("Premature end of mesh file\n");
+	if (!fread(&conn.Jph, sizeof(double), 1, f))
+		Error("Premature end of mesh file\n");
+	if (!fread(&conn.nid1, sizeof(double), 1, f))
+		Error("Premature end of mesh file\n");
+	if (!fread(&conn.nid2, sizeof(double), 1, f))
+		Error("Premature end of mesh file\n");
+	if (!fread(&conn.Eg, sizeof(double), 1, f))
+		Error("Premature end of mesh file\n");
+	if (!fread(&conn.Rs, sizeof(double), 1, f))
+		Error("Premature end of mesh file\n");
+	if (!fread(&conn.Rsh, sizeof(double), 1, f))
+		Error("Premature end of mesh file\n");	
+	
+	if (!fread(&conn.N, sizeof(int), 1, f))
+		Error("Premature end of mesh file\n");
+	conn.V=malloc((conn.N+1)*sizeof(double));	
+	if (fread(conn.V, sizeof(double), P.N, f)<P.N)
+		Error("Premature end of mesh file\n");
+	conn.J=malloc((conn.N+1)*sizeof(double));	
+	if (fread(conn.J, sizeof(double), P.N, f)<P.N)
+		Error("Premature end of mesh file\n");
+	return conn;		
+}
+
 void WritePropertiesArray(FILE *f, mesh *M)
 {
-	int i;
+	int i,j;
+	int len;
 	fwrite(&(M->Na), sizeof(int), 1, f);
+	fwrite(&(M->Nel), sizeof(int), 1, f);
 	for (i=0;i<M->Na;i++)
-		WriteProperties(f, M->P[i]);
+	{
+	
+		len=strlen(M->P[i].name)+1;
+		fwrite(&len, sizeof(int), 1, f);
+		fwrite(M->P[i].name, sizeof(char), len, f);
+		
+		fwrite(&(M->P[i].Rel), sizeof(double), M->Nel, f);
+		fwrite(&(M->P[i].Rvp), sizeof(double), M->Nel, f);
+		fwrite(&(M->P[i].Rvn), sizeof(double), M->Nel, f);
+		
+		for (i=0;i<M->Nel-1;i++)
+			WriteElConn(f, M->P[i].conn[j]);
+		
+		fwrite(&(M->P[i].T), sizeof(double), 1, f);
+		fwrite(&(M->P[i].SplitX), sizeof(int), 1, f);
+		fwrite(&(M->P[i].SplitY), sizeof(int), 1, f);	
+	
+	}
 }
 void ReadPropertiesArray(FILE *f, mesh *M)
 {
@@ -2322,32 +2324,60 @@ void ReadPropertiesArray(FILE *f, mesh *M)
 		Error("Premature end of file\n");
 	M->Na=i;
 	M->P=malloc((M->Nn+1)*sizeof(local_prop));
+	if (!fread(&i, sizeof(int), 1, f))
+		Error("Premature end of file\n");
+	M->Nel=i;
 	for (i=0;i<M->Na;i++)
-		M->P[i]=ReadProperties(f);
+	{
+		if (!fread(&i, sizeof(int), 1, f))
+			Error("Premature end of mesh file\n");
+		M->P[i].name=malloc(MAXNAMELEN*sizeof(char));
+		if (fread(M->P[i].name,sizeof(char), i, f)<i)
+			Error("Premature end of mesh file\n");
+			
+		if (!fread(&(M->P[i].Rel, sizeof(double), M->Nel, f))
+			Error("Premature end of mesh file\n");
+		if (!fread(&(M->P[i].Rvp, sizeof(double), M->Nel, f))
+			Error("Premature end of mesh file\n");
+		if (!fread(&(M->P[i].Rvn, sizeof(double), M->Nel, f))
+			Error("Premature end of mesh file\n");
+			
+		for (i=0;i<M->Nel-1;i++)
+			M->P[i].conn=ReadElConn(f);
+		
+		if (!fread(&(M->P[i].T, sizeof(double), 1, f))
+			Error("Premature end of mesh file\n");
+		if (!fread(&(M->P[i].SplitX, sizeof(int), 1, f))
+			Error("Premature end of mesh file\n");
+		if (!fread(&(M->P[i].SplitY, sizeof(int), 1, f))
+			Error("Premature end of mesh file\n");
+	}
 }
+
 
 void WriteResults(FILE *f, mesh *M)
 {
-	int i;
+	int i,j;
 	
 	fwrite(&(M->res.Nva), sizeof(int), 1, f);
 	fwrite(M->res.Va, sizeof(double), M->res.Nva, f);
 	fwrite(M->res.I, sizeof(double), M->res.Nva, f);
 	for (i=0;i<M->res.Nva;i++)
-		fwrite(M->res.Vn[i], sizeof(double), 2*M->Nn, f);
+		for (j=0;i<M->Nel;j++)
+			fwrite(M->res.Vn[i][j], sizeof(double), M->Nn, f);
 		
 }
 
 void ReadResults(FILE *f, mesh *M)
 {
-	int i;
+	int i,j;
 
 	if (!fread(&(M->res.Nva), sizeof(int), 1, f))
 		Error("Premature end of mesh file\n");
 	
 	M->res.Va=malloc((M->res.Nva+1)*sizeof(double));
 	M->res.I=malloc((M->res.Nva+1)*sizeof(double));
-	M->res.Vn=malloc((M->res.Nva+1)*sizeof(double *));
+	M->res.Vn=malloc((M->res.Nva+1)*sizeof(double **));
 	
 	if (fread(M->res.Va, sizeof(double), M->res.Nva, f)<M->res.Nva)
 		Error("Premature end of mesh file\n");
@@ -2356,9 +2386,13 @@ void ReadResults(FILE *f, mesh *M)
 	
 	for (i=0;i<M->res.Nva;i++)
 	{
-		M->res.Vn[i]=malloc((2*M->Nn+1)*sizeof(double));
-		if (fread(M->res.Vn[i], sizeof(double), 2*M->Nn, f)<2*M->Nn)
-			Error("Premature end of mesh file\n");
+		M->res.Vn[i]=malloc((M->Nel+1)*sizeof(double *));
+		for (j=0;i<M->Nel;j++)
+		{
+			M->res.Vn[i][j]=malloc((M->Nn+1)*sizeof(double));
+			if (fread(M->res.Vn[i][j], sizeof(double), M->Nn, f)<M->Nn)
+				Error("Premature end of mesh file\n");
+		}
 	}
 		
 }

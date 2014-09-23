@@ -38,7 +38,7 @@
  *                                                               *             
  *****************************************************************/                                                                             
 /* Data Structures */
-typedef enum {JVD,ONED,TWOD} diode_model;
+typedef enum {R, JVD,ONED,TWOD} diode_model;
 /* struct describing the connection between two electrodes */
 
 typedef struct ElConn {
