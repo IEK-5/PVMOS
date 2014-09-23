@@ -39,17 +39,24 @@
  *****************************************************************/                                                                             
 /* Data Structures */
 typedef enum {JVD,ONED,TWOD} diode_model;
-/* struct with all local properties i.e. decribing the solar cell, sheet resistances, etc */
-typedef struct local_prop {
-	char * name;
-	double Rp, Rn; /* sheet resistance of the "p" and "n" electrode */
-	double Rpvp, Rpvn, Rnvp, Rnvn; /* resistance (in Ohm cm^2) of the p/n-electrode to the positive (vp) /negative (vn) terminal  (negative values indicate no connection) */
+/* struct describing the connection between two electrodes */
+
+typedef struct ElConn {
 	diode_model model;
 	double J01, J02, Jph, nid1, nid2;
-	double Eg,T;
+	double Eg;
 	double Rs, Rsh;
 	double *V, *J; /* voltage versus current density A/cm^2*/
 	int N; /* number of current-voltage pairs */
+}
+
+/* struct with all local properties i.e. decribing the solar cell, sheet resistances, etc */
+typedef struct local_prop {
+	char * name;
+	double *Rel; /* array of electrode sheet resistances */
+	double *Relvp, *Relvn; /* resistance (in Ohm cm^2) of the electrodes to the positive (vp) /negative (vn) terminal  (negative values indicate no connection) */
+	ElConn *conn;
+	double T;
 	int SplitX, SplitY; /* whether the node can be split during adaptive meshing, in x and y direction  */
 } local_prop ;
 
@@ -57,7 +64,7 @@ typedef struct local_prop {
 typedef struct results {
 	double *Va;
 	double *I;
-	double **Vn;
+	double ***Vn;
 	int Nva;	
 } results ;
 
