@@ -54,7 +54,7 @@ typedef struct ElConn {
 typedef struct local_prop {
 	char * name;
 	double *Rel; /* array of electrode sheet resistances */
-	double *Relvp, *Relvn; /* resistance (in Ohm cm^2) of the electrodes to the positive (vp) /negative (vn) terminal  (negative values indicate no connection) */
+	double *Rvp, *Rvn; /* resistance (in Ohm cm^2) of the electrodes to the positive (vp) /negative (vn) terminal  (negative values indicate no connection) */
 	ElConn *conn;
 	double T;
 	int SplitX, SplitY; /* whether the node can be split during adaptive meshing, in x and y direction  */
@@ -83,6 +83,7 @@ typedef struct node {
 typedef struct mesh {
 	node * nodes;			/* nodes */
 	int Nn;				/* number of nodes */
+	int Nel;			/* number of electrodes */
 	local_prop *P;			/* local properties */
 	int Na;				/* Number of area's with differing local properties */
 	results res;			/* struct with calculated data for the mesh */
