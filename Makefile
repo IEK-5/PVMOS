@@ -6,11 +6,11 @@ obj=main.o parse.o utils.o mesh2d.o solve.o list.o select_nodes.o dataexport.o d
 CC=gcc
 target=pvmos
 
-CFLAGS=-O3
-# CFLAGS=-Og -Wall -g
+# CFLAGS=-O3
+CFLAGS=-Wall -g
 LFLAGS= -lcholmod -lopenblas -lm
 #LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
-VERSION=0.34
+VERSION=0.4
 
 all: $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)

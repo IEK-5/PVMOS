@@ -552,6 +552,21 @@ void Parse (char *file)
 						AddMeshVar (Mnew, &name,  &Meshes, &Nm);
 						break;					
 					}
+					case ADDEL:
+					{
+						meshvar *MV;
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;								
+						MV=LookupMesh (word,  Meshes, Nm);
+						if (!MV)
+							Error("Mesh %s does not exist\n",word);		
+						
+						Print(NORMAL,"* line %3d: Adding an electrode to mesh %s\n",line_nr, word);
+						Print(NORMAL,"            Please define the appropriate properties\n");
+						AddElectrode(&(MV->M));			
+						break;		
+					}
 					case SPLITX:
 					{
 						meshvar *MV;
@@ -1216,13 +1231,6 @@ void Parse (char *file)
 					}
 					
 					/***************** Section Local Properties */
-					/*
-						double Rp, Rn; 
-						double Rpvp, Rpvn, Rnvp, Rnvn; 
-						double *V, *J; 
-						int N;
-						int SplitX, SplitY;
-					*/
 					case ASSIGN_PROP:
 					{
 						meshvar *MV;
@@ -1252,10 +1260,10 @@ void Parse (char *file)
 						}					
 						break;
 					}
-					case SET_RP:
+					case SET_REL:
 					{
 						meshvar *MV;
-						int P;
+						int P, el;
 						double R;
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -1271,20 +1279,26 @@ void Parse (char *file)
 							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
-						}	
-						Print(NORMAL,"* line %3d: Setting Rp of %s ",line_nr, word);	
+						}
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						el=atoi(word);	
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("Invalid electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-1);
+						Print(NORMAL,"* line %3d: Setting R for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);	
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"to %s\n",word);								
 						R=atof(word);
-						MV->M.P[P].Rp=R;
+						MV->M.P[P].Rel[el]=R;
 						break;
 					}
-					case SET_RN:
+					case SET_RVP:
 					{
 						meshvar *MV;
-						int P;
+						int P, el;
 						double R;
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -1300,51 +1314,26 @@ void Parse (char *file)
 							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
-						}	
-						
-						Print(NORMAL,"* line %3d: Setting Rn of %s ",line_nr, word);	
+						}
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
-							goto premature_end;	
-						Print(NORMAL,"to %s\n",word);								
-						R=atof(word);
-						MV->M.P[P].Rn=R;
-						break;
-					}
-					case SET_RPVP:
-					{
-						meshvar *MV;
-						int P;
-						double R;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
-						if (P<0)
-						{
-							char *area;
-							area=word;
-							while ((*area)!='.')
-								area++;
-							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
-							P=MV->M.Na;
-							NewProperties(&(MV->M), area);	
-						}	
-						
-						Print(NORMAL,"* line %3d: Setting Rpvp of %s ",line_nr, word);	
+							goto premature_end;
+						el=atoi(word);	
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("Invalid electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-1);
+						Print(NORMAL,"* line %3d: Setting Rvp for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"to %s\n",word);										
 						R=atof(word);
-						MV->M.P[P].Rpvp=R;
+						MV->M.P[P].Rvp[el]=R;
 						break;
 					}
-					case SET_RNVP:
+					case SET_RVN:
 					{
 						meshvar *MV;
-						int P;
+						int P, el;
 						double R;
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -1362,79 +1351,26 @@ void Parse (char *file)
 							NewProperties(&(MV->M), area);
 						}	
 						
-						Print(NORMAL,"* line %3d: Setting Rnvp of %s ",line_nr, word);	
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
-							goto premature_end;	
-						Print(NORMAL,"to %s\n",word);								
-						R=atof(word);
-						MV->M.P[P].Rnvp=R;
-						break;
-					}
-					case SET_RPVN:
-					{
-						meshvar *MV;
-						int P;
-						double R;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
-						if (P<0)
-						{
-							char *area;
-							area=word;
-							while ((*area)!='.')
-								area++;
-							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
-							P=MV->M.Na;
-							NewProperties(&(MV->M), area);
-						}	
-						
-						Print(NORMAL,"* line %3d: Setting Rpvn of %s ",line_nr, word);	
+							goto premature_end;
+						el=atoi(word);	
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("Invalid electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-1);
+							
+						Print(NORMAL,"* line %3d: Setting Rvn for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"to %s\n",word);									
 						R=atof(word);
-						MV->M.P[P].Rpvn=R;
-						break;
-					}
-					case SET_RNVN:
-					{
-						meshvar *MV;
-						int P;
-						double R;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
-						if (P<0)
-						{
-							char *area;
-							area=word;
-							while ((*area)!='.')
-								area++;
-							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
-							P=MV->M.Na;
-							NewProperties(&(MV->M), area);	
-						}	
-						
-						Print(NORMAL,"* line %3d: Setting Rnvn of %s ",line_nr, word);	
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Print(NORMAL,"to %s\n",word);								
-						R=atof(word);
-						MV->M.P[P].Rnvn=R;
+						MV->M.P[P].Rvn[el]=R;
 						break;
 					}
 					case SET_JV:
 					{
 						meshvar *MV;
-						int P;
+						int P, el;
 						polygon JV;
 						
 						begin=GetWord (begin, word);
@@ -1453,7 +1389,14 @@ void Parse (char *file)
 							NewProperties(&(MV->M), area);	
 						}	
 						
-						Print(NORMAL,"* line %3d: Setting tabular JV of %s ",line_nr, word);	
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						el=atoi(word);	
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-2);
+							
+						Print(NORMAL,"* line %3d: Setting tabular JV between electrodes %d and %d in %s.%s ",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
@@ -1461,20 +1404,20 @@ void Parse (char *file)
 						JV=ReadPoly(word);
 						if (JV.N<2)
 							Error("JV characteristic from file %s is too short\nAt least two voltage current pairs are requires\n", word);
-						free(MV->M.P[P].V);
-						free(MV->M.P[P].J);
+						free(MV->M.P[P].conn[el].V);
+						free(MV->M.P[P].conn[el].J);
 						/* ensure monotoneous increasing voltages */
 						BubbleSortJV(JV.N, JV.x, JV.y);
-						MV->M.P[P].V=JV.x;
-						MV->M.P[P].J=JV.y;
-						MV->M.P[P].N=JV.N;
-						MV->M.P[P].model=JVD;						
+						MV->M.P[P].conn[el].V=JV.x;
+						MV->M.P[P].conn[el].J=JV.y;
+						MV->M.P[P].conn[el].N=JV.N;
+						MV->M.P[P].conn[el].model=JVD;						
 						break;
 					}
 					case SET_2DJV:
 					{
 						meshvar *MV;
-						int P;
+						int P, el;
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -1492,50 +1435,52 @@ void Parse (char *file)
 							NewProperties(&(MV->M), area);	
 						}	
 						
-						Print(NORMAL,"* line %3d: Setting 2 diode model parameters of %s\n",line_nr, word);	
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].J01=atof(word);
+						el=atoi(word);	
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-2);
+							
+						Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s\n",line_nr, el, el+1, MV->name, MV->M.P[P].name);
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						MV->M.P[P].conn[el].J01=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].J02=atof(word);
+						MV->M.P[P].conn[el].J02=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].Jph=atof(word);
+						MV->M.P[P].conn[el].Jph=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].Rs=atof(word);
+						MV->M.P[P].conn[el].Rs=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].Rsh=atof(word);
-						
+						MV->M.P[P].conn[el].Rsh=atof(word);
+												
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].T=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].Eg=atof(word);
-						MV->M.P[P].nid1=1.0;
-						MV->M.P[P].nid2=2.0;							
-						MV->M.P[P].model=TWOD;	
+						MV->M.P[P].conn[el].Eg=atof(word);
+						MV->M.P[P].conn[el].nid1=1.0;
+						MV->M.P[P].conn[el].nid2=2.0;							
+						MV->M.P[P].conn[el].model=TWOD;	
 						break;
 					}
 					case SET_1DJV:
 					{
 						meshvar *MV;
-						int P;
+						int P, el;
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -1552,49 +1497,51 @@ void Parse (char *file)
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
 						}	
-						
-						Print(NORMAL,"* line %3d: Setting 1 diode model parameters of %s\n",line_nr, word);	
+												
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].J01=atof(word);
-						
+						el=atoi(word);	
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-2);
+							
+						Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s\n",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].nid1=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].Jph=atof(word);
+						MV->M.P[P].conn[el].J01=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].Rs=atof(word);
+						MV->M.P[P].conn[el].nid1=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].Rsh=atof(word);
+						MV->M.P[P].conn[el].Jph=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].T=atof(word);
+						MV->M.P[P].conn[el].Rs=atof(word);
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						MV->M.P[P].Eg=atof(word);					
-						MV->M.P[P].model=ONED;							
+						MV->M.P[P].conn[el].Rsh=atof(word);
+					
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						MV->M.P[P].conn[el].Eg=atof(word);					
+						MV->M.P[P].conn[el].model=ONED;							
 						break;
 					}
 					case SET_R:
 					{
 						meshvar *MV;
-						int P;
+						int P, el;
 						double R;
 						
 						begin=GetWord (begin, word);
@@ -1611,22 +1558,65 @@ void Parse (char *file)
 							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
-						}	
-						
-						Print(NORMAL,"* line %3d: Setting R of %s ",line_nr, word);	
+						}
+							
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						el=atoi(word);	
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-2);
+							
+						Print(NORMAL,"* line %3d: Setting R between electrodes %d and %d in %s.%s ",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
 						Print(NORMAL,"to %s\n",word);	
 						R=atof(word);
+						if (MV->M.P[P].conn[el].V)
+							free(MV->M.P[P].conn[el].V);
+						if (MV->M.P[P].conn[el].J)
+							free(MV->M.P[P].conn[el].J);
+						MV->M.P[P].conn[el].V=malloc(3*sizeof(double));
+						MV->M.P[P].conn[el].J=malloc(3*sizeof(double));
+						MV->M.P[P].conn[el].N=2;	
+						MV->M.P[P].conn[el].V[0]=-1.0;
+						MV->M.P[P].conn[el].J[0]=-1.0/R;
+						MV->M.P[P].conn[el].V[1]=1.0;
+						MV->M.P[P].conn[el].J[1]=1.0/R;
+						MV->M.P[P].conn[el].model=JVD;	
+						break;
+					}
+					case SET_T:
+					{
+						meshvar *MV;
+						int P;
+						double T;
 						
-						MV->M.P[P].V=malloc(3*sizeof(double));
-						MV->M.P[P].J=malloc(3*sizeof(double));
-						MV->M.P[P].N=2;	
-						MV->M.P[P].V[0]=-1.0;
-						MV->M.P[P].J[0]=-1.0/R;
-						MV->M.P[P].V[1]=1.0;
-						MV->M.P[P].J[1]=1.0/R;
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;								
+						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						if (P<0)
+						{
+							char *area;
+							area=word;
+							while ((*area)!='.')
+								area++;
+							area++;
+							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							P=MV->M.Na;
+							NewProperties(&(MV->M), area);	
+						}
+														
+						Print(NORMAL,"* line %3d: Setting initial temperature in %s ",line_nr, word);
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;	
+						Print(NORMAL,"to %s\n",word);	
+						T=atof(word);
+						
+						MV->M.P[P].T=T;
 						break;
 					}
 					case SET_SPLITY:

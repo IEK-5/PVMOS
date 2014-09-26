@@ -48,7 +48,7 @@ typedef struct ElConn {
 	double Rs, Rsh;
 	double *V, *J; /* voltage versus current density A/cm^2*/
 	int N; /* number of current-voltage pairs */
-}
+} ElConn;
 
 /* struct with all local properties i.e. decribing the solar cell, sheet resistances, etc */
 typedef struct local_prop {
@@ -91,7 +91,7 @@ typedef struct mesh {
 
 mesh InitMesh(char *name, double x1, double x2, double y1, double y2, int Nx, int Ny);
 void FreeMesh(mesh *M);
-void DuplicateProperties(local_prop *dest, local_prop *source);
+void DuplicateProperties(mesh *M, local_prop *dest, local_prop *source);
 mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff);
 mesh JoinMeshes_H(mesh M1, mesh M2, double yoff);
 mesh JoinMeshes_V(mesh M1, mesh M2, double xoff);
@@ -101,6 +101,7 @@ int FindProperties(mesh M, char *name);
 void NewProperties(mesh * M, char *name);
 void AssignProperties(mesh *M, int *select, int P);
 void AssignPropertiesMesh(mesh *M, int P);
+void AddElectrode(mesh *M);
 void SplitNodeX(int id, mesh *M);
 void SplitNodeY(int id, mesh *M);
 void SplitNodeXY(int id, mesh *M);

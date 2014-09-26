@@ -56,59 +56,35 @@
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define MAX(a,b) ((a)<(b) ? (b):(a))
 
-void Jfield(mesh *M, int Vai, double *Jx, double *Jy, double *Ex, double *Ey)
+void Jfield(mesh *M, int Vai, double **Jx, double **Jy, double **Ex, double **Ey)
+/* compute current density and electric field in each node */
+/* Input: Mesh M, Solution index Vai, two dimensional arrays for current densities and electric field in x an d y directions */
+/* the two dimensions for these arrays are electrode index and node index */
+
 {
 	int i, j;
 	node N1, N2;
-	double J, Rp, Rn;
-	double *Vn, *Vp, *Jxn, *Jxp, *Jyn, *Jyp, *Exn, *Exp, *Eyn, *Eyp;
+	double J, *R;
+	
+	
 	if (Vai>=M->res.Nva)
 		Error("No simulation with index %i available", Vai);
-	Vp=M->res.Vn[Vai];
-	Vn=M->res.Vn[Vai]+M->Nn;
+	
+	R=malloc((M->Nel+1)*sizeof(double));
+	
+	/* remove any possible old data */
 	for (i=0;i<M->Nn;i++)
-	{
-		if (Jx)
+		for (j=0;j<M->Nel;j++)
 		{
-			Jx[i]=0;
-			Jx[i+M->Nn]=0;
+			if (Jx)
+				Jx[j][i]=0;
+			if (Jy)
+				Jy[j][i]=0;
+			if (Ex)
+				Ex[j][i]=0;
+			if (Ey)
+				Ey[j][i]=0;
 		}
-		if (Jy)
-		{
-			Jy[i]=0;
-			Jy[i+M->Nn]=0;
-		}
-		if (Ex)
-		{
-			Ex[i]=0;
-			Ex[i+M->Nn]=0;
-		}
-		if (Ey)
-		{
-			Ey[i]=0;
-			Ey[i+M->Nn]=0;
-		}
-	}
-	if (Jx)
-	{
-		Jxp=Jx;
-		Jxn=Jx+M->Nn;
-	}
-	if (Jy)
-	{
-		Jyp=Jy;
-		Jyn=Jy+M->Nn;
-	}
-	if (Ex)
-	{
-		Exp=Ex;
-		Exn=Ex+M->Nn;
-	}	
-	if (Ey)
-	{
-		Eyp=Ey;
-		Eyn=Ey+M->Nn;
-	}
 	
 	for (i=0;i<M->Nn;i++)
 	{
@@ -116,64 +92,54 @@ void Jfield(mesh *M, int Vai, double *Jx, double *Jy, double *Ex, double *Ey)
 		for (j=1;j<=N1.north[0];j++)
 		{
 			N2=(*SearchNode(*M, N1.north[j]));
-			Resistance(*M, N1,N2, &Rp, &Rn);
-			J=(Vn[N1.id]-Vn[N2.id])/Rn/2;
-			if (Jy)
+			Resistance(*M, N1,N2, R);
+			
+			for (j=0;j<M->Nel;j++)
 			{
-				Jyn[N1.id]+=J/(N1.x2-N1.x1);
-				Jyn[N2.id]+=J/(N2.x2-N2.x1);
+				J=(M->res.Vn[Vai][j][N1.id]-M->res.Vn[Vai][j][N2.id])/R[j]/2;
+				if (Jy)
+				{
+					Jy[j][N1.id]+=J/(N1.x2-N1.x1);
+					Jy[j][N2.id]+=J/(N2.x2-N2.x1);
+				
+				}
+				if (Ey)
+				{
+					Ey[j][N1.id]-=M->P[N1.P].Rel[j]*J/(N1.x2-N1.x1);
+					Ey[j][N2.id]-=M->P[N2.P].Rel[j]*J/(N2.x2-N2.x1);
+				}
 			}
-			if (Ey)
-			{
-				Eyn[N1.id]-=M->P[N1.P].Rn*J/(N1.x2-N1.x1);
-				Eyn[N2.id]-=M->P[N2.P].Rn*J/(N2.x2-N2.x1);
-			}
-			J=(Vp[N1.id]-Vp[N2.id])/Rp/2;
-			if (Jy)
-			{
-				Jyp[N1.id]+=J/(N1.x2-N1.x1);
-				Jyp[N2.id]+=J/(N2.x2-N2.x1);
-			}
-			if (Ey)
-			{
-				Eyp[N1.id]-=M->P[N1.P].Rp*J/(N1.x2-N1.x1);
-				Eyp[N2.id]-=M->P[N2.P].Rp*J/(N2.x2-N2.x1);
-			}			
 		}
 		for (j=1;j<=N1.east[0];j++)
 		{
 			N2=(*SearchNode(*M, N1.east[j]));
-			Resistance(*M, N1,N2, &Rp, &Rn);
-			J=(Vn[N1.id]-Vn[N2.id])/Rn/2;
-			if (Jx)
+			Resistance(*M, N1,N2, R);
+			for (j=0;j<M->Nel;j++)
 			{
-				Jxn[N1.id]+=J/(N1.y2-N1.y1);
-				Jxn[N2.id]+=J/(N2.y2-N2.y1);
+				J=(M->res.Vn[Vai][j][N1.id]-M->res.Vn[Vai][j][N2.id])/R[j]/2;
+				if (Jy)
+				{
+					Jx[j][N1.id]+=J/(N1.x2-N1.x1);
+					Jx[j][N2.id]+=J/(N2.x2-N2.x1);
+				
+				}
+				if (Ey)
+				{
+					Ex[j][N1.id]-=M->P[N1.P].Rel[j]*J/(N1.x2-N1.x1);
+					Ex[j][N2.id]-=M->P[N2.P].Rel[j]*J/(N2.x2-N2.x1);
+				}
 			}
-			if (Ex)
-			{
-				Exn[N1.id]-=M->P[N1.P].Rn*J/(N1.y2-N1.y1);
-				Exn[N2.id]-=M->P[N2.P].Rn*J/(N2.y2-N2.y1);
-			}
-			J=(Vp[N1.id]-Vp[N2.id])/Rp/2;
-			if (Jx)
-			{
-				Jxp[N1.id]+=J/(N1.y2-N1.y1);
-				Jxp[N2.id]+=J/(N2.y2-N2.y1);
-			}
-			if (Ex)
-			{
-				Exp[N1.id]-=M->P[N1.P].Rp*J/(N1.y2-N1.y1);
-				Exp[N2.id]-=M->P[N2.P].Rp*J/(N2.y2-N2.y1);
-			}			
 		}
 	}
+	free(R);
 }
 
-void LocalVoltage(mesh *M, int Vai, node N, double *Ex, double *Ey, double x, double y, double *Vn, double *Vp)
+void LocalVoltage(mesh *M, int Vai, node N, double **Ex, double **Ey, double x, double y, double *V)
+/* interpolate voltage within node using the electric field within the nodes */
 {
-	(*Vp)=M->res.Vn[Vai][N.id]+Ex[N.id]*(x-(N.x1+N.x2)/2)+Ey[N.id]*(y-(N.y1+N.y2)/2);
-	(*Vn)=M->res.Vn[Vai][N.id+M->Nn]+Ex[N.id+M->Nn]*(x-(N.x1+N.x2)/2)+Ey[N.id+M->Nn]*(y-(N.y1+N.y2)/2);
+	int i;
+	for (i=0;i<M->Nel;i++)
+		V[i]=M->res.Vn[Vai][i][N.id]+Ex[i][N.id]*(x-(N.x1+N.x2)/2)+Ey[i][N.id]*(y-(N.y1+N.y2)/2);
 }
 
 /*
@@ -211,17 +177,27 @@ void SurfVPlotNearest(char *fn, mesh *M, int Vai, double x1, double y1, double x
 
 void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
 {
-	int i,j, ln_y=0, ln_x=0;
+	int i,j, k, ln_y=0, ln_x=0;
 	double x,y, x_step, y_step;
-	double *Ex, *Ey;
+	double **Ex, **Ey, *V;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
-	Ex=malloc(2*M->Nn*sizeof(double));
-	Ey=malloc(2*M->Nn*sizeof(double));
+	Ex=malloc(M->Nel*sizeof(double *));
+	Ey=malloc(M->Nel*sizeof(double *));
+	V=malloc(M->Nel*sizeof(double));
+	for (i=0;i<M->Nel;i++)
+	{
+		Ex[i]=malloc(M->Nn*sizeof(double));
+		Ey[i]=malloc(M->Nn*sizeof(double));
+	}
+	/* compute the electric field in each node for each electrode */
 	Jfield(M, Vai, NULL, NULL, Ex, Ey);
+	
+	/* scan a regular mesh */
 	x_step=(x2-x1)/((double)Nx);
 	y_step=(y2-y1)/((double)Ny);
+	
 	x=x1;
 	for (i=0;i<=Nx;i++)
 	{
@@ -230,10 +206,19 @@ void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 		{	
 			node N;
 			double Vn, Vp;
+			/* here I tried to optimize search performance. To this end I use the variables ln_y and ln_x */
+			/* The FindPos routine searches a node by simply walking from the start node toward the desired coordinate */
+			/* It is thus useful to try and choose a start node as close as possible to the desired coordinate */
+			/* at the beginning of the routine we have no idea but after that we start always at a nearby node */
 			ln_y=FindPos(*M, ln_y, x, y);
 			N=*SearchNode(*M,ln_y);
-			LocalVoltage(M, Vai, N, Ex, Ey, x, y, &Vn, &Vp);
-			fprintf(f,"%e %e %e %e\n", x, y, Vp, Vn);
+			LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
+			
+			fprintf(f,"%e %e", x, y);
+			for (k=0;k<M->Nel;k++)
+				fprintf(f," %e",V[k]);
+			fprintf(f,"\n");
+				
 			if (j==0)
 				ln_x=ln_y;
 			y+=y_step;
@@ -243,22 +228,38 @@ void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 		ln_y=ln_x;
 		x+=x_step;
 	}
+	for (i=0;i<M->Nel;i++)
+	{
+		free(Ex[i]);
+		free(Ey[i]);
+	}
 	free(Ex);
 	free(Ey);
+	free(V);
+	fclose(f);
 }
 
 void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
 {
-	int i,j, ln_y=0, ln_x=0;
+	int i,j, k, ln_y=0, ln_x=0;
 	double x,y, x_step, y_step;
-	double *Ex, *Ey, *Jx, *Jy;
+	double **Ex, **Ey, **Jx, **Jy, *V;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
-	Ex=malloc(2*M->Nn*sizeof(double));
-	Ey=malloc(2*M->Nn*sizeof(double));
-	Jx=malloc(2*M->Nn*sizeof(double));
-	Jy=malloc(2*M->Nn*sizeof(double));
+		
+	Ex=malloc(M->Nn*sizeof(double *));
+	Ey=malloc(M->Nn*sizeof(double *));
+	Jx=malloc(M->Nn*sizeof(double *));
+	Jy=malloc(M->Nn*sizeof(double *));
+	V=malloc(M->Nel*sizeof(double));
+	for (i=0;i<M->Nel;i++)
+	{
+		Ex[i]=malloc(M->Nn*sizeof(double));
+		Ey[i]=malloc(M->Nn*sizeof(double));
+		Jx[i]=malloc(M->Nn*sizeof(double));
+		Jy[i]=malloc(M->Nn*sizeof(double));
+	}
 	Jfield(M, Vai, Jx, Jy, Ex, Ey);
 	x_step=(x2-x1)/((double)Nx);
 	y_step=(y2-y1)/((double)Ny);
@@ -269,16 +270,27 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 		for (j=0;j<=Ny;j++)
 		{	
 			node N;
-			double Pp, Pn, Pj;
-			double Vn, Vp, I; 
+			double P, Pj;
+			double I; 
 			ln_y=FindPos(*M, ln_y, x, y);
 			N=*SearchNode(*M,ln_y);
-			Pp=sqrt((Jx[ln_y]*Jx[ln_y]+Jy[ln_y]*Jy[ln_y])*(Ex[ln_y]*Ex[ln_y]+Ey[ln_y]*Ey[ln_y]));
-			Pn=sqrt((Jx[ln_y+M->Nn]*Jx[ln_y+M->Nn]+Jy[ln_y+M->Nn]*Jy[ln_y+M->Nn])*(Ex[ln_y+M->Nn]*Ex[ln_y+M->Nn]+Ey[ln_y+M->Nn]*Ey[ln_y+M->Nn]));
-			LocalVoltage(M, Vai, N, Ex, Ey, x, y, &Vn, &Vp);
-			Diode(*M, N, Vp-Vn, &I, NULL);
-			Pj=(Vp-Vn)*I/((N.x2-N.x1)*(N.y2-N.y1));
-			fprintf(f,"%e %e %e %e %e\n", x, y,Pp, Pn, Pj);
+			LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
+			fprintf(f,"%e %e", x, y);
+			for (k=0;k<M->Nel;k++)
+			{
+				P=sqrt((Jx[k][ln_y]*Jx[k][ln_y]+Jy[k][ln_y]*Jy[k][ln_y])*(Ex[k][ln_y]*Ex[k][ln_y]+Ey[k][ln_y]*Ey[k][ln_y]));
+				if (k>0)
+				{
+					Diode(*M, N, k-1, V[k-1]-V[k], &I, NULL);
+					Pj=(V[k-1]-V[k])*I/((N.x2-N.x1)*(N.y2-N.y1));
+					fprintf(f," %e %e", Pj, P);
+				}
+				else
+					fprintf(f," %e", P);
+				
+			}
+			fprintf(f,"\n");
+			
 			if (j==0)
 				ln_x=ln_y;
 			y+=y_step;
@@ -290,6 +302,7 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	}
 	free(Ex);
 	free(Ey);
+	fclose(f);
 }
 
 void PrintMesh(char *fn, mesh *M)
@@ -328,7 +341,7 @@ void PrintSurfDef(char *fn, mesh *M)
 
 void PrintSurfV(char *fn, mesh *M)
 {
-	int i, j;
+	int i, j, k;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
@@ -336,24 +349,28 @@ void PrintSurfV(char *fn, mesh *M)
 	{
 		fprintf(f,"%e %e", M->nodes[i].x1, M->nodes[i].y1);
 		for(j=0;j<M->res.Nva;j++)
-			fprintf(f," %e %e", M->res.Vn[j][i], M->res.Vn[j][M->Nn+i]);
+			for(k=0;k<M->Nel;k++)
+				fprintf(f," %e", M->res.Vn[j][k][i]);
 		fprintf(f,"\n");	
 					
 		fprintf(f,"%e %e", M->nodes[i].x1, M->nodes[i].y2);
 		for(j=0;j<M->res.Nva;j++)
-			fprintf(f," %e %e", M->res.Vn[j][i], M->res.Vn[j][M->Nn+i]);
+			for(k=0;k<M->Nel;k++)
+				fprintf(f," %e", M->res.Vn[j][k][i]);
 		fprintf(f,"\n\n");	
 			
 			
 		fprintf(f,"%e %e", M->nodes[i].x2, M->nodes[i].y1);
 		for(j=0;j<M->res.Nva;j++)
-			fprintf(f," %e %e", M->res.Vn[j][i], M->res.Vn[j][M->Nn+i]);
+			for(k=0;k<M->Nel;k++)
+				fprintf(f," %e", M->res.Vn[j][k][i]);
 		fprintf(f,"\n");	
 			
 					
 		fprintf(f,"%e %e", M->nodes[i].x2, M->nodes[i].y2);
 		for(j=0;j<M->res.Nva;j++)
-			fprintf(f," %e %e", M->res.Vn[j][i], M->res.Vn[j][M->Nn+i]);
+			for(k=0;k<M->Nel;k++)
+				fprintf(f," %e", M->res.Vn[j][k][i]);
 		fprintf(f,"\n\n");	
 		
 		fprintf(f,"\n");
@@ -460,7 +477,7 @@ void PrintSurfDefSel(char *fn, mesh *M, double x1, double y1, double x2, double 
 
 void PrintSurfVSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
 {
-	int i, j;
+	int i, j, k;
 	double xx1,yy1,xx2,yy2;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
@@ -475,24 +492,28 @@ void PrintSurfVSel(char *fn, mesh *M, double x1, double y1, double x2, double y2
 		{
 			fprintf(f,"%e %e", xx1, yy1);
 			for(j=0;j<M->res.Nva;j++)
-				fprintf(f," %e %e", M->res.Vn[j][i], M->res.Vn[j][M->Nn+i]);
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][i]);
 			fprintf(f,"\n");	
 						
 			fprintf(f,"%e %e", xx1, yy2);
 			for(j=0;j<M->res.Nva;j++)
-				fprintf(f," %e %e", M->res.Vn[j][i], M->res.Vn[j][M->Nn+i]);
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][i]);
 			fprintf(f,"\n\n");	
 				
 				
 			fprintf(f,"%e %e", xx2, yy1);
 			for(j=0;j<M->res.Nva;j++)
-				fprintf(f," %e %e", M->res.Vn[j][i], M->res.Vn[j][M->Nn+i]);
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][i]);
 			fprintf(f,"\n");	
 				
 						
 			fprintf(f,"%e %e", xx2, yy2);
 			for(j=0;j<M->res.Nva;j++)
-				fprintf(f," %e %e", M->res.Vn[j][i], M->res.Vn[j][M->Nn+i]);
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][i]);
 			fprintf(f,"\n\n");	
 			
 			fprintf(f,"\n");
@@ -558,7 +579,7 @@ void PrintConnSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
 }
 void PrintPars(char *fn, mesh *M)
 {
-	int i, j;
+	int i, j, k;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
@@ -566,29 +587,35 @@ void PrintPars(char *fn, mesh *M)
 	{
 		fprintf(f,"*****************Parameters for area %s\n", M->P[i].name);
 		fprintf(f,"id:     %i\n", i);
-		fprintf(f,"Rp:     %e\tRn:     %e\n", M->P[i].Rp, M->P[i].Rn);
-		fprintf(f,"Rpvp:   %e\tRpvn:   %e\n", M->P[i].Rpvp, M->P[i].Rpvn);
-		fprintf(f,"Rnvp:   %e\tRnvn:   %e\n", M->P[i].Rnvp, M->P[i].Rnvn);
-		switch (M->P[i].model)
+		for (k=0;k<M->Nel;k++)
 		{
-			case JVD:
-				fprintf(f,"V [V]\t\tJ [A/cm2]\n");
-				for (j=0;j<M->P[i].N;j++)
-					fprintf(f,"%e\t%e\n", M->P[i].V[j], M->P[i].J[j]);
-				break;
-			case ONED:
-				fprintf(f,"J0:     %e\tnid:    %e\n", M->P[i].J01, M->P[i].nid1);
-				fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].Rs, M->P[i].Rsh);
-				fprintf(f,"T:      %e\tEg:     %e\n", M->P[i].T, M->P[i].Eg);
-				break;
-			case TWOD:
-				fprintf(f,"J01:    %e\tnid1:   %e\n", M->P[i].J01, 1.0);
-				fprintf(f,"J02:    %e\tnid2:   %e\n", M->P[i].J02, 2.0);
-				fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].Rs, M->P[i].Rsh);
-				fprintf(f,"T:      %e\tEg:     %e\n", M->P[i].T, M->P[i].Eg);
-				break;
-				
+			fprintf(f,"Rel %i: %e\n", k, M->P[i].Rel[k]);
+			fprintf(f,"Rvp %i: %e\tRvn %i: %e\n", k, M->P[i].Rvp[k], k, M->P[i].Rvn[k]);
+			if (k>0)
+			{
+				fprintf(f,"Electrode Connection %i to %i:\n", k-1, k);
+				switch (M->P[i].conn[k].model)
+				{
+					case JVD:
+						fprintf(f,"V [V]\t\tJ [A/cm2]\n");
+						for (j=0;j<M->P[i].conn[k].N;j++)
+							fprintf(f,"%e\t%e\n", M->P[i].conn[k].V[j], M->P[i].conn[k].J[j]);
+						break;
+					case ONED:
+						fprintf(f,"J0:     %e\tnid:    %e\n", M->P[i].conn[k].J01, M->P[i].conn[k].nid1);
+						fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].conn[k].Rs, M->P[i].conn[k].Rsh);
+						fprintf(f,"Eg:     %e\n", M->P[i].conn[k].Eg);
+						break;
+					case TWOD:
+						fprintf(f,"J01:    %e\tnid1:   %e\n", M->P[i].conn[k].J01, 1.0);
+						fprintf(f,"J02:    %e\tnid2:   %e\n", M->P[i].conn[k].J02, 2.0);
+						fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].conn[k].Rs, M->P[i].conn[k].Rsh);
+						fprintf(f,"Eg:     %e\n", M->P[i].conn[k].Eg);
+						break;
+				}
+			}
 		}
+		fprintf(f,"T:      %e\n", M->P[i].T);
 		fprintf(f,"SplitX: %d\t\tSplitY: %d\n", M->P[i].SplitX, M->P[i].SplitY);
 		fprintf(f,"\n");
 	}

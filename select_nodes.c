@@ -70,7 +70,10 @@ newid:		list=AddToList(list,id);
 		N=SearchNode(M, id);
 		Print(DEBUG,"%e %e %i\n",(N->x1+N->x2)/2, (N->y1+N->y2)/2, N->id);
 		if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY)&&(y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+		{
+			free(list);
 			return N->id;
+		}
 			
 		if ((mind<0)||(mind>((N->x1+N->x2)/2-x)*((N->x1+N->x2)/2-x)+((N->y1+N->y2)/2-y)*((N->y1+N->y2)/2-y)))
 		{
@@ -107,6 +110,7 @@ newid:		list=AddToList(list,id);
 					goto newid;
 				}
 	}
+	free(list);
 	/* fallback option, check all nodes 
 	for (id=1;id<M.Nn;id++)
 	{
