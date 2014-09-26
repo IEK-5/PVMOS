@@ -784,14 +784,15 @@ double AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double t
 	SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
 	
 	/* clean up old data */
+	
 	for (i=0;i<M->res.Nva-1;i++)
 	{
 		for (j=0;j<M->Nel;j++)
 			free(M->res.Vn[i][j]);
 		free(M->res.Vn[i]);
 	}
-	for (j=0;j<M->Nel;j++)
-		M->res.Vn[0][j]=M->res.Vn[M->res.Nva-1][j];
+	M->res.Vn[0]=M->res.Vn[M->res.Nva-1];
+	
 	M->res.Nva=1;
 	
 	for (i=0;i<N;i++)
