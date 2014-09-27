@@ -62,7 +62,7 @@ void Jfield(mesh *M, int Vai, double **Jx, double **Jy, double **Ex, double **Ey
 /* the two dimensions for these arrays are electrode index and node index */
 
 {
-	int i, j;
+	int i, j, k;
 	node N1, N2;
 	double J, *R;
 	
@@ -94,19 +94,19 @@ void Jfield(mesh *M, int Vai, double **Jx, double **Jy, double **Ex, double **Ey
 			N2=(*SearchNode(*M, N1.north[j]));
 			Resistance(*M, N1,N2, R);
 			
-			for (j=0;j<M->Nel;j++)
+			for (k=0;k<M->Nel;k++)
 			{
-				J=(M->res.Vn[Vai][j][N1.id]-M->res.Vn[Vai][j][N2.id])/R[j]/2;
+				J=(M->res.Vn[Vai][k][N1.id]-M->res.Vn[Vai][k][N2.id])/R[k]/2;
 				if (Jy)
 				{
-					Jy[j][N1.id]+=J/(N1.x2-N1.x1);
-					Jy[j][N2.id]+=J/(N2.x2-N2.x1);
+					Jy[k][N1.id]+=J/(N1.x2-N1.x1);
+					Jy[k][N2.id]+=J/(N2.x2-N2.x1);
 				
 				}
 				if (Ey)
 				{
-					Ey[j][N1.id]-=M->P[N1.P].Rel[j]*J/(N1.x2-N1.x1);
-					Ey[j][N2.id]-=M->P[N2.P].Rel[j]*J/(N2.x2-N2.x1);
+					Ey[k][N1.id]-=M->P[N1.P].Rel[k]*J/(N1.x2-N1.x1);
+					Ey[k][N2.id]-=M->P[N2.P].Rel[k]*J/(N2.x2-N2.x1);
 				}
 			}
 		}
@@ -114,19 +114,19 @@ void Jfield(mesh *M, int Vai, double **Jx, double **Jy, double **Ex, double **Ey
 		{
 			N2=(*SearchNode(*M, N1.east[j]));
 			Resistance(*M, N1,N2, R);
-			for (j=0;j<M->Nel;j++)
+			for (k=0;k<M->Nel;k++)
 			{
-				J=(M->res.Vn[Vai][j][N1.id]-M->res.Vn[Vai][j][N2.id])/R[j]/2;
-				if (Jy)
+				J=(M->res.Vn[Vai][k][N1.id]-M->res.Vn[Vai][k][N2.id])/R[k]/2;
+				if (Jx)
 				{
-					Jx[j][N1.id]+=J/(N1.x2-N1.x1);
-					Jx[j][N2.id]+=J/(N2.x2-N2.x1);
+					Jx[k][N1.id]+=J/(N1.y2-N1.y1);
+					Jx[k][N2.id]+=J/(N2.y2-N2.y1);
 				
 				}
-				if (Ey)
+				if (Ex)
 				{
-					Ex[j][N1.id]-=M->P[N1.P].Rel[j]*J/(N1.x2-N1.x1);
-					Ex[j][N2.id]-=M->P[N2.P].Rel[j]*J/(N2.x2-N2.x1);
+					Ex[k][N1.id]-=M->P[N1.P].Rel[k]*J/(N1.y2-N1.y1);
+					Ex[k][N2.id]-=M->P[N2.P].Rel[k]*J/(N2.y2-N2.y1);
 				}
 			}
 		}

@@ -642,6 +642,7 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 	
 	V=calloc((M->Nel*M->Nn+1),sizeof(double));
 	Vout=calloc((M->Nel*M->Nn+1),sizeof(double));
+	M->res.Vn=realloc(M->res.Vn, (M->res.Nva+Nstep+1)*sizeof(double **));	
 	for (k=0;k<Nstep;k++)
 	{
 		if (Nstep>1)
@@ -653,7 +654,6 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 		M->res.Va=realloc(M->res.Va, (M->res.Nva+1)*sizeof(double));
 		M->res.I=realloc(M->res.I, (M->res.Nva+1)*sizeof(double));
 		M->res.Va[M->res.Nva]=Va;
-		M->res.Vn=realloc(M->res.Vn, (M->res.Nva+1)*sizeof(double **));	
 		M->res.Vn[M->res.Nva]=malloc((M->Nel+1)*sizeof(double *));	
 		for (j=0;j<M->Nel;j++)	
 			M->res.Vn[M->res.Nva][j]=calloc(M->Nn+1,sizeof(double));
@@ -686,10 +686,11 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 		} while ((i<max_iter)&&(((Ekcl>tol_kcl_abs)&&(Ekcl_rel>tol_kcl_rel))||((Ev>tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>tol_v_rel))));
 		if (verbose<VERBOSE)
 			Print(NORMAL, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e\n",Va, i,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
+	
+		for (j=0;j<M->Nel*M->Nn;j++)				
+			M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]=V[j];	
 	}
 	Print(NORMAL, "----------------------------------------------------------------\n");
-	for (j=0;j<M->Nel*M->Nn;j++)				
-		M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]=V[j];	
 	free(V);
 	free(Vout);
 	cholmod_free_sparse(&S, &c);	
@@ -755,7 +756,7 @@ void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 			   split in one direction over and over again, where the solution gets no more
 			   accurate. For this reason I put a maximum to the ratio. Note that you are still 
 			   free to screw up your mesh by disallowing nodes to be split in one or another 
-			   direction. Long live the power to shoot yourself in the foot! */
+			   direction. */
 			N1=SearchNode(*M, i);
 			if (((N1->y2-N1->y1)/(N1->x2-N1->x1)>MAXRATIO)&&(M->P[N1->P].SplitY))
 				SplitNodeY(i, M);
