@@ -6,8 +6,8 @@ obj=main.o parse.o utils.o mesh2d.o solve.o list.o select_nodes.o dataexport.o d
 CC=gcc
 target=pvmos
 
-CFLAGS=-Ofast
-# CFLAGS=-Wall -g
+# CFLAGS=-O3
+CFLAGS=-Og -Wall -g -fPIC
 LFLAGS= -lcholmod -lopenblas -lm
 #LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
 VERSION=0.4
@@ -24,5 +24,7 @@ list.o: list.c utils.h
 select_nodes.o: select_nodes.c list.h utils.h mesh2d.h
 dataexport.o: dataexport.c list.h utils.h mesh2d.h
 diode.o: diode.c diode.h
+octave_mesher: mesh2d.o utils.o list.o
+	mkoctfile -v  Octave_PVMOSMESH.cc mesh2d.o utils.o list.o
 clean:
 	rm $(obj) $(target)

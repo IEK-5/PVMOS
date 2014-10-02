@@ -2407,7 +2407,6 @@ void ReadResults(FILE *f, mesh *M)
 		M->res.Vn[i]=malloc((M->Nel+1)*sizeof(double *));
 		for (j=0;j<M->Nel;j++)
 		{
-			printf("%i %i\n",j, M->res.Nva);
 			M->res.Vn[i][j]=malloc((M->Nn+1)*sizeof(double));
 			if (fread(M->res.Vn[i][j], sizeof(double), M->Nn, f)<M->Nn)
 				Error("Premature end of mesh file CODE: POS037\n");

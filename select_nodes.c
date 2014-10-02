@@ -58,7 +58,7 @@
 int FindPos(mesh M, int id, double x, double y)
 /* find the node within which the coordinate x,y falls */
 {
-	int n_id, i, *list;
+	int n_id=0, i, *list;
 	double mind=-1;
 	node *N;
 	

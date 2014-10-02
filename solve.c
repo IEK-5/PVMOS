@@ -88,7 +88,9 @@ void Resistance(mesh M, node N1, node N2, double *R)
 	if (W<=0)
 		W=(L1+L2)*1e-100;
 	for (i=0;i<M.Nel;i++)
+	{
 		R[i]=(L1*M.P[N1.P].Rel[i]+L2*M.P[N2.P].Rel[i])/W;
+	}
 }
 
 void BubbleSortJV(int n, double *V, double *J)
@@ -259,7 +261,7 @@ cholmod_sparse * SystemMatrix(mesh M, cholmod_common *c)
 	
 	for (i=0;i<M.Nn;i++)
 	{
-		int D;
+		int D=0;
 		for (k=0;k<M.Nel;k++)
 		{
 			if (k>0)
@@ -411,18 +413,6 @@ cholmod_sparse * JacobiMatrix(mesh M, double *V, cholmod_sparse *S, cholmod_comm
 		
 		}
 	}
-		
-	/*pp=(int*)jj->p;
-	ii=(int*)jj->i;
-	xx=(double *)jj->x;
-	for (i=0;i<M.Nel*M.Nn;i++)
-	{
-		for (j=pp[i];j<pp[i+1];j++)
-			printf("%i %i %e\n", i, ii[j], xx[j]);
-	}
-	fflush(stdout);/*
-	cholmod_print_sparse (jj, "jj", c);
-	cholmod_print_sparse (S, "S", c);*/
 	
 	J=cholmod_add(S,jj,a,b,1,1,c);
 	/*
@@ -781,7 +771,7 @@ void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 double AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
 {
 	int i, j;
-	double E;
+	double E=0;
 	SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
 	
 	/* clean up old data */

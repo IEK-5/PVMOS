@@ -160,7 +160,7 @@ mesh *FetchMesh(char *name, meshvar * meshes, int Nm)
 	
 	MV=LookupMesh (name,  meshes, Nm);
 	if (!MV)
-		Error("Mesh %s does not exist\n",name);
+		return NULL;
 	return &(MV->M);
 }	
 
@@ -174,10 +174,10 @@ mesh *FetchMesh(char *name, meshvar * meshes, int Nm)
 void AddMeshVar (mesh M, char **name,  meshvar ** meshes, int *Nm)
 {
 	if (strchr(*name, '.'))
-		Error("Mesh name %s invalid, no dots (.) allowed.\n", *name);
+		Error("In AddMeshVar: Mesh name %s invalid, no dots (.) allowed.\n", *name);
 
 	if (LookupMesh (*name,  *meshes, *Nm))
-		Error("Mesh already exists\n");
+		Error("In AddMeshVar: Mesh already exists\n");
 	(*meshes)[*Nm].M=M;
 	(*meshes)[*Nm].name=*name;
 	(*meshes)[*Nm].nodes=malloc(LISTBLOCK*sizeof(int));
@@ -197,7 +197,7 @@ void RemoveMeshVar (char **name,  meshvar ** meshes, int *Nm)
       	int i;
       
 	if (strchr(*name, '.'))
-		Error("Mesh name %s invalid, no dots (.) allowed.\n", *name);
+		Error("In RemoveMeshVar: Mesh name %s invalid, no dots (.) allowed.\n", *name);
       
       	len=strlen((*name));
       	for (i=0; i<(*Nm); i++)
@@ -207,7 +207,7 @@ void RemoveMeshVar (char **name,  meshvar ** meshes, int *Nm)
 				break;
       	}
       	if (i==(*Nm))
-		Error("Mesh does not exist exists\n");
+		Error("In RemoveMeshVar: Mesh does not exist exists\n");
 	
 	FreeMesh(&((*meshes)[i].M));
 	free((*meshes)[i].name);
@@ -241,10 +241,10 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 	meshvar *MV;
 	MV=LookupMesh (name,  meshes, Nm);
 	if (!MV)
-		Error("Mesh %s is not defined\n", name);
+		Error("In SelectRectNodes: Mesh %s is not defined\n", name);
 	MV->nodes=RectSelectNodes(x1, y1, x2, y2, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("No nodes selected, try selecting a larger area or refine the mesh first\n");
+		Error("In SelectRectNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
 	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
 }
 /* select circular area in a mesh variable */
@@ -263,10 +263,10 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 	meshvar *MV;
 	MV=LookupMesh (name,  meshes, Nm);
 	if (!MV)
-		Error("Mesh %s is not defined\n", name);
+		Error("In SelectCircNodes: Mesh %s is not defined\n", name);
 	MV->nodes=CircSelectNodes(x, y, r, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("No nodes selected, try selecting a larger area or refine the mesh first\n");
+		Error("In SelectCircNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
 	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
 }
 /* select area enclosed by a polygon in a mesh variable */
@@ -283,10 +283,10 @@ void SelectPolyNodes (char *name,  meshvar * meshes, int Nm, polygon P)
 	meshvar *MV;
 	MV=LookupMesh (name,  meshes, Nm);
 	if (!MV)
-		Error("Mesh %s is not defined\n", name);
+		Error("In SelectPolyNodes: Mesh %s is not defined\n", name);
 	MV->nodes=PolySelectNodes(P, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("No nodes selected, try selecting a larger area or refine the mesh first\n");
+		Error("In SelectPolyNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
 	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
 }
 
@@ -307,13 +307,13 @@ meshvar *LookupMeshArea (char *name,  meshvar * meshes, int Nm, int *P)
 	while ((i<len)&&(name[i]!='.'))
 		i++;
 	if (i==len)
-		Error("Expected a string of the form <mesh_name>.<area_name>, got %s\n", name);
+		Error("In LookupMeshArea: Expected a string of the form <mesh_name>.<area_name>, got %s\n", name);
 		
 	name[i]='\0';
 	
 	MV=LookupMesh (name,  meshes, Nm);
 	if (!MV)
-		Error("Mesh %s is not defined\n", name);
+		Error("In LookupMeshArea: Mesh %s is not defined\n", name);
 	(*P)=FindProperties(MV->M, name+i+1);
 	name[i]='.';
 	return MV;
@@ -335,7 +335,7 @@ void Parse (char *file)
 	P.N=0;
 	
 	if ((f=fopen(file,"r"))==NULL)
-		Error("Cannot open file %s\n", file);
+		Error("In Parse: Cannot open file %s\n", file);
 	
 
 	line=malloc(MAXSTRLEN*sizeof(char));
@@ -429,12 +429,17 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M1=FetchMesh(word, Meshes, Nm);
+						if (!M1)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
+							
 						
 						Print(NORMAL,"* line %3d: Joining mesh %s ", line_nr,word);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
 						M2=FetchMesh(word, Meshes, Nm);	
+						if (!M2)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						
 						Print(NORMAL,"and mesh %s ", word);		
 								
@@ -466,14 +471,18 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;							
-						M1=FetchMesh(word, Meshes, Nm);
+						M1=FetchMesh(word, Meshes, Nm);						
+						if (!M1)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						
 						Print(NORMAL,"* line %3d: Joining mesh %s ",line_nr, word);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
 						M2=FetchMesh(word, Meshes, Nm);	
-						
+						if (!M2)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
+							
 						Print(NORMAL,"and mesh %s ", word);		
 								
 						begin=GetWord (begin, word);				
@@ -505,12 +514,16 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M1=FetchMesh(word, Meshes, Nm);
+						if (!M1)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						
 						Print(NORMAL,"* line %3d: Joining mesh %s ",line_nr, word);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
 						M2=FetchMesh(word, Meshes, Nm);	
+						if (!M2)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						
 						Print(NORMAL,"and mesh %s ", word);		
 								
@@ -538,7 +551,9 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Duplicating mesh %s",line_nr, word);	
-						M=FetchMesh (word,  Meshes, Nm);			
+						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);			
 						Mnew=DuplicateMesh((*M));
 						
 						begin=GetWord (begin, word);
@@ -560,7 +575,7 @@ void Parse (char *file)
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
-							Error("Mesh %s does not exist\n",word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr, word);		
 						
 						Print(NORMAL,"* line %3d: Adding an electrode to mesh %s\n",line_nr, word);
 						Print(NORMAL,"            Please define the appropriate properties\n");
@@ -575,7 +590,7 @@ void Parse (char *file)
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
-							Error("Mesh %s does not exist\n",word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
 												
 						if (MV->nodes[0]==0)
 						{
@@ -602,7 +617,7 @@ void Parse (char *file)
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
-							Error("Mesh %s does not exist\n",word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
 												
 						if (MV->nodes[0]==0)
 						{
@@ -629,7 +644,7 @@ void Parse (char *file)
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
-							Error("Mesh %s does not exist\n",word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
 												
 						if (MV->nodes[0]==0)
 						{
@@ -656,7 +671,7 @@ void Parse (char *file)
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
-							Error("Mesh %s does not exist\n",word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
 												
 						if (MV->nodes[0]==0)
 						{
@@ -684,7 +699,7 @@ void Parse (char *file)
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
-							Error("Mesh %s does not exist\n",word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
 							
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -753,6 +768,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;								
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Saving mesh %s ",line_nr,word);
 						
 						begin=GetWord (begin, word);
@@ -773,6 +790,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print nodes of mesh %s ",line_nr,word);
 												
 						begin=GetWord (begin, word);
@@ -791,6 +810,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print connections in mesh %s ",line_nr,word);
 												
 						begin=GetWord (begin, word);
@@ -809,6 +830,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print area definition per node in mesh %s ",line_nr,word);
 												
 						begin=GetWord (begin, word);
@@ -827,6 +850,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print node potentials in mesh %s ",line_nr,word);
 												
 						begin=GetWord (begin, word);
@@ -846,6 +871,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print selected nodes of mesh %s ",line_nr,word);
 									
 						begin=GetWord (begin, word);
@@ -885,6 +912,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 									
 						Print(NORMAL, "* line %3d: Print selected connections in mesh %s ",line_nr,word);
 						begin=GetWord (begin, word);
@@ -925,6 +954,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print area definition per selected node in mesh %s ",line_nr,word);
 									
 						begin=GetWord (begin, word);
@@ -965,6 +996,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print selected node potentials in mesh %s ",line_nr,word);
 									
 						begin=GetWord (begin, word);
@@ -1004,6 +1037,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print simulated I-V pairs of mesh %s ",line_nr,word);
 												
 						begin=GetWord (begin, word);
@@ -1022,6 +1057,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Print parameters per area in mesh %s ",line_nr,word);
 												
 						begin=GetWord (begin, word);
@@ -1042,6 +1079,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Export potentials from mesh %s ",line_nr,word);
 												
 						begin=GetWord (begin, word);
@@ -1083,9 +1122,15 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;
 						Vai=FindVa(Va, M->res.Va, M->res.Nva);
-						Print(NORMAL, "to file %s\n",word);
-						Print(NORMAL,"            -->  Using simulation at %e V\n", M->res.Va[Vai]);
-						SurfVPlot(word, M, Vai, x1, y1, x2, y2, Nx, Ny);
+						if (Vai>=0)
+						{
+							Print(NORMAL, "to file %s\n",word);
+							Print(NORMAL,"            -->  Using simulation at %e V\n", M->res.Va[Vai]);
+							SurfVPlot(word, M, Vai, x1, y1, x2, y2, Nx, Ny);
+						}
+						else
+							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
+							
 						break;
 					}
 					case SURFPPLOT:
@@ -1098,6 +1143,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL, "* line %3d: Export power density from mesh %s ",line_nr,word);
 												
 						begin=GetWord (begin, word);
@@ -1140,9 +1187,14 @@ void Parse (char *file)
 							goto premature_end;
 						
 						Vai=FindVa(Va, M->res.Va, M->res.Nva);
-						Print(NORMAL, "to file %s\n",word);
-						Print(NORMAL,"            -->  Using simulation at %e V\n", M->res.Va[Vai]);
-						SurfPPlot(word, M, Vai, x1, y1, x2, y2, Nx, Ny);
+						if (Vai>=0)
+						{
+							Print(NORMAL, "to file %s\n",word);
+							Print(NORMAL,"            -->  Using simulation at %e V\n", M->res.Va[Vai]);
+							SurfPPlot(word, M, Vai, x1, y1, x2, y2, Nx, Ny);
+						}
+						else
+							Warning("\n* line %3d: Warning: no data present\n", line_nr);	
 						break;
 					}
 					/********************************* Secion Node Selection */
@@ -1224,7 +1276,7 @@ void Parse (char *file)
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
-							Error("Mesh %s does not exist\n",word);	
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);	
 						Print(NORMAL,"* line %3d: Deselecting selection in mesh %s\n", line_nr, MV->name);	
 						MV->nodes[0]=0;
 						break;
@@ -1242,7 +1294,7 @@ void Parse (char *file)
 						MV=LookupMeshArea (word,  Meshes, Nm, &P);
 						
 						if (P<0)
-							Error("Area %s is not defined\n", word);
+							Error("* line %3d: Area %s is not defined\n", line_nr, word);
 						
 												
 						if (MV->nodes[0]==0)
@@ -1285,7 +1337,7 @@ void Parse (char *file)
 							goto premature_end;
 						el=atoi(word);	
 						if ((el<0)||(el>=MV->M.Nel))
-							Error("Invalid electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-1);
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);
 						Print(NORMAL,"* line %3d: Setting R for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);	
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -1320,7 +1372,7 @@ void Parse (char *file)
 							goto premature_end;
 						el=atoi(word);	
 						if ((el<0)||(el>=MV->M.Nel))
-							Error("Invalid electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-1);
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);
 						Print(NORMAL,"* line %3d: Setting Rvp for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
@@ -1356,7 +1408,7 @@ void Parse (char *file)
 							goto premature_end;
 						el=atoi(word);	
 						if ((el<0)||(el>=MV->M.Nel))
-							Error("Invalid electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-1);
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);
 							
 						Print(NORMAL,"* line %3d: Setting Rvn for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
@@ -1394,7 +1446,7 @@ void Parse (char *file)
 							goto premature_end;
 						el=atoi(word);	
 						if ((el<0)||(el>=MV->M.Nel-1))
-							Error("Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-2);
+							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 							
 						Print(NORMAL,"* line %3d: Setting tabular JV between electrodes %d and %d in %s.%s ",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
@@ -1440,7 +1492,7 @@ void Parse (char *file)
 							goto premature_end;
 						el=atoi(word);	
 						if ((el<0)||(el>=MV->M.Nel-1))
-							Error("Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-2);
+							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 							
 						Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s\n",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
@@ -1503,7 +1555,7 @@ void Parse (char *file)
 							goto premature_end;
 						el=atoi(word);	
 						if ((el<0)||(el>=MV->M.Nel-1))
-							Error("Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-2);
+							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 							
 						Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s\n",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
@@ -1565,7 +1617,7 @@ void Parse (char *file)
 							goto premature_end;
 						el=atoi(word);	
 						if ((el<0)||(el>=MV->M.Nel-1))
-							Error("Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", el, MV->M.Nel-2);
+							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 							
 						Print(NORMAL,"* line %3d: Setting R between electrodes %d and %d in %s.%s ",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						begin=GetWord (begin, word);
@@ -1718,6 +1770,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL,"* line %3d: Solving potentials in mesh %s\n",line_nr, word);
 						
 						begin=GetWord (begin, word);
@@ -1745,6 +1799,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;							
 						M=FetchMesh (word,  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
 						Print(NORMAL,"* line %3d: Adaptive solving of potentials in mesh %s\n",line_nr, word);
 						
 						begin=GetWord (begin, word);
@@ -1785,7 +1841,7 @@ void Parse (char *file)
 					default:
 						break;
 premature_end:
-						Error("Premature end of input\n");
+						Error("* line %3d: Premature end of input\n", line_nr);
 						exit(1);
 				
 				}

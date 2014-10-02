@@ -67,7 +67,7 @@ void Jfield(mesh *M, int Vai, double **Jx, double **Jy, double **Ex, double **Ey
 	double J, *R;
 	
 	
-	if (Vai>=M->res.Nva)
+	if ((Vai>=M->res.Nva)||(Vai<0))
 		Error("No simulation with index %i available", Vai);
 	
 	R=malloc((M->Nel+1)*sizeof(double));
@@ -205,7 +205,6 @@ void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 		for (j=0;j<=Ny;j++)
 		{	
 			node N;
-			double Vn, Vp;
 			/* here I tried to optimize search performance. To this end I use the variables ln_y and ln_x */
 			/* The FindPos routine searches a node by simply walking from the start node toward the desired coordinate */
 			/* It is thus useful to try and choose a start node as close as possible to the desired coordinate */
@@ -594,23 +593,25 @@ void PrintPars(char *fn, mesh *M)
 			if (k>0)
 			{
 				fprintf(f,"Electrode Connection %i to %i:\n", k-1, k);
-				switch (M->P[i].conn[k].model)
+				switch (M->P[i].conn[k-1].model)
 				{
 					case JVD:
 						fprintf(f,"V [V]\t\tJ [A/cm2]\n");
-						for (j=0;j<M->P[i].conn[k].N;j++)
-							fprintf(f,"%e\t%e\n", M->P[i].conn[k].V[j], M->P[i].conn[k].J[j]);
+						for (j=0;j<M->P[i].conn[k-1].N;j++)
+							fprintf(f,"%e\t%e\n", M->P[i].conn[k-1].V[j], M->P[i].conn[k-1].J[j]);
 						break;
 					case ONED:
-						fprintf(f,"J0:     %e\tnid:    %e\n", M->P[i].conn[k].J01, M->P[i].conn[k].nid1);
-						fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].conn[k].Rs, M->P[i].conn[k].Rsh);
-						fprintf(f,"Eg:     %e\n", M->P[i].conn[k].Eg);
+						fprintf(f,"J0:     %e\tnid:    %e\n", M->P[i].conn[k-1].J01, M->P[i].conn[k-1].nid1);
+						fprintf(f,"Jph:    %e\n", M->P[i].conn[k-1].Jph);
+						fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].conn[k-1].Rs, M->P[i].conn[k-1].Rsh);
+						fprintf(f,"Eg:     %e\n", M->P[i].conn[k-1].Eg);
 						break;
 					case TWOD:
-						fprintf(f,"J01:    %e\tnid1:   %e\n", M->P[i].conn[k].J01, 1.0);
-						fprintf(f,"J02:    %e\tnid2:   %e\n", M->P[i].conn[k].J02, 2.0);
-						fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].conn[k].Rs, M->P[i].conn[k].Rsh);
-						fprintf(f,"Eg:     %e\n", M->P[i].conn[k].Eg);
+						fprintf(f,"J01:    %e\tnid1:   %e\n", M->P[i].conn[k-1].J01, 1.0);
+						fprintf(f,"J02:    %e\tnid2:   %e\n", M->P[i].conn[k-1].J02, 2.0);
+						fprintf(f,"Jph:    %e\n", M->P[i].conn[k-1].Jph);
+						fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].conn[k-1].Rs, M->P[i].conn[k-1].Rsh);
+						fprintf(f,"Eg:     %e\n", M->P[i].conn[k-1].Eg);
 						break;
 				}
 			}
