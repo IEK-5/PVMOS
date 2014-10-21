@@ -46,4 +46,5 @@ void Warning( const char *format_str, ...);
 int ProgressBar(int pcn, int pco, int len, int tics);
 
 void PrintHeader(void);
+void PrintFileHeader(FILE *f);
 void Disclamer(void);

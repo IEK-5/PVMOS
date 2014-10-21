@@ -730,6 +730,8 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);							
 						Print(NORMAL,"* line %3d: Simplifying mesh of %d nodes\n",line_nr, MV->M.Nn);
 						fflush(stdout);		
 						Chunkify(&(MV->M), 4);

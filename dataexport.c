@@ -183,6 +183,10 @@ void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Potentials mapped to a regular mesh\n");
+	fprintf(f, "# V(i):      Potential in the i-th electrode\n");
+	fprintf(f, "# x [cm]\ty [cm]\tU(i) [V]\tU(i+1) [V]...\n");
 	Ex=malloc(M->Nel*sizeof(double *));
 	Ey=malloc(M->Nel*sizeof(double *));
 	V=malloc(M->Nel*sizeof(double));
@@ -247,6 +251,11 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
 		
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Power Density mapped to a regular mesh\n");
+	fprintf(f, "# P(i):      power dissipation in the i-th electrode\n");
+	fprintf(f, "# P(i+0.5):  power dissipation in the connection beteen the i-th and i+1-th electrodes\n");	
+	fprintf(f, "# x [cm]\ty [cm]\tP(i) [W/cm^2]\tP(i+0.5) [W/cm^2]\tP(i+1) [W/cm^2]...\n");
 	Ex=malloc(M->Nn*sizeof(double *));
 	Ey=malloc(M->Nn*sizeof(double *));
 	Jx=malloc(M->Nn*sizeof(double *));
@@ -310,6 +319,10 @@ void PrintMesh(char *fn, mesh *M)
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Mesh element borders\n");
+	fprintf(f, "# gnuplot line plot\n");
+	fprintf(f, "# x [cm]\ty [cm]\tElement-id\n");
 	for (i=0;i<M->Nn;i++)
 	{
 		fprintf(f,"%e %e %i\n", M->nodes[i].x1, M->nodes[i].y1, M->nodes[i].id);
@@ -327,6 +340,10 @@ void PrintSurfDef(char *fn, mesh *M)
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Mesh element area definition\n");
+	fprintf(f, "# gnuplot surface plot\n");
+	fprintf(f, "# x [cm]\ty [cm]\tElement-id\tArea-id\n");
 	for (i=0;i<M->Nn;i++)
 	{
 		fprintf(f,"%e %e %i %i\n", M->nodes[i].x1, M->nodes[i].y1, M->nodes[i].id, M->nodes[i].P);
@@ -344,6 +361,11 @@ void PrintSurfV(char *fn, mesh *M)
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Potentials per element\n");
+	fprintf(f, "# gnuplot surface plot\n");
+	fprintf(f, "# V(i):      Potential in the i-th electrode\n");
+	fprintf(f, "# x [cm]\ty [cm]\tU(i) [V]\tU(i+1) [V]...\n");
 	for (i=0;i<M->Nn;i++)
 	{
 		fprintf(f,"%e %e", M->nodes[i].x1, M->nodes[i].y1);
@@ -385,6 +407,10 @@ void PrintConn(char *fn, mesh *M)
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Connections within the electrodes\n");
+	fprintf(f, "# gnuplot vector plot\n");
+	fprintf(f, "# x [cm]\ty [cm]\tdx [cm]\tdy [cm]\telement_id1\t element_id2\n");
 	for (i=0;i<M->Nn;i++)
 	{
 		xn=(M->nodes[i].x1+M->nodes[i].x2)/2;
@@ -431,6 +457,10 @@ void PrintMeshSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Mesh element borders\n");
+	fprintf(f, "# gnuplot line plot\n");
+	fprintf(f, "# x [cm]\ty [cm]\tElement-id\n");
 	for (i=0;i<M->Nn;i++)
 	{
 		xx1=MAX(M->nodes[i].x1,x1);
@@ -456,6 +486,10 @@ void PrintSurfDefSel(char *fn, mesh *M, double x1, double y1, double x2, double 
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Mesh element area definition\n");
+	fprintf(f, "# gnuplot surface plot\n");
+	fprintf(f, "# x [cm]\ty [cm]\tElement-id\tArea-id\n");
 	for (i=0;i<M->Nn;i++)
 	{
 		xx1=MAX(M->nodes[i].x1,x1);
@@ -481,6 +515,11 @@ void PrintSurfVSel(char *fn, mesh *M, double x1, double y1, double x2, double y2
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Potentials per element\n");
+	fprintf(f, "# gnuplot surface plot\n");
+	fprintf(f, "# V(i):      Potential in the i-th electrode\n");
+	fprintf(f, "# x [cm]\ty [cm]\tU(i) [V]\tU(i+1) [V]...\n");
 	for (i=0;i<M->Nn;i++)
 	{
 		xx1=MAX(M->nodes[i].x1,x1);
@@ -530,6 +569,10 @@ void PrintConnSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Connections within the electrodes\n");
+	fprintf(f, "# gnuplot vector plot\n");
+	fprintf(f, "# x [cm]\ty [cm]\tdx [cm]\tdy [cm]\telement_id1\t element_id2\n");
 	for (i=0;i<M->Nn;i++)
 	{
 		xx1=MAX(M->nodes[i].x1,x1);
@@ -582,6 +625,8 @@ void PrintPars(char *fn, mesh *M)
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Simulation parameters per area definition\n");
 	for (i=0;i<M->Na;i++)
 	{
 		fprintf(f,"*****************Parameters for area %s\n", M->P[i].name);
@@ -629,6 +674,9 @@ void PrintIV(char *fn, mesh *M)
 	double *V, *I;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Current-Voltage pairs\n");
+	fprintf(f, "# U [V]\tI [A]\n");
 	
 	V=malloc((M->res.Nva+1)*sizeof(double));
 	I=malloc((M->res.Nva+1)*sizeof(double));

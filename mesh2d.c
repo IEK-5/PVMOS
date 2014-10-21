@@ -429,6 +429,16 @@ void DuplicateProperties(mesh *M, local_prop *dest, local_prop *source)
 		dest->Rel[j]=source->Rel[j];		
 		dest->Rvp[j]=source->Rvp[j];
 		dest->Rvn[j]=source->Rvn[j];
+		dest->conn[j].model=source->conn[j].model;
+		dest->conn[j].J01=source->conn[j].J01;
+		dest->conn[j].J02=source->conn[j].J02;
+		dest->conn[j].Jph=source->conn[j].Jph;
+		dest->conn[j].nid1=source->conn[j].nid1;
+		dest->conn[j].nid2=source->conn[j].nid2;
+		dest->conn[j].Eg=source->conn[j].Eg;
+		dest->conn[j].Rs=source->conn[j].Rs;
+		dest->conn[j].Rsh=source->conn[j].Rsh;
+		dest->conn[j].N=source->conn[j].N;
 		dest->conn[j].V=malloc((source->conn[j].N+1)*sizeof(double));
 		dest->conn[j].J=malloc((source->conn[j].N+1)*sizeof(double));
 		for (i=0;i<source->conn[j].N;i++)
@@ -472,6 +482,7 @@ mesh DuplicateMesh(mesh M)
 	mesh res;
 	int i;
 	res.Nn=M.Nn;
+	res.Nel=M.Nel;
 	res.nodes=malloc(res.Nn*sizeof(node));
 	for (i=0;i<res.Nn;i++)
 		DuplicateNode(M,res.nodes+i, M.nodes[i].id);
@@ -700,6 +711,7 @@ mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
 	}
 	free(outl1);
 	free(outl2);
+	free(prop_out);
 	ReInitResults(&res);
 
 	return res;
@@ -775,6 +787,7 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 	}
 	free(outl1);
 	free(outl2);
+	free(prop_out);
 	ReInitResults(&res);
 
 	return res;
@@ -850,6 +863,7 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 	}
 	free(outl1);
 	free(outl2);
+	free(prop_out);
 	ReInitResults(&res);
 
 	return res;

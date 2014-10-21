@@ -45,6 +45,8 @@
  *                                                               *            
  *****************************************************************/     
 #include <stdio.h>
+#include <time.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include "main.h"
@@ -136,6 +138,53 @@ void PrintHeader()
 	printf("PV-MOS Version %s   %s   B.E. Pieters \n", VERSION, __DATE__); 
 	printf("IEK-5 Photovoltaik Forschungszentrum Juelich, Germany\n"); 
 	printf("\n");
+}
+
+char *TimeString(void)
+{
+	time_t current_time;
+	char* c_time_string;
+	int len;
+	 
+	current_time = time(NULL);
+	if (current_time == ((time_t)-1))
+	{
+		Warning("Warning: time is unknown. I have no idea when we are!\n");
+		c_time_string=calloc(1, sizeof(char));
+ 		return c_time_string;
+	}
+	 
+	/* Convert to local time format. */
+	c_time_string = ctime(&current_time);
+	 
+	if (c_time_string == NULL)
+	{
+		Warning("Warning: time is unknown. I have no idea when we are!\n");
+		c_time_string=calloc(1, sizeof(char));
+ 		return c_time_string;
+	}
+	
+	len=strlen(c_time_string);
+	c_time_string=malloc((len+1)*sizeof(char));
+	strncpy(c_time_string, ctime(&current_time), len);
+	c_time_string[len-1]='\0';
+	
+ 	return c_time_string;
+}
+
+void PrintFileHeader(FILE *f)
+{
+	char* c_time_string;
+	fprintf(f, "#   _____   __   __  __  ___  ___                                  \n");
+	fprintf(f, "#  | _ \\ \\ / /__|  \\/  |/ _ \\/ __|                                 \n");
+	fprintf(f, "#  |  _/\\ V /___| |\\/| | (_) \\__ \\                                 \n");
+	fprintf(f, "#  |_|   \\_/    |_|  |_|\\___/|___/    PV-Module Simulator          \n");
+	fprintf(f, "# ________________________________________________________________\n");
+	fprintf(f, "# PV-MOS Version %s   %s   B.E. Pieters \n", VERSION, __DATE__); 
+	fprintf(f, "# IEK-5 Photovoltaik Forschungszentrum Juelich, Germany\n"); 
+	c_time_string=TimeString();
+	fprintf(f, "# Date: %s\n#\n", c_time_string); 
+	free(c_time_string);
 }
 
 void Disclamer()
