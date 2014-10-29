@@ -115,7 +115,7 @@ void SplitListY(mesh *M, int *list);
 void SplitListXY(mesh *M, int *list);
 void SplitListLong(mesh *M, int *list);
 void SplitListWhileCoarse(mesh *M, int *list, double d);
-void Chunkify(mesh *M, int J);
+void Chunkify(mesh *M);
 void WriteMesh(char *fn, mesh *M);
 void ReadMesh(char *fn, mesh *M);
 

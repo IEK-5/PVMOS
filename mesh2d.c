@@ -335,7 +335,6 @@ void NodeConnector(node *N1, node *N2)
 	}
 }
 
-
 int * MeshOutline(mesh M)
 /* create a list of nodes which lie along the outline of the mesh */
 {
@@ -1066,31 +1065,53 @@ void SplitMeshXY(mesh *M)
 
 void SplitMeshWhileCoarse(mesh *M, double d)
 {
-	int i, go=1;	
-	while (go)
+	int i, *list, *newlist, c=0;	
+	
+	list=malloc(((M->Nn+2)/LISTBLOCK+1)*LISTBLOCK*sizeof(int));
+	for (i=0;i<M->Nn;i++)
+		list[i+1]=i;
+	list[0]=M->Nn;
+	
+	newlist=malloc(LISTBLOCK*sizeof(int));
+	newlist[0]=0;
+	
+	do
 	{
-		for (i=M->Nn-1;i>=0;i--)
+		Print(DEBUG, "%i elements to check %i\n",list[0], c);
+		c++;
+		for (i=list[0];i>0;i--) 
 		{
 			node *N;
-			N=SearchNode(*M, i);
-			go=0;
+			N=SearchNode(*M, list[i]);
 			if (((N->x2-N->x1)>d)&&((N->y2-N->y1)>d))
 			{
-				SplitNodeXY(i, M);
-				go=1;
+				SplitNodeXY(list[i], M);
+				newlist=AddToList(newlist, list[i]);
+				newlist=AddToList(newlist, M->Nn-1);
+				newlist=AddToList(newlist, M->Nn-2);
+				newlist=AddToList(newlist, M->Nn-3);
 			}
 			else if ((N->x2-N->x1)>d)
 			{
-				SplitNodeX(i, M);
-				go=1;
+				SplitNodeX(list[i], M);
+				newlist=AddToList(newlist, list[i]);
+				newlist=AddToList(newlist, M->Nn-1);
 			}
 			else if ((N->y2-N->y1)>d)
 			{
-				SplitNodeY(i, M);
-				go=1;
+				SplitNodeY(list[i], M);
+				newlist=AddToList(newlist, list[i]);
+				newlist=AddToList(newlist, M->Nn-1);
 			}
 		}
-	}
+		free(list);
+		list=newlist;		
+		newlist=malloc(LISTBLOCK*sizeof(int));
+		newlist[0]=0;
+		
+	}while (list[0]);
+	free(list);
+	free(newlist);
 }
 
 void SplitListX(mesh *M, int *list)
@@ -1129,12 +1150,16 @@ void SplitListLong(mesh *M, int *list)
 
 void SplitListWhileCoarse(mesh *M, int *list, double d)
 {
-	int i, go=1;
-	int *list_c;
+	int i;
+	int *list_c, *newlist;
 	
 	list_c=DuplicateList(list);
-	while (go)
+	
+	newlist=malloc(LISTBLOCK*sizeof(int));
+	newlist[0]=0;
+	do
 	{
+		Print(DEBUG, "%i elements to check\n",list_c[0]);
 		for (i=list_c[0];i>0;i--) 
 		/* Careful: This loop walks backward through the list. The reason is that any newly created node will end up at the 
 		  back or the list (as the lists are sorted and newly created lists have indices at the end of the node list). By walking
@@ -1142,30 +1167,34 @@ void SplitListWhileCoarse(mesh *M, int *list, double d)
 		{
 			node *N;
 			N=SearchNode(*M, list_c[i]);
-			go=0;
 			if (((N->x2-N->x1)>d)&&((N->y2-N->y1)>d))
 			{
 				SplitNodeXY(list_c[i], M);
-				list_c=AddToList(list_c, M->Nn-1);
-				list_c=AddToList(list_c, M->Nn-2);
-				list_c=AddToList(list_c, M->Nn-3);
-				go=1;
+				newlist=AddToList(newlist, list_c[i]);
+				newlist=AddToList(newlist, M->Nn-1);
+				newlist=AddToList(newlist, M->Nn-2);
+				newlist=AddToList(newlist, M->Nn-3);
 			}
 			else if ((N->x2-N->x1)>d)
 			{
 				SplitNodeX(list_c[i], M);
-				list_c=AddToList(list_c, M->Nn-1);
-				go=1;
+				newlist=AddToList(newlist, list_c[i]);
+				newlist=AddToList(newlist, M->Nn-1);
 			}
 			else if ((N->y2-N->y1)>d)
 			{
 				SplitNodeY(list_c[i], M);
-				list_c=AddToList(list_c, M->Nn-1);
-				go=1;
+				newlist=AddToList(newlist, list_c[i]);
+				newlist=AddToList(newlist, M->Nn-1);
 			}
 		}
-	}
+		free(list_c);
+		list_c=newlist;		
+		newlist=malloc(LISTBLOCK*sizeof(int));
+		newlist[0]=0;
+	} while (list_c[0]);
 	free(list_c);
+	free(newlist);
 }
 
 
@@ -1210,8 +1239,10 @@ void SortMesh(mesh *M)
 }
 
 /* valgrind trips over this(?) routine. I've been checking everything and I cannot find anything wrong with it.
-   I tried mtrace which finds no leaks. Either there is some hidden bug in here or valgrind gets confused by 
-   this. If you want to use valgrind then do not simplify your mesh. */
+   I tried mtrace which finds no leaks. Perhaps there is a bug, perhaps valgrind just is confused by this as it
+   is kind of hard to keep track of where what is allocated and freed. 
+   If you want to use valgrind you cannot simplify the mesh, it will segfault.
+   */
 void CleanUpMesh(mesh *M, int *merged)
 {
 	int i, j;
@@ -2128,7 +2159,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	return merged;
 }
 
-int Chunkify_nodes(mesh *M, int skip, int offset)
+int Chunkify_nodes_(mesh *M, int skip, int offset)
 {
 	int i,Nold;
 	int *merged;
@@ -2148,7 +2179,7 @@ int Chunkify_nodes(mesh *M, int skip, int offset)
 	CleanUpMesh(M, merged);
 	return Nold-M->Nn;
 }
-void Chunkify(mesh *M, int J)
+void Chunkify_(mesh *M, int J)
 {
 	int Nold, i=0, skip=1, offset=0;
 	Nold=M->Nn+1; 
@@ -2175,12 +2206,109 @@ void Chunkify(mesh *M, int J)
 		skip=J;
 		offset=J;
 		Print(DEBUG,"Skip:%i Offset %i\n",skip,offset);
-		Chunkify_nodes(M, skip, 0);
+		Chunkify_nodes_(M, skip, 0);
 		offset/=2;
 		while (skip>1)
 		{
 			Print(DEBUG,"Skip:%i Offset %i\n",skip,offset);
-			Chunkify_nodes(M, skip, offset);
+			Chunkify_nodes_(M, skip, offset);
+			offset/=2;
+			skip/=2;
+		}
+		i++;
+		Print(DEBUG,"Round %i, %i nodes left\n",i, M->Nn);
+	}
+}
+
+/* this time we add some true random to our mesh simplifier */
+int Random(int rmin, int rmax)
+{
+	return rmin + (int) (1.0*(rmax-rmin+1) * rand()/(RAND_MAX+1.0) );
+}
+
+
+void InitRandom(void)
+{
+	time_t curtime;
+	
+	time( &curtime );
+	srand( (unsigned int) curtime );
+	Random(0, 1000);
+}
+
+
+void Shuffle (int *list)
+/* shuffle integer array */
+{
+	int i;
+	
+	for( i = 2; i <list[0]; i++ ){
+		int	where;
+		int	temp;
+
+		where = Random(0,32767) % (i-1) + 1;		
+		temp = list[where];
+		list[where] = list[i+1];
+		list[i+1] = temp;
+	}
+}
+
+int Chunkify_nodes(mesh *M, int *list, int skip, int offset)
+{
+	int i,Nold;
+	int *merged;
+	merged=malloc(LISTBLOCK*sizeof(int));
+	merged[0]=0;
+	Nold=M->Nn;
+	i=offset;
+	
+	while (i<Nold)
+	{
+		merged=Chunkify_node(M, list[i+1], merged);
+		i+=skip;
+		while (IsInList(merged, list[i+1])&&(i<M->Nn))
+			i++;
+	}
+	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
+	CleanUpMesh(M, merged);
+	return Nold-M->Nn;
+}
+
+void Chunkify(mesh *M)
+{
+	int Nold, i=0, j,J,skip=1, offset=0;
+	int *list;
+	Nold=M->Nn+1; 
+	list=malloc((M->Nn+2)*sizeof(int));
+	J=(int)(2*sqrt((double)M->Nn)/300);
+	if (J>M->Nn/2)
+		J=M->Nn/2;
+	while (skip<J)
+	{
+		skip*=2;
+	}
+	J=skip;
+	InitRandom();
+	while ((M->Nn<Nold)&&(i<100))
+	{
+		Nold=M->Nn;
+		list[0]=M->Nn;
+		for (j=0;j<M->Nn;j++)
+			list[j+1]=j;
+		Shuffle (list);
+		skip=J;
+		offset=J;
+		Print(DEBUG,"Skip:%i Offset %i %i\n",skip,offset,M->Nn);
+		Chunkify_nodes(M,  list, skip, 0);
+		list[0]=M->Nn;
+		for (j=0;j<M->Nn;j++)
+			list[j+1]=j;
+		offset/=2;
+		while (skip>1)
+		{
+			Print(DEBUG,"Skip:%i Offset %i %i\n",skip,offset,M->Nn);
+			list[0]=M->Nn;
+			Chunkify_nodes(M, list, skip, offset);
 			offset/=2;
 			skip/=2;
 		}

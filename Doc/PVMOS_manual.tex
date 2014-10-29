@@ -46,42 +46,45 @@
 \maketitle
 
 \section{Introduction}
-This is (or rather will be as the current state of this document is far from finished) the manual for the Photo-Voltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{}. The purpose of this document is to document how PVMOS is operated and installed. In the following sections I discuss in order, the installation, basic usage and operating principles and finally a detailed discussion of all available functions.
+This is (or rather will be as the current state of this document is far from finished) the manual for the Photo-Voltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{pvmos:2014}. The purpose of this document is to document how PVMOS is operated and installed. In the following sections I discuss in order, the installation, basic usage and operating principles and finally a detailed discussion of all available functions.
+
+Before we continue, here are some legalities:\\\\
+\texttt{
+DISCLAMER:\\
+PVMOS  Copyright (C) 2014  B. E. Pieters\\
+This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to\\
+redistribute under certain conditions. You should have received a copy of the GNU General \\
+Public License along with this program. If not, see <http://www.gnu.org/licenses/>.\\
+}\\
+In order to stress the ABSOLUTELY NO WARRANTY bit, here a quote from R. Freund:\\\\
+\texttt{
+For all intent and purpose, any description of what the codes are doing should be construed as being a note of what we thought the codes did on our machine on a particular Tuesday of last year. If you're really lucky, they might do the same for you someday. Then again, do you really feel *that* lucky?\\
+}
 
 \section{Installation Instructions}	
-
-\begin{verbatim}
-DISCLAMER:
-PVMOS  Copyright (C) 2014  B. E. Pieters
-This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to
-redistribute under certain conditions. You should have received a copy of the GNU General 
-Public License along with this program. If not, see <http://www.gnu.org/licenses/>.
-\end{verbatim}
-
-
-PVMOS is is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \verb_cholmod_, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to compile the source, for which a Makefile is provided. To install PVMOS you thus need to
+PVMOS is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \texttt{cholmod}, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to compile the source, for which a Makefile is provided. To install PVMOS you thus need to
 \begin{enumerate}
-\item{} Install PVMOS's dependencies
+\item{} Install PVMOS's dependencies (\texttt{cholmod},\texttt{BLAS})
 \item{} Edit the Makefile
 \item{} Compile the code (type make)
 \item{} test the executable
 \end{enumerate}
 
-The performance of PVMOS is mostly determined by the performance of the sparse linear solver (i.e. \verb_cholmod_). For an optimal performance an optimized \verb_BLAS_ library must be used (the reference \verb_BLAS_ is comparatively slow). For an optimized \verb_BLAS_ there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \verb_Open-BLAS_, which gives a very good performance (\verb_Open-BLAS_ is an actively developed fork of the now unmaintained \verb_GoTo BLAS_). Some CPU manufacturers also publish their own optimized \verb_BLAS_ libraries for their CPU's (e.g. Intel and AMD). However, those libraries are usually provided under stricter conditions. For example Intel's Math Kernel Library is available commercially or under the condition that it is used for non-profit purposes (for that it provides a performance which was marginally better than \verb_Open BLAS_ in my tests).
+The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \texttt{OpenBLAS}, which gives a very good performance (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}). Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the makefiles are set up to use \texttt{OpenBLAS} as it provides a good performance and is freely available.
 
 
 \section{Basic Usage and operating principles}
-The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the filename describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this:
+The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the filename describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this\footnote{Many BLAS versisons seem to suffer from a bug which makes that \texttt{cholmod} performance deteriorates when multi-threading is enabled \cite{Davis:2007:Online}. If your BLAS library has multi-threading enabled, performance may improve if you set environment variables such that BLAS will use only one thread. In case of \texttt{OpenBLAS} with OpenMP you need to set \texttt{OMP\_NUM\_THREADS=1}, e.g. \texttt{export OMP\_NUM\_THREADS=1} in bash or \texttt{SET OMP\_NUM\_THREADS=1} in DOS}:
 \begin{verbatim}
 pvmos [verbose-option] <input-file>
 \end{verbatim}
-where \verb_[verbose-option]_ is an option which how much information PVMOS outputs to stdout, and \verb_<input-file>_ is the plain text input file. We first describe the mesh data structure in more detail in the next section. 
+where \texttt{[verbose-option]} is an option which how much information PVMOS outputs to stdout, and \texttt{<input-file>} is the plain text input file. We first describe the mesh data structure in more detail in the next section. 
 
-More or less all functions implemented in PVMOS manipulate meshes in one way or another. To understand PVMOS one needs to understand PVMOS's mesh data-structure. A mesh in PVMOS consists of rectangular elements. For each element we store the coordinates of the lower left corner ($x_1,y_1$) and of the upper right corner ($x_2,y_2$). Furthermore each node has a unique ID number. In order to save memory space we do not store the electrical properties for every element. Instead, we store the electrical parameters per ``area''. To this end a mesh contains a list of area data-structures which contain parameters such as the electrode sheet resistances and the solar cell properties. Each element now refers to a certain area by means of an area-ID number. Each area also has a name for easy referencing by the user. Finally, once you solve the potentials within a mesh for certain applied bias voltages, the mesh will also contain arrays with the potentials in the front and back contact for each element for each of the applied bias voltages. 
+In its essence PVMOS is a Poisson solver. The Poisson equation is solved for several stacked, 2D ``electrodes'', where each electrode is coupled to the electrodes above and below (note that a stack of 2D electrodes makes a 3D structure). The electrodes itself simply conductors and behave linearly (Ohmic). However, the connection between the electrodes can be non-linear (e.g. a diode). Now ther are several limitations of the structures that PVMOS handles. The main limitation is that the meshes are 2D as in PVMOS all electrodes share the same 2D mesh. This means that PVMOS is specifically designed for flat layered structures, a less than optimal performance is to be expected for different that flat layered geometries. PVMOS uses straight forward finite-differences to solve the coupled Poisson equations. As such the 2D meshes in PVMOS divide the 2D surface in rectangular elements. Now every element in the mesh must be associated with certain properties. Storing properties on a per element basis woul put a heavy burdon on the memory resources. For that reason elements are grouped into ``area's'' where each ares constitures a certain combination of properties. A mesh therfore also contains a list of all area's and every element is a member of one of the area's in the mesh (note that an element is always assigned to one area, i.e. you need at least one area for every unique combination of local properties).
 
-In PVMOS we can define more than one mesh at the same time (this is useful as you can build meshes from several meshes, e.g. join two meshes for single cells to one mesh with two series connected cells). In order to reference one particular mesh, each mesh has a name. To reference an area within a mesh you can refer to \verb_<mesh-name>.<area-name>_, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis. 
+In PVMOS we can define more than one mesh at the same time (this is useful as you can build meshes from several meshes, e.g. join two meshes for single cells to one mesh with two series connected cells). In order to reference one particular mesh, each mesh has a name. To reference an area within a mesh you can refer to \texttt{<mesh-name>.<area-name>}, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis. 
 
-The input file is parsed by PVMOS which sequentially processes the file. PVMOS provides functions to generate and manipulate meshes such that you can generate meshes describing the problem by a sequence of commands. To this end each mesh you define has a name to reference it by. The following section provides a command-reference.
+The input file is parsed by PVMOS, which sequentially processes the file. PVMOS provides functions to generate and manipulate meshes such that you can generate meshes describing the problem by a sequence of commands. To this end each mesh you define has a name to reference it by. The following section provides a command-reference.
 
 \section{\label{syntax}PVMOS command reference}
 
@@ -125,6 +128,15 @@ Keyword & Description \\
 \item \texttt{mesh2-name}, Name of the second mesh
 \item \texttt{mesh3-name}, Name of the resulting mesh
 \end{enumerate}\\
+\texttt{dupmesh}	& Duplicate a mesh. The command takes 2 arguments:
+\begin{enumerate}
+\item \texttt{mesh1-name}, Name of the mesh to be duplicated
+\item \texttt{mesh2-name}, Name of the resulting copy
+\end{enumerate}\\
+\texttt{add\_electrode}	& Adds an electrode to a certain mesh. The command takes arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \multicolumn{2}{l}{\textsc{Selecting Elements}} \\*
 \hline
@@ -153,7 +165,7 @@ Keyword & Description \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{load\_poly}	& Load a polygon from file. This command is used in conjunction with the \texttt{select\_poly} command. The command takes one argument.
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, Name of the file describing the polygon (one 2D coordinate per line, i.e., two columns, 1: x-coordinate, 2: y-coordinate)
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{deselect}	& deselects a selection within a mesh. The command takes one argument.
@@ -255,18 +267,18 @@ The output file will contain data in columns. The file contains coordinates, the
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printV}		& Print the front and back electrode element voltages for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. The command takes two arguments:
+\texttt{printV}		& Print the electrode potentials per element for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}
-The output file will contain data in columns. The file contains coordinates followed by the potential in the positive and negative electrodes for each solution.For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each element in the mesh. For each element the folowing data is printed to the file:\newline 
-\begin{tabular}{ccccccc}
-	\texttt{x1} & \texttt{y1} & $V_+^1$ & $V_-^1$ & $V_+^2$ & $V_-^2$ & ...\\
-	\texttt{x1} & \texttt{y2} & $V_+^1$ & $V_-^1$ & $V_+^2$ & $V_-^2$ & ...\\
+The output file will contain data in columns. The file contains coordinates followed by the potential in each electrode for each solution. For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each electrode in each element in the mesh. For each element the folowing data is printed to the file, where the subscripts indicate the electrode index and the superscript the solution index:\newline 
+\begin{tabular}{ccccccccccc}
+	\texttt{x1} & \texttt{y1} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
+	\texttt{x1} & \texttt{y2} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
-	\texttt{x2} & \texttt{y2} & $V_+^1$ & $V_-^1$ & $V_+^2$ & $V_-^2$ & ...\\
-	\texttt{x2} & \texttt{y1} & $V_+^1$ & $V_-^1$ & $V_+^2$ & $V_-^2$ & ...\\
+	\texttt{x2} & \texttt{y2} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
+	\texttt{x2} & \texttt{y1} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 \end{tabular}\\
@@ -355,67 +367,62 @@ Keyword & Description \\
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \end{enumerate}\\
-\texttt{set\_Rp}	&  Set the electrode resistance for the positive electrode for a specified area. If the specified area does not exist it will be newly created. The command takes two arguments:
+\texttt{set\_Rel}	&  Set an electrode resistance. If the specified area does not exist it will be newly created. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
 \item \texttt{value}, Sheet resistance value ($\Omega$)
 \end{enumerate}\\
-\texttt{set\_Rn}	&  Set the electrode resistance for the negative electrode for a specified area. If the specified area does not exist it will be newly created. The command takes two arguments:
+\texttt{set\_Rvp}	&  Set the contact resistance between the positive node and an electrode. Together with \texttt{set\_Rvn} this command allows the application of an extranal voltage. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
-\item \texttt{value}, Sheet resistance value ($\Omega$)
-\end{enumerate}\\
-\texttt{set\_Rpvn}	&  Set the contact resistance between the positive electrode and the negative node for the applied voltage. The command takes two arguments:
-\begin{enumerate}
-\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
 \item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
 \end{enumerate}\\
-\texttt{set\_Rnvn}	&  Set the contact resistance between the negative electrode and the negative node for the applied voltage. The command takes two arguments:
+\texttt{set\_Rvn}	&  Set the contact resistance between the negative node and an electrode. Together with \texttt{set\_Rvp} this command allows the application of an extranal voltage.The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
 \item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
 \end{enumerate}\\
-\texttt{set\_Rpvp}	&  Set the contact resistance between the positive electrode and the positive node for the applied voltage. The command takes two arguments:
+\texttt{set\_JV}	&  Specify a tabular data set to use as a JV characteristics. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
-\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
-\end{enumerate}\\
-\texttt{set\_Rnvp}	&  Set the contact resistance between the negative electrode and the positive node for the applied voltage. The command takes two arguments:
-\begin{enumerate}
-\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
-\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
-\end{enumerate}\\
-\texttt{set\_JV}	&  Specify a tabular data set to use as a JV characteristics. The command takes two arguments:
-\begin{enumerate}
-\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
 \item \texttt{file-name}, Name of a file containing two columns, voltage and current density ($V$, $A \text{cm}^{-2}$)
 \end{enumerate}\\
 \texttt{set\_2DJV}	&  Specify a two-diode model for the JV characteristics. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
 \item \texttt{J01}, Saturation current density for the first diode (ideality factor one)  ($A \text{cm}^{-2}$)
 \item \texttt{J02}, Saturation current density for the second diode (ideality factor two)  ($A \text{cm}^{-2}$)
 \item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
 \item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
 \item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
-\item \texttt{T}, Temperature ($K$)
 \item \texttt{Eg}, Band gap ($eV$)
 \end{enumerate}\\
 \texttt{set\_1DJV}	&  Specify a one-diode model for the JV characteristics. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
 \item \texttt{J0}, Saturation current density ($A \text{cm}^{-2}$)
 \item \texttt{nid}, Ideality factor
 \item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
 \item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
 \item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
-\item \texttt{T}, Temperature ($K$)
 \item \texttt{Eg}, Band gap ($eV$)
 \end{enumerate}\\
-\texttt{set\_R}	&  Specify a resistance for the JV characteristics. The command takes two arguments:
+\texttt{set\_R}	&  Specify a resistance for the JV characteristics. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
 \item \texttt{R}, Resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_T}	&  Specify a local temperature. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{T}, Temperature ($K$)
 \end{enumerate}\\
 \multicolumn{2}{l}{\textsc{Numerical Settings}} \\*
 \hline
@@ -476,108 +483,107 @@ Keyword & Description \\
 \\
 \end{longtable}
 
-\section{Example:monolithically series connected cells and a defect}
+\section{Example:monolithically series connected mini-module and a defect}
 
 \begin{small}
 \begin{verbatim}
-################################################################################################
-# This example demonstrates the simulation of a monolithically interconnected thin-film module 
-# The following meshes are created
+###################################################################################################
+# In this example we create an 8x8 cm a-Si:H mini module with a defect.
+###################################################################################################
+
+
+###################################################################################################
+# create the meshes. The following meshes are created
 # cell_a:	mesh for the active part of a cell stripe (i.e., not including dead area)
 # p1:		mesh for the p1 laser line
-# da:		mesh for the area's between laser lines (for simplicity this mesh will be used
-#               between p1 and p2 aswell as between p2 and p3)
+# da:		mesh for the area's between laser lines
 # p2:		mesh for the p2 laser line
 # p3:		mesh for the p3 laser line
 # cp:		mesh for a contact trip connected to the positive electrode
 # cn:		mesh for a contact strip to the negative electrode
-################################################################################################
-#		x1  y1		x2  y2		Nx	Ny	name
-newmesh 	0.0 0.0 	0.5 30 		50 	30 	cell_a
-newmesh 	0.0 0.0 	8e-3 30 	1 	30 	p1
-newmesh 	0.0 0.0 	12e-3 30 	1 	30 	da
-newmesh 	0.0 0.0 	5e-3 30 	1 	30 	p2
-newmesh 	0.0 0.0 	5e-3 30 	1 	30 	p3
-newmesh 	0.0 0.0 	8e-3 30 	1 	30 	cp
-newmesh 	0.0 0.0 	8e-3 30 	1 	30 	cn
+###################################################################################################
+#           x1      y1      x2       y2  Nx   Ny   name   
+newmesh     0.0     0.0     0.958    8   50   21   cell_a
+newmesh     0.0     0.0     8e-3     8   1    21   p1
+newmesh     0.0     0.0     12e-3    8   1    21   da
+newmesh     0.0     0.0     5e-3     8   1    21   p2
+newmesh     0.0     0.0     5e-3     8   1    21   p3
+newmesh     -8e3    0.0     0        8   1    21   cp
+newmesh     0.0     0.0     8e-3     8   1    21   cn
+# Note I gave the cp mesh a negative x1 and 0 for x2, I will explain why later...
 
-################################################################################################
-# A mesh consists of elements. The elements in a mesh belong to areas. When a mesh is 
-# initialized, all elements are part of the samedefault area. All areas that are part of a mesh
-# must have a name. The nameof the default area is the same as the name of the mesh when it is 
-# initialized. You can change the properties of an area by using "set" commands. You can also 
-# define new areas and assign elements to these new areas. More on that later. We first define 
-# the properties of the default areas for each mesh. To refer to a certain area you must specify 
-# the mesh and the area name like so: <mesh-name>.<area-name>
+###################################################################################################
+# A mesh consists of nodes. The nodes in a mesh belong to areas. All meshed are initialized with 
+# an area which is the same as the name of the mesh, and all nodes are assigned to it. You can 
+# change the properties by using various commands starting with set_XX. You can also define new 
+# areas and assign nodes to these new areas. More on that later. We first define the properties 
+# per mesh. To refer to a certain area you must specify the mesh and the area name like so: 
+# <mesh-name>.<area-name>
 # Here we set the diode properties of the area cell_a in the mesh cell_a:
-################################################################################################
-#		mesh.area	J0	n	Jph	Rs	Rsh	Temp	Eg
-set_1DJV 	cell_a.cell_a 	1e-8 	1.5 	0.03 	1e-3 	1e4 	300 	1.12
-# here we set the sheet resistances for the same area, for the positive and negative electrodes
-set_Rp		cell_a.cell_a	20
-set_Rn		cell_a.cell_a	1
+###################################################################################################
+#           mesh.area       conn J0           n   Jph      Rs      Rsh          Eg
+set_1DJV    cell_a.cell_a   0    2.4803e-12   1.5 0.015    7.6529  6.1273e+04   1.7
 
+###################################################################################################
+# here we set the sheet resistances for the same area, for the positive and negative electrodes
+###################################################################################################
+#           mesh.area       electrode    Rel
+set_Rel     cell_a.cell_a   0            5
+set_Rel     cell_a.cell_a   1            0.5
+
+###################################################################################################
 # here follow various areas for the various meshes
 # set_R sets the resistance between front and back electrode, here we remove the contact
-set_R 		p1.p1 	 	1e90
-set_Rp		p1.p1		1e9
-set_Rn		p1.p1		1
-set_SplitX	p1.p1		0
+###################################################################################################
+set_R       p1.p1   0   1e90
+set_Rel     p1.p1   0   1e9
+set_Rel     p1.p1   1   0.5
+set_SplitX  p1.p1
 
-set_1DJV 	da.da 		1e-8 	1.5 	0.03 	1e-3 	1e4 	300 	1.12
-set_Rp		da.da		20
-set_Rn		da.da		1
-set_SplitX	da.da		0
+set_1DJV    da.da   0   2.4803e-12   1.5 0.015    7.6529   6.1273e+04  1.7
+set_Rel     da.da   0   5
+set_Rel     da.da   1   0.5
+set_SplitX  da.da
+  
+set_R       p2.p2   0   1e-2
+set_Rel     p2.p2   0   5
+set_Rel     p2.p2   1   0.5
+set_SplitX  p2.p2
 
-set_R 		p2.p2 	 	1e-5
-set_Rp		p2.p2		20
-set_Rn		p2.p2		1
-set_SplitX	p2.p2		0
+set_R       p3.p3   0   1e90
+set_Rel     p3.p3   0   5
+set_Rel     p3.p3   1   1e9
+set_SplitX  p3.p3
 
-set_R 		p3.p3 	 	1e90
-set_Rp		p3.p3		1e-3
-set_Rn		p3.p3		1e9
-set_SplitX	p3.p3		0
+set_R       cp.cp   0   1e90
+set_Rel     cp.cp   0   1e-3
+set_Rel     cp.cp   1   1e3
+set_Rvp     cp.cp   0   1e-8
+set_SplitX  cp.cp
 
+set_R       cn.cn   0   1e90
+set_Rel     cn.cn   0   1e-3
+set_Rel     cn.cn   1   1e3
+set_Rvn     cn.cn   0   1e-8
+set_SplitX  cn.cn
 
-################################################################################################
-# We have two contact strips. Within the strips we remove the solar cell (define it as a 
-# resistors with a very high resistance). Either the positive or the negative electrode is made 
-# very conductive, and connected to the positive applied voltage or 0V, respectively.
-# we do not split elements in this mesh in the x direction.
-################################################################################################
-
-set_R 		cp.cp 	 	1e90
-set_Rp		cp.cp		1e-3
-set_Rpvp 	cp.cp 		1e-8
-set_SplitX	cp.cp		0
-
-set_R 		cn.cn 	 	1e90
-set_Rn		cn.cn		0.1
-set_Rpvn 	cn.cn 		1e-8
-set_SplitX	cn.cn		0
-
-################################################################################################
+###################################################################################################
 # Now we start to assemble the complete mesh out of the various parts. When joining meshes we 
 # will use the coordinate system of the first mesh. The coordinate system of the second mesh can 
 # be shifted by using an x and y offset value. Note that you have to take care not to make the 
-# meshes overlap I have not (yet) inplemented error checking for this! Here I will use 
-# jointmesh_h, which joins meshes horizontally and keeps track of the x-offset value for me 
-# (i.e. the x-offset valueis computed as the maximum x-value in the first mesh).
-################################################################################################
-#	 xoff y_off	mesh1		mesh2	mesh_out
-joinmesh_h 	0.0 	cell_a		p1	cell_p1			
-# 0.5+0.008=0.508
-joinmesh_h 	0.0 	cell_p1		da	cell_p1da		
-# 0.508+0.012=0.52
-joinmesh_h 	0.0 	cell_p1da	p2	cell_p1dap2		
-# 0.52+0.005=0.525
-joinmesh_h 	 0.0 	cell_p1dap2	da	cell_p1dap2da		
-# 0.525+0.012=0.537
-joinmesh_h	0.0 	cell_p1dap2da	p3	cell_p1dap2dap3		
-# 0.537+0.005=0.542		
+# meshes overlap I have not (yet) inplemented error checking for this! In order to keep track 
+# of the dimensions and avoid overlapping meshes I keep track of the total width of the mesh on 
+# the comment lines below the join commands.
+###################################################################################################
+#           xoff    mesh1            mesh2    mesh_out
+joinmesh_h  0.0     cell_a           p1       cell_p1    
+joinmesh_h  0.0     cell_p1          da       cell_p1da
+joinmesh_h  0.0     cell_p1da        p2       cell_p1dap2
+joinmesh_h  0.0     cell_p1dap2      da       cell_p1dap2da    
+joinmesh_h  0.0     cell_p1dap2da    p3       cell_p1dap2dap3        
+# should be 1 cm wide        
 
-################################################################################################
+###################################################################################################
 # Note that we now have many meshes defined:
 # 1.  cell_a
 # 2.  p1
@@ -586,137 +592,126 @@ joinmesh_h	0.0 	cell_p1dap2da	p3	cell_p1dap2dap3
 # 5.  p3
 # 6.  cp
 # 7.  cn
-# 8.  cell_p1	
-# 9.  cell_p1da	
+# 8.  cell_p1    
+# 9.  cell_p1da    
 # 10. cell_p1dap2
-# 11. cell_p1dap2da	
+# 11. cell_p1dap2da    
 # 12. cell_p1dap2dap3
 # The last mesh is cell stripe including dead area. We can easily series connect several cells 
-# by joining several instances of the last mesh in a row. Here we series connect five cells
-################################################################################################
-joinmesh_h	0.0 	cell_p1dap2dap3		cell_p1dap2dap3	2cells			
-# 0.542+0.542=1.084
-joinmesh_h	0.0 	2cells			cell_p1dap2dap3	3cells			
-# 1.084+0.542=1.626
-joinmesh_h	0.0 	3cells			cell_p1dap2dap3	4cells			
-# 1.626+0.542=2.168
-joinmesh_h	0.0 	4cells			cell_p1dap2dap3	5cells			
-# 2.168+0.542=2.710
-
-################################################################################################
-# Now we add the contacts. Our final mesh will be called: cells
-################################################################################################
-joinmesh_h	0.0 	cp			5cells	cp5cells			
-# 8e-3+2.710=2.718
-joinmesh_h	0.0 	cp5cells		cn	cells				
-# 2.718+8e-3=2.726
+# by joining several instances of the last mesh in a row. Here we series connect 40 cells
+###################################################################################################
+joinmesh_h  0.0 cell_p1dap2dap3  cell_p1dap2dap3  2cells    
+joinmesh_h  0.0 2cells           2cells           4cells        
+joinmesh_h  0.0 4cells           4cells           8cells            
+# 8x8 cm2, 8 cells
 
 
-
-################################################################################################
-# Now we have three perfectly homogeneous cells. That is boring so we add a shunt in the middle 
-# cell. First we create a new area. This should be part of the cells mesh. We can create a new 
-# area simply by starting to specify its properties, a new area will automatically be created.
-################################################################################################
-# set_JV		cells.shunt	shunt.dat
-set_R 		cells.shunt 	1e-3
-set_Rp		cells.shunt	20
-set_Rn		cells.shunt	1
-
-################################################################################################
-# So far the creation of this area has no effect as no nodes are assigned to the area. However, 
-# before we assign nodes to this area we need a better resolution as the nodes in the cell area 
-# are now 0.01x1.0 cm^2, which is not sufficient to specify a small defect. I will add a defect
-# at the coordinate (0.7,15). Refining the mesh will be done by selecting nodes and subsequently 
-# splitting the nodes. As the nodes are long in the y direction we first split the nodes only in 
-# the y-direction. The select_circ creates a circular selection, Only nodes whose center fall 
-# within the specified circle are selected. The circle is specified by its center coordinates 
-# (xc,yc) and the radius, r. The split commands automatically use the selected nodes. Beware
-# that if no nodes are selected prior to giving a split command, all nodes in the mesh are split
-################################################################################################
-#           xc  yc r mesh
-select_circ 1.5 15 4 cells
-split_y cells
-
-select_circ 1.5 15 3 cells
-split_y cells
-
-select_circ 1.5 15 2 cells
-split_y cells
-
-select_circ 1.5 15 1 cells
-split_y cells
-
-select_circ 1.5 15 0.1 cells
-split_y cells
-
-select_circ 1.5 15 0.07 cells
-split_y cells
-
-select_circ 1.5 15 0.06 cells
-split_y cells
-
-################################################################################################
-# Note that I gradually reduced the radius of the circle to get a denser and senser mesh around 
-# the coordinate (0.7,15). The nodes at this coordinate are now about 0.01x0.0078 cm^2 large. As 
-# the nodes are now close enough to quadratic we now split the nodes three times in both x- and
-# y- direction to get a satifactory resolution with nodes of about 10µm x 10µm. Note that in a
-# regular, equidistant mesh such node sizes would result in meshes of almost 50 milion nodes 
-# where the mesh here is about 20000 nodes large.
-################################################################################################
-select_circ 1.5 15 0.05 cells
-split_xy cells
+###################################################################################################
+# Now we add the contacts. The resulting mesh will be called: minimodule
+###################################################################################################
+joinmesh_h  0.0 cp          8cells   cp8cells
+# Remember that for the cp mesh x1 was nagative and x2 was 0. This means that after joining them
+# I have the 8x8 cm^2 cells in the square (0,0) and (8,8) 
+joinmesh_h  0.0 cp8cells    cn       minimodule
 
 
-################################################################################################
-# Now we have at the location of the shunt nodes of about 0.001x0.001 cm^2, this suffices for 
-# a defect with a radius of about 0.01 cm and up. As we already defined the shunt properties
-# of the area "shunt" we only need to assign nodes to this area. To this and we select the nodes 
-# and then assign them (note if you do not select nodes before you do this, all the nodes in the 
-# mesh will be assigned to the shunt area.
-################################################################################################
-select_circ 1.5 15 0.04 cells
-assign_properties cells.shunt
+###################################################################################################
+# Now for some defects!
+###################################################################################################
+# First we create a new area with the defect properties
+set_Rel     minimodule.shunt     0   5
+set_Rel     minimodule.shunt     1   0.5
+set_R       minimodule.shunt     0   0.0001
 
+###################################################################################################
+# we will make the defect in the center of the third cell
+# First thing to take care of is that the mesh is fine around the defect so we can 
+# properly define it. Currently at the defect location the elements are 
+# 0.02x0.4 cm^2. We select an area with radius 2 cm and refine it a bit
+###################################################################################################
+select_circ 2.5 4   2   minimodule
+split_coarse    minimodule  0.2
 
+###################################################################################################
+# now the elements in a radius of 2 cm around the defect are 0.02x0.2 cm^2
+# we do another run, this time in an area with a 1 cm radius around the defect 
+###################################################################################################
+select_circ 2.5 4   1   minimodule
+split_coarse    minimodule  0.1
 
-################################################################################################
-# Now we print some stuff so we can check whether we made no mistakes.
-# printmesh prints the mesh (i.e. contour of each node)
-# printpars prints the name, id number and parameters for each area in a mesh
-# printarea prints the meah and adds element id and area id for each element
-# printconn prints the connections between nodes (verctors from center to center of a node 
-# (bi-directional)
-################################################################################################
-printmesh cells mesh_initial.dat
-printpars cells pars.dat
-printarea cells areas.dat
-printconn cells conn.dat
+###################################################################################################
+# repeat ...
+###################################################################################################
+select_circ 2.5 4   0.5   minimodule
+split_coarse    minimodule  0.05
 
-################################################################################################
-# Finaly do some simulations, we start by adapting the mesh a few iterations (5). The adapttive
-# solve command expects as arguments:
-# 1: the mesh to adapt
-# 2: the applied voltage
-# 3: adaption factor, af,  (lower value means more nodes are adapted each iteration)
-# 4: number of iterations for the mesh adaption 
-# We also output the refined mesh
-################################################################################################
-# 		mesh	V	af	iterations
-adaptive_solve 	cells 	2.4 	0.3 	5
-printmesh cells mesh_refined.dat
+select_circ 2.5 4   0.25 minimodule
+split_coarse    minimodule  0.025
 
-################################################################################################
-# Now we simulate an IV curve, save it to IV.dat and plot the spatial potential distribution
-# for the available simulation that is closest to 4.0 V
-################################################################################################
-solve cells -0.5 4.0 46
-printIV cells IV.dat
-printV cells checkpot.dat
-surfVplot cells 0.008 14.0 2.718 16 300 400 4.0 thin_film_detail.dat
-surfVplot cells 0.008 0 2.718 30 300 400 4.0 thin_film_wholedevice.dat
+###################################################################################################
+# We create a defect with a radius of 1mm, a a rule of thumb I want at leat 10 elemnts along the 
+# radius, so this time I have a circle slightly larger than the defect with a maximum mesh distance 
+# of 0.01.
+###################################################################################################
+select_circ 2.5 4   0.125   minimodule
+split_coarse    minimodule  0.01
+
+###################################################################################################
+# Time to create ourselves a defect
+###################################################################################################
+select_circ 2.5 4   0.1 minimodule
+assign_properties   minimodule.shunt
+
+###################################################################################################
+# Solve stuff and export data
+###################################################################################################
+# Dump the initial mesh so you can plot it later
+printmesh       minimodule  mesh0.dat
+
+# Do 2 iterations of adaptive solving a@5 volt with a factor 0.3
+adaptive_solve  minimodule  5    0.3 2
+
+# Dump the refined mesh so you can plot it later and compare to the initial one
+printmesh       minimodule  mesh1.dat
+
+# solve IV from 0-35 V in 36 steps (1V steps including both 0 and 35 V)
+solve       minimodule  0   8    41\n");
+surfVplot   minimodule  0   0    8   8   200  200 4.4  minimodule_44.dat
+surfVplot   minimodule  0   0    8   8   200  200 0    minimodule_00.dat
+surfVplot   minimodule  0   0    8   8   200  200 6.4  minimodule_64.dat
+printIV     minimodule  IV_minimodule.dat
 \end{verbatim}
 \end{small}
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{#1}
+\csname url@samestyle\endcsname
+\providecommand{\newblock}{\relax}
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\BIBentrySTDinterwordspacing}{\spaceskip=0pt\relax}
+\providecommand{\BIBentryALTinterwordstretchfactor}{4}
+\providecommand{\BIBentryALTinterwordspacing}{\spaceskip=\fontdimen2\font plus
+\BIBentryALTinterwordstretchfactor\fontdimen3\font minus
+  \fontdimen4\font\relax}
+\providecommand{\BIBforeignlanguage}[2]{{%
+\expandafter\ifx\csname l@#1\endcsname\relax
+\typeout{** WARNING: IEEEtran.bst: No hyphenation pattern has been}%
+\typeout{** loaded for the language `#1'. Using the pattern for}%
+\typeout{** the default language instead.}%
+\else
+\language=\csname l@#1\endcsname
+\fi
+#2}}
+\providecommand{\BIBdecl}{\relax}
+\BIBdecl
 
+
+\bibitem{pvmos:2014}
+B.~E. Pieters, ``{PVMOS: A Free and Open Source Simulation Tool for Solar Modules},'' \emph{submitted to: Journal of Photovoltaics}, 2014.
+
+\bibitem{Davis:2007:Online}
+T.~A. Davis. (retrieved 22 May 2014) {BLAS performance bug and its effect on
+  sparse "bench" in MATLAB 7.4}. [Online]. Available:
+  \url{http://www.cise.ufl.edu/research/sparse/cholmod/blasbug.html}
+\end{thebibliography}
 % that's all folks
 \end{document}

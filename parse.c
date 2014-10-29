@@ -408,6 +408,24 @@ void Parse (char *file)
 						AddMeshVar (InitMesh(word, x1, x2, y1, y2, Nx, Ny), &name,  &Meshes, &Nm);
 						break;
 					}
+					case RMMESH:
+					{
+						char *name;
+						int len;
+						/* read next word and process, if no next word trow an error */
+						
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;	
+						len=strlen(word);
+						name=malloc((len+2)*sizeof(char));
+						name=strncpy(name,word,len+1);	
+						
+						Print(NORMAL,"* line %3d: Removing mesh %s\n", line_nr, word);			
+						RemoveMeshVar (&name,  &Meshes, &Nm);
+						free(name);
+						break;
+					}
 					case JOINMESH:
 					{
 						double xoff, yoff;
@@ -734,7 +752,7 @@ void Parse (char *file)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);							
 						Print(NORMAL,"* line %3d: Simplifying mesh of %d nodes\n",line_nr, MV->M.Nn);
 						fflush(stdout);		
-						Chunkify(&(MV->M), 4);
+						Chunkify(&(MV->M));
 						MV->nodes[0]=0;
 						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);	
 						break;
