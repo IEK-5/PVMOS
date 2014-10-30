@@ -141,7 +141,7 @@ Keyword & Description \\
 \multicolumn{2}{l}{\textsc{Selecting Elements}} \\*
 \hline
 Keyword & Description \\
-\texttt{select\_rect}	& Select a rectangular area in a mesh. The command takes five arguments:
+\texttt{select\_rect}	& Select a rectangular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the rectangle. If the latter is not desired use deselect first. The command takes five arguments:
 \begin{enumerate}
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
@@ -150,7 +150,7 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_circ}	& Select a circular area in a mesh. The command takes four arguments:
+\texttt{select\_circ}	& Select a circular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. The command takes four arguments:
 \begin{enumerate}
 \item \texttt{x\_c}, center x-coordinate of the selected circle
 \item \texttt{y\_c}, center y-coordinate of the selected circle
@@ -158,7 +158,7 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load a polygon from file with the \texttt{load\_poly} command. The command takes one argument.
+\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load a polygon from file with the \texttt{load\_poly} command. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the polygon. If the latter is not desired use deselect first. The command takes one argument.
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
@@ -166,6 +166,11 @@ Keyword & Description \\
 \texttt{load\_poly}	& Load a polygon from file. This command is used in conjunction with the \texttt{select\_poly} command. The command takes one argument.
 \begin{enumerate}
 \item \texttt{file-name}, Name of the file describing the polygon (one 2D coordinate per line, i.e., two columns, 1: x-coordinate, 2: y-coordinate)
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_area}	& Select all nodes assigned to a given area. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes which are assigned to the given area. If the latter is not desired use deselect first. The command takes one argument.
+\begin{enumerate}
+\item \texttt{area-name}, Name of the mesh and area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{deselect}	& deselects a selection within a mesh. The command takes one argument.

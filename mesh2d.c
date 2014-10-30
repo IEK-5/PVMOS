@@ -60,7 +60,7 @@
 #include "utils.h"
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define MAX(a,b) ((a)<(b) ? (b):(a))
-#define TINY 1e-12
+#define TINY 1e-10
 #define TWOPI 6.28318530717959
 #define MAXNAMELEN 255
 #define T0 300
@@ -718,7 +718,7 @@ mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
 mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 {
 	mesh res;
-	double xoff;
+	double xoff1, xoff2, xoff;
 	int *outl1, *outl2;
 	int *prop_out;
 	node *m1, *m2;
@@ -727,14 +727,22 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 	if (M1.Nel!=M2.Nel)
 		Error("Cannot join meshes with unequal number of electrodes, M1:%d M2:%d\n",M1.Nel, M2.Nel);
 	outl1=MeshOutline(M1);
-	xoff=M1.nodes[0].x1;
+	outl2=MeshOutline(M2);
+	xoff1=M1.nodes[0].x1;
 	for (i=1;i<=outl1[0];i++)
 	{
 		m1=SearchNode(M1, outl1[i]);
-		if (xoff<m1->x2)
-			xoff=m1->x2;
+		if (xoff1<m1->x2)
+			xoff1=m1->x2;
 	}	
-	outl2=MeshOutline(M2);
+	xoff2=M2.nodes[0].x2;
+	for (i=1;i<=outl2[0];i++)
+	{
+		m1=SearchNode(M2, outl2[i]);
+		if (xoff2>m1->x1)
+			xoff2=m1->x1;
+	}	
+	xoff=xoff1-xoff2;
 	
 	/* TODO check for overlap */
 	
@@ -794,7 +802,7 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 {
 	mesh res;
-	double yoff;
+	double yoff1, yoff2, yoff;
 	int *outl1, *outl2;
 	int *prop_out;
 	node *m1, *m2;
@@ -803,14 +811,22 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 	if (M1.Nel!=M2.Nel)
 		Error("Cannot join meshes with unequal number of electrodes, M1:%d M2:%d\n",M1.Nel, M2.Nel);
 	outl1=MeshOutline(M1);
-	yoff=M1.nodes[0].y1;
+	outl2=MeshOutline(M2);
+	yoff1=M1.nodes[0].y1;
 	for (i=1;i<=outl1[0];i++)
 	{
 		m1=SearchNode(M1, outl1[i]);
-		if (yoff<m1->y2)
-			yoff=m1->y2;
+		if (yoff1<m1->y2)
+			yoff1=m1->y2;
 	}	
-	outl2=MeshOutline(M2);
+	yoff2=M2.nodes[0].y2;
+	for (i=1;i<=outl2[0];i++)
+	{
+		m1=SearchNode(M2, outl2[i]);
+		if (yoff2>m1->y1)
+			yoff2=m1->y1;
+	}	
+	yoff=yoff1-yoff2;
 	
 	/* TODO check for overlap */
 	

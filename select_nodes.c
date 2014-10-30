@@ -68,7 +68,11 @@ int FindPos(mesh M, int id, double x, double y)
 	{
 newid:		list=AddToList(list,id);
 		N=SearchNode(M, id);
-		Print(DEBUG,"%e %e %i\n",(N->x1+N->x2)/2, (N->y1+N->y2)/2, N->id);
+		if ((fabs(x-1.047500e+01)<1e-5)&&(fabs(y-3.819900e+01)<1e-5))
+		{
+			Print(DEBUG,"%e %e %i\n",(N->x1+N->x2)/2, (N->y1+N->y2)/2, N->id);
+			Print(DEBUG,"%e %e %e %e\n",N->x1, N->x2, N->y1, N->y2);
+		}
 		if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY)&&(y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
 		{
 			free(list);
@@ -175,16 +179,30 @@ int IsInPolygon(polygon P, double x, double y)
 
 int * PolySelectNodes(polygon P, mesh M, int *sel_nodes) 
 {
-	int i;
+	int i, *old_sel;
 	
 	if (sel_nodes[0]>0)
 	{
+		/* make selection within selection */
+		old_sel=DuplicateList(sel_nodes);
 		sel_nodes[0]=0;
-		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));		
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+		{
+			node *N;
+			N=SearchNode(M, old_sel[i]);			
+			if (IsInPolygon(P, (N->x1+N->x2)/2, (N->y1+N->y2)/2))
+				sel_nodes=AddToList(sel_nodes, N->id);
+		}		
+		free(old_sel);			
 	}
-	for (i=0;i<M.Nn;i++)
-		if (IsInPolygon(P, (M.nodes[i].x1+M.nodes[i].x2)/2, (M.nodes[i].y1+M.nodes[i].y2)/2))
-			sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+	else
+	{
+		/* make new selection */
+		for (i=0;i<M.Nn;i++)
+			if (IsInPolygon(P, (M.nodes[i].x1+M.nodes[i].x2)/2, (M.nodes[i].y1+M.nodes[i].y2)/2))
+				sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+	}
 	if (sel_nodes[0]==0)
 		Warning("No nodes selected in PolySelectNodes\n");
 	return sel_nodes;		
@@ -192,20 +210,37 @@ int * PolySelectNodes(polygon P, mesh M, int *sel_nodes)
 
 int * CircSelectNodes(double x, double y, double r, mesh M, int *sel_nodes)
 {
-	int i;
+	int i, *old_sel;
 	double xn, yn;
+	r=r*r;
 	if (sel_nodes[0]>0)
 	{
+		/* make selection within selection */
+		old_sel=DuplicateList(sel_nodes);
 		sel_nodes[0]=0;
-		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));		
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+		{
+			node *N;
+			N=SearchNode(M, old_sel[i]);
+			xn=x-(N->x1+N->x2)/2;
+			yn=y-(N->y1+N->y2)/2;
+			if (xn*xn+yn*yn<=r)
+				sel_nodes=AddToList(sel_nodes, N->id);
+		}
+		
+		free(old_sel);	
 	}
-	r=r*r;
-	for (i=0;i<M.Nn;i++)
+	else
 	{
-		xn=x-(M.nodes[i].x1+M.nodes[i].x2)/2;
-		yn=y-(M.nodes[i].y1+M.nodes[i].y2)/2;
-		if (xn*xn+yn*yn<=r)
-			sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+		/* make new selection */
+		for (i=0;i<M.Nn;i++)
+		{
+			xn=x-(M.nodes[i].x1+M.nodes[i].x2)/2;
+			yn=y-(M.nodes[i].y1+M.nodes[i].y2)/2;
+			if (xn*xn+yn*yn<=r)
+				sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+		}
 	}
 	if (sel_nodes[0]==0)
 		Warning("No nodes selected in CircSelectNodes\n");	
@@ -213,20 +248,36 @@ int * CircSelectNodes(double x, double y, double r, mesh M, int *sel_nodes)
 }
 int * RectSelectNodes(double x1, double y1, double x2, double y2, mesh M, int *sel_nodes)
 {
-	int i;
+	int i, *old_sel;
 	double xn, yn;
 	if (sel_nodes[0]>0)
 	{
+		/* make selection within selection */
+		old_sel=DuplicateList(sel_nodes);
 		sel_nodes[0]=0;
-		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));		
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+		{
+			node *N;
+			N=SearchNode(M, old_sel[i]);
+			xn=(N->x1+N->x2)/2;
+			yn=(N->y1+N->y2)/2;
+			if ((x1<=xn)&&(x2>xn)&&(y1<=yn)&&(y2>yn))
+				sel_nodes=AddToList(sel_nodes, N->id);
+		}
+		free(old_sel);						
 	}
-	for (i=0;i<M.Nn;i++)
+	else
 	{
-		xn=(M.nodes[i].x1+M.nodes[i].x2)/2;
-		yn=(M.nodes[i].y1+M.nodes[i].y2)/2;
-		if ((x1<=xn)&&(x2>xn)&&(y1<=yn)&&(y2>yn))
-			sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
-	}	
+		/* make new selection */
+		for (i=0;i<M.Nn;i++)
+		{
+			xn=(M.nodes[i].x1+M.nodes[i].x2)/2;
+			yn=(M.nodes[i].y1+M.nodes[i].y2)/2;
+			if ((x1<=xn)&&(x2>xn)&&(y1<=yn)&&(y2>yn))
+				sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+		}
+	}
 	if (sel_nodes[0]==0)
 		Warning("No nodes selected in RectSelectNodes\n");
 	return sel_nodes;		
@@ -272,4 +323,34 @@ polygon ReadPoly(char *fn)
 	res.y=realloc(res.y, (res.N+1)*sizeof(double));
 	fclose(f);
 	return res;
+}
+
+int * SelectArea(mesh M, int *sel_nodes, char *name)
+{
+	int i, *old_sel, P;
+	
+	P=FindProperties(M, name);
+	if (P<0)
+		Error("Area %s does not exist\n", name);
+	
+	if (sel_nodes[0]>0)
+	{
+		/* make selection within selection */
+		old_sel=DuplicateList(sel_nodes);
+		sel_nodes[0]=0;
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+			if (SearchNode(M, old_sel[i])->P==P)
+				sel_nodes=AddToList(sel_nodes, old_sel[i]);
+		free(old_sel);				
+	}
+	else
+	{
+		for (i=0;i<M.Nn;i++)
+			if (M.nodes[i].P==P)
+				sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+	}	
+	if (sel_nodes[0]==0)
+		Warning("No nodes selected in RectSelectNodes\n");
+	return sel_nodes;		
 }

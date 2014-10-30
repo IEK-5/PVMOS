@@ -242,6 +242,8 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 	MV=LookupMesh (name,  meshes, Nm);
 	if (!MV)
 		Error("In SelectRectNodes: Mesh %s is not defined\n", name);
+	if (MV->nodes[0]>0)	
+		Print(NORMAL,"            -->  Making sub-selection\n");
 	MV->nodes=RectSelectNodes(x1, y1, x2, y2, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectRectNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
@@ -264,6 +266,8 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 	MV=LookupMesh (name,  meshes, Nm);
 	if (!MV)
 		Error("In SelectCircNodes: Mesh %s is not defined\n", name);
+	if (MV->nodes[0]>0)	
+		Print(NORMAL,"            -->  Making sub-selection\n");
 	MV->nodes=CircSelectNodes(x, y, r, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectCircNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
@@ -284,9 +288,35 @@ void SelectPolyNodes (char *name,  meshvar * meshes, int Nm, polygon P)
 	MV=LookupMesh (name,  meshes, Nm);
 	if (!MV)
 		Error("In SelectPolyNodes: Mesh %s is not defined\n", name);
+	if (MV->nodes[0]>0)	
+		Print(NORMAL,"            -->  Making sub-selection\n");
 	MV->nodes=PolySelectNodes(P, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectPolyNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
+	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
+}
+
+void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
+{
+	meshvar *MV;
+	int len, i;
+	i=0;
+	len=strlen(name);
+	while ((i<len)&&(name[i]!='.'))
+		i++;
+	if (i==len)
+		Error("In LookupMeshArea: Expected a string of the form <mesh_name>.<area_name>, got %s\n", name);
+		
+	name[i]='\0';
+	
+	MV=LookupMesh (name,  meshes, Nm);
+	if (!MV)
+		Error("In SelectAreaNodes: Mesh %s is not defined\n", name);
+	if (MV->nodes[0]>0)	
+		Print(NORMAL,"            -->  Making sub-selection %s\n", name+i+1);
+	MV->nodes=SelectArea(MV->M, MV->nodes, name+i+1);
+	if (MV->nodes[0]==0)
+		Error("In SelectAreaNodes: No nodes selected.\n");
 	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
 }
 
@@ -1223,7 +1253,7 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
-						Print(NORMAL, "* line %3d: Load polygon from file %s ",line_nr,word);
+						Print(NORMAL, "* line %3d: Load polygon from file %s \n",line_nr,word);
 						P=ReadPoly(word);
 						break;
 					}	
@@ -1288,6 +1318,17 @@ void Parse (char *file)
 						SelectPolyNodes (word,  Meshes, Nm, P);
 						break;
 					}
+					case SELECT_AREA:
+					{						
+
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Make area selection of nodes\n", line_nr, word);
+						fflush(stdout);
+						SelectAreaNodes (word,  Meshes, Nm);
+						break;
+					}	
 					case DESELECT:
 					{
 						meshvar *MV;
