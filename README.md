@@ -41,7 +41,9 @@ to date.).
 
 [1] B. E. Pieters, "PVMOS: A Free and Open Source Simulation Tool for Solar Modules," 
     submitted to Journal of Photovoltaics, 2014.
+    
 [2] B. E. Pieters, "A free and open source finite-difference simulation tool for solar 
     modules." Photovoltaic Specialist Conference (PVSC), 2014 IEEE 40th. IEEE, 2014.
+    
 [3] B. E. Pieters, "Spatial modeling of Thin-Film Solar Modules using the Network 
     Simulation Method and SPICE," Journal of Photovoltaics, 2011.
