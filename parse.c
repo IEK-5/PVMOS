@@ -1030,7 +1030,7 @@ void Parse (char *file)
 						if (Vai>=0)
 						{
 							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
-							SurfVPlot(word, M, Vai, x1, y1, x2, y2, Nx, Ny);
+							SurfVPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
@@ -1067,7 +1067,7 @@ void Parse (char *file)
 						if (Vai>=0)
 						{
 							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
-							SurfPPlot(word, M, Vai, x1, y1, x2, y2, Nx, Ny);
+							SurfPPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present\n", line_nr);	
@@ -1512,7 +1512,7 @@ void Parse (char *file)
 							NewProperties(&(MV->M), area);	
 						}
 						
-						Print(NORMAL,"* line %3d: Toggle split-y parameter of %s\n",line_nr, args[0]);
+						Print(NORMAL,"* line %3d: Toggle split-y parameter of %s",line_nr, args[0]);
 						if (MV->M.P[P].SplitY)
 							MV->M.P[P].SplitY=0;
 						else
@@ -1541,7 +1541,7 @@ void Parse (char *file)
 							NewProperties(&(MV->M), area);	
 						}
 						
-						Print(NORMAL,"* line %3d: Toggle split-x parameter of %s\n",line_nr, args[0]);
+						Print(NORMAL,"* line %3d: Toggle split-x parameter of %s",line_nr, args[0]);
 						if (MV->M.P[P].SplitX)
 							MV->M.P[P].SplitX=0;
 						else
@@ -1554,35 +1554,35 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						Print(NORMAL,"* line %3d: Setting maximum number of iterations to %s\n",line_nr, word);							
+						Print(NORMAL,"* line %3d: Setting maximum number of iterations to %s",line_nr, word);							
 						MaxIter=atoi(word);
 						break;		
 					case TOLV:
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
-						Print(NORMAL,"* line %3d: Setting absolute voltage totelance to %s\n",line_nr, word);							
+						Print(NORMAL,"* line %3d: Setting absolute voltage totelance to %s",line_nr, word);							
 						TolV=atof(word);
 						break;		
 					case RELTOLV:
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
-						Print(NORMAL,"* line %3d: Setting relative voltage totelance to %s\n",line_nr, word);							
+						Print(NORMAL,"* line %3d: Setting relative voltage totelance to %s",line_nr, word);							
 						RelTolV=atof(word);
 						break;		
 					case TOLKCL:
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
-						Print(NORMAL,"* line %3d: Setting absolute KCL totelance to %s\n",line_nr, word);							
+						Print(NORMAL,"* line %3d: Setting absolute KCL totelance to %s",line_nr, word);							
 						TolKcl=atof(word);
 						break;		
 					case RELTOLKCL:
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						Print(NORMAL,"* line %3d: Setting relative KCL totelance to %s\n",line_nr, word);								
+						Print(NORMAL,"* line %3d: Setting relative KCL totelance to %s",line_nr, word);								
 						RelTolKcl=atof(word);
 						break;		
 					case SOLVE:
@@ -1619,7 +1619,7 @@ void Parse (char *file)
 						if (args==NULL)
 							goto premature_end;
 							
-						Print(NORMAL,"* line %3d: Adaptive solving of potentials in mesh %s\n",line_nr, args[0]);					
+						Print(NORMAL,"* line %3d: Adaptive solving of potentials in mesh %s",line_nr, args[0]);					
 						M=FetchMesh (args[0],  Meshes, Nm);
 						if (!M)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
