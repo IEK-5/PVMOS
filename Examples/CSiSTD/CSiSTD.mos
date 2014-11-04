@@ -1,0 +1,523 @@
+###################################################################################################
+# Step1: create a vertical section of the cell spanning the width of the cell and the height of 
+# the horizontal finger spacing.
+###################################################################################################
+# The first mesh we create is the 1mm finger free edge-top/bottom of the cell. This mesh will be used for 
+# both the left and the right edge-top/bottom. The height of the mesh is the finger spacing (0.1980645 cm).
+###################################################################################################
+#		x1  y1		x2  	y2	Nx	Ny	name
+newmesh 	0.0 0.0 	0.09	0.1980645	2 	4 	l/r_edge
+
+
+###################################################################################################
+# I want to create the area "cell" in this mesh which is the area name I will use in all meshes 
+# for the active area of the defice. I will not define the area here in detail but rather do the 
+# parametrization at the end (that makes it easier to play with parameters as then there is only 
+# one part fo this file where the simulation parameters are defined). However, to create an area 
+# I have to set something. In this case I use an electrode resistance.
+###################################################################################################
+#			<mesh>.<area>		electrode index		sheet resistance
+set_Rel			l/r_edge.cell		0			0.005
+assign_properties 	l/r_edge.cell
+
+###################################################################################################
+# The second mesh is the 0.2mm wide vertical finger on the left and right side of the cell
+###################################################################################################
+#		x1  y1		x2  	y2	Nx	Ny	name
+newmesh 	0.0 0.0 	0.02	0.1980645	1 	10	v_finger
+
+###################################################################################################
+# In this mesh we define the area "finger" and make all elemnts part of it.
+###################################################################################################
+#			<mesh>.<area>		electrode index		sheet resistance
+set_Rel			v_finger.finger	0			0.005
+assign_properties 	v_finger.finger
+
+###################################################################################################
+# Now we define the horizontal finger from the vertical finger to the first busbar
+###################################################################################################
+#		x1  y1		x2  		y2	Nx	Ny	name
+newmesh 	0.0 0.0 	1.89833333333	0.02	20 	1	h1_finger
+
+#			<mesh>.<area>		electrode index		sheet resistance
+set_Rel			h1_finger.finger	0			0.005
+assign_properties 	h1_finger.finger
+
+###################################################################################################
+# Above this finger we have active area up to the next finger
+###################################################################################################
+#		x1  y1		x2  	y2	Nx	Ny	name
+newmesh 	0.0 0.0 	1.89833333333	0.1780645	20 	3	h1_cell
+
+#			<mesh>.<area>		electrode index		sheet resistance
+set_Rel			h1_cell.cell		0			0.005
+assign_properties 	h1_cell.cell
+
+###################################################################################################
+# Tome to glue some things together. joinmesh_v joins meshes vertically, takes two input meshes 
+# and a horizontal offset (x_off) between them. joinmesh_v joins meshes vertically, takes two input 
+# meshes and a vertical offset between them. Likewise joinmesh_h joins horizontally.
+# The first join command joins the horizontal finger with the active area above it.
+###################################################################################################
+#		x_off	mesh1  		mesh2		mesh_out
+joinmesh_v 	0.0 	h1_finger	h1_cell		h1_finger+cell
+
+###################################################################################################
+# Join the l/r_edge with the vertical finger. We do this for the left side (first edge then finger)
+# amd for the right side (first finger then edge).
+###################################################################################################
+#		y_off	mesh1  		mesh2		mesh_out
+joinmesh_h	0.0	l/r_edge	v_finger	l_edge+v_finger
+joinmesh_h	0.0	v_finger	l/r_edge	v_finger+r_edge
+
+###################################################################################################
+# join the resulting meshes to a mesh decribing the left side of the cell up to the busbar
+# (l_edge2bb) and from the last bb to the right edge (bb2r_edge).
+###################################################################################################
+#		y_off	mesh1  		mesh2		mesh_out
+joinmesh_h	0.0	l_edge+v_finger	h1_finger+cell	l_edge2bb
+joinmesh_h	0.0	h1_finger+cell	v_finger+r_edge	bb2r_edge
+
+
+###################################################################################################
+# For now we do not define the busbar yet. We will do that later. To make sure the busbar fits 
+# well we make a 1.5 mm mesh which serves as a spacer. All elemenst will be part of the area cell.
+###################################################################################################
+newmesh 		0.0 0.0 	0.15	0.1980645	3 	4 	bb_spacer
+set_Rel			bb_spacer.cell	0	0.005
+assign_properties 	bb_spacer.cell
+
+
+###################################################################################################
+# The next two meshes describe the active area between two busbars and the finger between two 
+# busbars
+###################################################################################################
+newmesh 		0.0 0.0 	4.016666667	0.1780645	10 	3 	cell_bb2bb
+set_Rel			cell_bb2bb.cell	0	0.005
+assign_properties 	cell_bb2bb.cell
+
+newmesh 		0.0 0.0 	4.016666667	0.02	10 	1	finger_bb2bb
+set_Rel			finger_bb2bb.finger	0	0.005
+assign_properties 	finger_bb2bb.finger
+
+###################################################################################################
+# Join them together to get the section between two busbars
+###################################################################################################
+joinmesh_v 	0.0 	finger_bb2bb		cell_bb2bb	bb2bb
+
+###################################################################################################
+# We have all the meshes we need to complete one horizontal section of the cell. we start at the 
+# left and construct the line
+###################################################################################################
+#		y_off	mesh1  		mesh2		mesh_out
+# add busbar (bb) spacer
+joinmesh_h	0.0	l_edge2bb	bb_spacer	l_edge2bb+bb
+# add area between two bb's
+joinmesh_h	0.0	l_edge2bb+bb	bb2bb		l_edge2bb2nd
+# add bb spacer
+joinmesh_h	0.0	l_edge2bb2nd	bb_spacer	l_edge2bb2nd+bb
+# add area between two bb's
+joinmesh_h	0.0	l_edge2bb2nd+bb	bb2bb		l_edge2bb3rd
+# add bb spacer
+joinmesh_h	0.0	l_edge2bb3rd	bb_spacer	l_edge2bb3rd+bb
+# add the right edge
+joinmesh_h	0.0	l_edge2bb3rd+bb	bb2r_edge	cell_h	
+
+
+###################################################################################################
+# After this we have many meshes we do not need anymore, we remove them to save memory
+# we only keep cell_h.
+###################################################################################################
+rm l/r_edge
+rm v_finger
+rm h1_finger
+rm h1_cell
+rm h1_finger+cell
+rm l_edge+v_finger
+rm v_finger+r_edge
+rm l_edge2bb
+rm bb2r_edge
+rm bb_spacer
+rm cell_bb2bb
+rm finger_bb2bb
+rm bb2bb
+rm l_edge2bb+bb
+rm l_edge2bb2nd
+rm l_edge2bb2nd+bb
+rm l_edge2bb3rd
+rm l_edge2bb3rd+bb
+
+###################################################################################################
+# Step2: Stack the created mesh 62 times and add a single finger on top
+###################################################################################################
+# We stack the horizontal sections up to 62 fingers (the 63rd will be added later)
+###################################################################################################
+#		y_off	mesh1  		mesh2		mesh_out
+joinmesh_v 	0.0 	cell_h		cell_h		2cell_h
+joinmesh_v 	0.0 	2cell_h		2cell_h		4cell_h
+joinmesh_v 	0.0 	4cell_h		4cell_h		8cell_h
+joinmesh_v 	0.0 	8cell_h		8cell_h		16cell_h
+joinmesh_v 	0.0 	16cell_h	16cell_h	32cell_h
+joinmesh_v 	0.0 	32cell_h	16cell_h	48cell_h
+joinmesh_v 	0.0 	48cell_h	8cell_h		56cell_h
+joinmesh_v 	0.0 	56cell_h	4cell_h		60cell_h
+joinmesh_v 	0.0 	60cell_h	2cell_h		62cell_h
+
+###################################################################################################
+# Again we delete some stuff we do not need
+###################################################################################################
+rm cell_h
+rm 2cell_h
+rm 4cell_h
+rm 8cell_h
+rm 16cell_h
+rm 32cell_h
+rm 48cell_h
+rm 56cell_h
+rm 60cell_h
+
+
+###################################################################################################
+# the 63rd finger should be placed above the 62 fingers we have. This last horizontal section, 
+# however, should have no vertical finger and be only 200µm tall.
+# As the previous unneeded meshes are all deleted I can reuse some old names where appropriate.
+###################################################################################################
+newmesh 	0.0 0.0 	0.09		0.0200010	2 	1	l/r_edge
+set_Rel		l/r_edge.cell	0		0.005
+assign_properties l/r_edge.cell
+
+# finger edge to first busbar
+newmesh 	0.0 0.0 	1.918333333 	0.0200010	20 	1	finger_edge2bb
+set_Rel		finger_edge2bb.finger	0		0.005
+assign_properties finger_edge2bb.finger
+
+# finger at busbar
+newmesh 	0.0 0.0 	0.15	0.0200010	3 	1		finger_bb
+set_Rel		finger_bb.finger	0	0.005
+assign_properties finger_bb.finger
+
+# finger between busbars
+newmesh 	0.0 0.0 	4.016666667	0.0200010	40 	1	finger_bb2bb
+set_Rel		finger_bb2bb.finger	0	0.005
+assign_properties finger_bb2bb.finger
+
+
+
+###################################################################################################
+# Gluetime!
+###################################################################################################
+# edge up to bb
+joinmesh_h	0.0	l/r_edge	finger_edge2bb	l_edge2bb
+# add busbar
+joinmesh_h	0.0	l_edge2bb	finger_bb	l_edge2bb+bb
+# up to second busbar
+joinmesh_h	0.0	l_edge2bb+bb	finger_bb2bb	l_edge2bb2nd
+# add busbar
+joinmesh_h	0.0	l_edge2bb2nd	finger_bb	l_edge2bb2nd+bb
+# up to 3rd busbar
+joinmesh_h	0.0	l_edge2bb2nd+bb	finger_bb2bb	l_edge2bb3rd
+# add busbar
+joinmesh_h	0.0	l_edge2bb3rd	finger_bb	l_edge2bb3rd+bb
+# up to end of finger
+joinmesh_h	0.0	l_edge2bb3rd+bb	finger_edge2bb	l_edge2end_f
+# whole 63rd finger line
+joinmesh_h	0.0	l_edge2end_f	l/r_edge	fingerline
+# add on top of 62 fingers
+joinmesh_v 	0.0 	62cell_h	fingerline	63cell_h
+
+
+rm l/r_edge
+rm finger_bb
+rm l_edge2bb
+rm l_edge2bb+bb
+rm l_edge2bb2nd
+rm l_edge2bb2nd+bb
+rm l_edge2bb3rd
+rm l_edge2bb3rd+bb
+rm l_edge2end_f
+rm fingerline
+rm finger_edge2bb
+rm finger_bb2bb
+rm 62cell_h
+
+###################################################################################################
+# Step 3: create the top and bottom edges.
+###################################################################################################
+#		x1  y1		x2  		y2	Nx	Ny	name
+newmesh 	0.0 0.0 	2.008333333    	0.1	60 	3 	l/r_edge2bb
+set_Rel		l/r_edge2bb.cell	0	0.005
+assign_properties l/r_edge2bb.cell
+
+newmesh 	0.0 0.0 	0.15    	0.1	4 	3 	bb_spacer
+set_Rel		bb_spacer.cell	0	0.005
+assign_properties bb_spacer.cell
+
+newmesh 	0.0 0.0 	4.016666667	0.1	120 	3	bb2bb	
+set_Rel		bb2bb.cell	0	0.005
+assign_properties bb2bb.cell
+
+# edge up to bb+bb
+joinmesh_h	0.0	l/r_edge2bb	bb_spacer	l_edge2bb+bb
+# edge up to 2nd bb
+joinmesh_h	0.0	l_edge2bb+bb	bb2bb		l_edge2bb2nd
+# edge up to 2nd bb+bb
+joinmesh_h	0.0	l_edge2bb2nd	bb_spacer	l_edge2bb2nd+bb
+# edge up to 3rd bb
+joinmesh_h	0.0	l_edge2bb2nd+bb	bb2bb		l_edge2bb3rd
+# edge up to 3rd bb+bb
+joinmesh_h	0.0	l_edge2bb3rd	bb_spacer	l_edge2bb3rd+bb
+# a top or bottom edge
+joinmesh_h	0.0	l_edge2bb3rd+bb	l/r_edge2bb	edge-top/bottom
+
+rm l/r_edge2bb
+rm bb_spacer
+rm bb2bb	
+rm l_edge2bb+bb
+rm l_edge2bb2nd
+rm l_edge2bb2nd+bb
+rm l_edge2bb3rd
+rm l_edge2bb3rd+bb
+
+###################################################################################################
+# add edge-top/bottoms on top and bottom
+###################################################################################################
+joinmesh_v 	0.0 	edge-top/bottom		63cell_h	b_edge+63cell
+joinmesh_v 	0.0 	b_edge+63cell		edge-top/bottom	active_area
+
+rm edge-top/bottom
+rm b_edge+63cell
+rm 63cell_h
+
+
+###################################################################################################
+# Step 4: Add the busbars
+###################################################################################################
+# Now we will add the busbars. The busbars are slightly tapered at the top. The geometry of the 
+# three busbars is described in the files BusBar1-3.dat. The polygons in these files will be used 
+# to select the elements which will be turned into a busbar. The tapered end requires special
+# attention. To get the tapered end in we need a high resolution at the tapered ends.
+###################################################################################################
+# Improve resolution at the tapered ends
+#		x1	y1	x2	y2	<mesh>
+select_rect	2.0 	12.2 	2.16 	12.41 	active_area
+#		<mesh>		max edge length
+split_coarse 	active_area 0.005
+
+select_rect 	6.17 	12.2 	6.33 	12.41 	active_area
+split_coarse 	active_area 0.005
+
+select_rect 	10.34 	12.2 	10.5 	12.41 	active_area
+split_coarse 	active_area 0.005
+
+# define the area for the busbar+tabbing wire
+set_Rel		active_area.tab	0	0.005
+
+
+###################################################################################################
+# Load BusBar1.dat to define the first busbar. Note the deselect at the end. This is needed as 
+# selection commands are additive, i.e. a second selection commands selects a sub set of selected 
+# elements. The deselect allows loadine the second polygon and define the second busbar.
+###################################################################################################
+load_poly 		BusBar1.dat
+select_poly		active_area
+assign_properties 	active_area.tab
+deselect 		active_area
+
+###################################################################################################
+# Load BusBar2.dat to define the second busbar
+###################################################################################################
+load_poly 		BusBar2.dat
+select_poly		active_area
+assign_properties 	active_area.tab
+deselect 		active_area
+
+
+###################################################################################################
+# Load BusBar2.dat to define the second busbar
+###################################################################################################
+load_poly 		BusBar3.dat
+select_poly		active_area
+assign_properties 	active_area.tab
+deselect 		active_area
+
+###################################################################################################
+# Step 5: We need contacts!
+###################################################################################################
+# We have the cell more of less defined but contacts still fail
+# contacts at the top are at three locations (there where tabbing wire is connected).
+###################################################################################################
+#		x1  y1		x2  	y2	Nx	Ny	name
+newmesh 	0.0 0.0 	0.15   	0.15	1 	1 	tab_top
+
+newmesh 	0.0 0.0 	0.15   	0.15	1 	1 	tab_bot
+
+newmesh 	0.0 0.0 	2.0083333333   	0.15	1 	1 	spacer_side
+set_Rel		spacer_side.spacer	0	0.005
+assign_properties spacer_side.spacer
+
+newmesh 	0.0 0.0 	4.016666667   	0.15	1 	1 	spacer_center
+set_Rel		spacer_center.spacer	0	0.005
+assign_properties spacer_center.spacer
+
+joinmesh_h 0.0	spacer_side 		tab_top 		s+t
+joinmesh_h 0.0	s+t 			spacer_center 		s+t+c
+joinmesh_h 0.0	s+t+c 			tab_top			s+t+c+t
+joinmesh_h 0.0	s+t+c+t			spacer_center 		s+t+c+t+c
+joinmesh_h 0.0	s+t+c+t+c		tab_top			s+t+c+t+c+t
+joinmesh_h 0.0	s+t+c+t+c+t		spacer_side		tab_top_line
+
+joinmesh_h 0.0	spacer_side 		tab_bot			s+b
+joinmesh_h 0.0	s+b 			spacer_center 		s+b+c
+joinmesh_h 0.0	s+b+c 			tab_bot		s+b+c+b
+joinmesh_h 0.0	s+b+c+b			spacer_center 		s+b+c+b+c
+joinmesh_h 0.0	s+b+c+b+c		tab_bot			s+b+c+b+c+b
+joinmesh_h 0.0	s+b+c+b+c+b		spacer_side		tab_bot_line
+
+rm tab_top
+rm tab_bot
+rm spacer_side
+rm spacer_center
+rm s+t
+rm s+t+c
+rm s+t+c+t
+rm s+t+c+t+c
+rm s+t+c+t+c+t
+rm s+b
+rm s+b+c
+rm s+b+c+b
+rm s+b+c+b+c
+rm s+b+c+b+c+b
+
+
+###################################################################################################
+# we join the meshes vertically and use the offsets to position the tabbing wires
+###################################################################################################
+joinmesh_v	0.0		active_area		tab_top_line	active_areacp
+joinmesh_v	0.0		tab_bot_line		active_areacp	complete_cell
+
+rm active_areacp
+rm tab_top_line
+rm tab_bot_line
+
+###################################################################################################
+# Uncomment the following if you want to simulate what your solar cell is worth (at least 
+# efficiency wise) after some misfit under the name Banksy decided to spay-paint a rat hanging 
+# from a parachute on the solar cell.
+###################################################################################################
+## First we load a polygon describing the graffiti
+#load_poly graffiti.dat
+#
+## The graffiti will shade the solar cell beneath it so we make an area "shade"
+#set_1DJV 	complete_cell.shade	0	1e-12 	1.0 	0.0 	1e-5 	1e5	1.12
+#set_Rel		complete_cell.shade	1	40
+#set_Rel		complete_cell.shade	0	0.005
+#
+## the mesh it rather coarse in many places so we better first refine he mesh
+## We do this only locally for the elements close to the polygon contour. This command selects
+## elements close to the contour (i.e. less than 0.7 cm from the contour)
+#select_poly_contour 0.7 1 complete_cell
+#
+## The elements are split to a resolution of about 300x300µm^2
+#split_coarse complete_cell 0.03
+#
+## We deselect the contour
+#deselect complete_cell 
+#
+## Using still the same polygon we select all elements *within* the polygon
+#select_poly complete_cell
+#
+## These elemens will be shaded. This only affects the area cell so we make a sub-selection for 
+## the area cell
+#select_area complete_cell.cell
+#
+## those elements are assigned to the area shade
+#assign_properties 	complete_cell.shade
+#
+###################################################################################################
+
+
+
+
+
+###################################################################################################
+# The geometry definition is now complete. We finish the initial mesh off by simplifying the
+# mesh a bit.
+###################################################################################################
+simplify complete_cell
+
+
+###################################################################################################
+# Step 6: Now for the parametrization
+###################################################################################################
+# active cell area
+set_1DJV 	complete_cell.cell	0	1e-12 	1.0 	0.037 	1e-5 	1e5	1.12
+set_Rel		complete_cell.cell	1	40
+set_Rel		complete_cell.cell	0	0.005
+
+# grid fingers
+set_1DJV 	complete_cell.finger	0	1e-12 	1.0 	0.0 	1e-5 	1e5	1.12
+set_Rel		complete_cell.finger	1	0.1
+set_Rel		complete_cell.finger	0	0.005
+
+# busbar with tabbing wire
+set_1DJV 	complete_cell.tab 	0	1e-12 	1.0 	0.0 	1e-5 	1e5	1.12
+set_Rel		complete_cell.tab	1	0.0005
+set_Rel		complete_cell.tab	0	0.005
+
+# positive contact (tabbing wires at the top)
+set_R 		complete_cell.tab_top 	0	1e20
+set_Rel		complete_cell.tab_top	1	1e8
+set_Rel		complete_cell.tab_top	0	0.0005
+set_Rvp		complete_cell.tab_top	0	1e-8
+set_SplitX	complete_cell.tab_top
+set_SplitY	complete_cell.tab_top
+
+# negative contact (tabbing wires at the bottom)
+set_R 		complete_cell.tab_bot 	0	1e20
+set_Rel		complete_cell.tab_bot	1	0.005
+set_Rel		complete_cell.tab_bot	0	1e8
+set_Rvn		complete_cell.tab_bot	1	1e-8
+set_SplitX	complete_cell.tab_bot
+set_SplitY	complete_cell.tab_bot
+
+# spacer (isolating)
+set_R 		complete_cell.spacer 	0	1e8
+set_Rel		complete_cell.spacer	1	1e20
+set_Rel		complete_cell.spacer	0	1e20
+set_SplitX	complete_cell.spacer
+set_SplitY	complete_cell.spacer
+
+
+###################################################################################################
+# Output some data to inspect the meshes
+###################################################################################################
+printarea complete_cell celldefs.dat
+printpars complete_cell cellpars.dat
+
+
+###################################################################################################
+# Step 7: Mesh refinement
+###################################################################################################
+# After simplifying the mesh became a bit too coarse, we refine it first by specifying a maximal
+# element edge length. We print the initial mesh for inspection
+###################################################################################################
+split_coarse complete_cell 0.07
+printmesh complete_cell mesh0.dat
+ 
+###################################################################################################
+# Best do a few itarations of adapting the mesh to the potential distributions.
+###################################################################################################
+adaptive_solve 	complete_cell 	0.0 	0.3	3
+printmesh complete_cell mesh1.dat
+ 
+
+###################################################################################################
+# Step 8: Simulate!
+###################################################################################################
+# Run IV sweep, export some potentials and an IV curve
+###################################################################################################
+solve 		complete_cell 	0 	1 	21 
+printV_sel  	complete_cell 0 0.02 3 3 meshpot.dat
+surfVplot 	complete_cell 0 0.15 12.5 12.65 1000 1000 0.6 Pot_06.dat
+surfVplot 	complete_cell 0 0.15 12.5 12.65 1000 1000 0.0 Pot_00.dat
+printIV 	complete_cell IV.dat

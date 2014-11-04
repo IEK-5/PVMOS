@@ -1,0 +1,65 @@
+PVMOS input file for a c-Si:H cell with three busbars
+In this example I show how you can script a mesh together
+In general the method a shown in the Pinup example is much simpler to do. However, if you
+know what you are doing this method has the advantage of being fast and does not require any 
+other tool than PVMOS. The downside is that it is tedious and offers oppurtunities to shoot 
+yourself in the foot.
+
+In PVMOS you have several tools to "script" a mesh, i.e. define a mesh by a sequence of 
+commands. I refer to the manual for a reference of the available commands to do this. In
+this example I will show how one can define a crystalline silicon solar cell with a typical 
+grid and three busbars. Here is a schemetic ASCII-art of the cell design:
+
+                   o---------------- 125 mm --------------------o
+                   +--------------------------------------------+   o
+                   |      |               |              |      |   |
+                   | +----|---------------|--------------|----+ |   |
+                   | |    |               |              |    | |   |
+                   | +----|---------------|--------------|----+ |   |
+                   | |    |               |              |    | |   |
+                   | +----|---------------|--------------|----+ |   |
+   Fingers:        | |    |               |              |    | |   |
+   width: 0.2mm  \ | +----|---------------|--------------|----+ |   |
+   63 lines       \| |    |               |              |    | |   125 mm
+   distance:       \ +----|---------------|--------------|----+ |   |
+   1.98387         |\|    |               |              |    | |   |
+   length: 123     | +----|---------------|--------------|----+ |   |
+                   | |    |               |              |    | |   |
+                   | +----|---------------|--------------|----+ |   |
+                   | |    |               |              |    | |   |
+                   | +----|---------------|--------------|----+ |   |
+                   | |    |               |              |    | |   |
+                   | +----|---------------|--------------|----+ |   |
+                   |      |               |              |      |   |
+                   +--------------------------------------------+   o
+                           \               \              \
+                             20.08333..      61.75          103.4166..
+                                 -             -                -
+                             21.58333..      63.25          104.9166..
+
+
+
+Thus we have three busbars which are 1.5 mm wide. There are 63 horizontal fingers of 200µm wide.
+The fingers have a spacing of 1.98387 mm. The fingers are 123mm long (i.e. there is a 1mm edge
+around the cell without fingers). There are two vertical fingers at the left and right side.
+
+If you define a regular mesh for the cell you will find you have to fit many geomeric details in 
+the mesh. For example the positions of the busbars, the positions of the fingers, the width of the 
+fingers the width of the busbars, etc. If you want to use a regular mesh for that you will 
+probably end up with a quite high number of elements, or, a mesh where for example the busbar width 
+is not accurate. 
+
+In this example we avoid that by not defining one regular mesh but defining many regular meshes 
+which we glue together. This way I can define a variable mesh which fits in all geometric details 
+with much less elements as compared to a regular mesh.
+
+I will built up my cell in several steps:
+- I first create a horizontal section of the cell which includes one horizontal finger and the 
+  height spans exactly the finger spacing (The busbars are not yet defined in this mesh but a 
+  space is built in which is exactly the width of the busbars so it can be accurately defined 
+  later).
+- The mesh defined above is stacked 62 times to get 62 horizontal fingers.
+- Create the busbars
+- Add meshes at the top and bottom to contact the cell
+  
+All these steps are taken in the PVMOS input file "CSiSTD.mos".
