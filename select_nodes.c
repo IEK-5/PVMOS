@@ -177,7 +177,78 @@ int IsInPolygon(polygon P, double x, double y)
 		return 1;
 }
 
+int IsNearPolygon(polygon P, double x, double y, double D, int loop)
+{
+	int i;
+	double dx, dy, xx, yy, d;
+	D=D*D;
+	
+	for (i=0;i<P.N-1;i++)
+	{
+		/* check endpoints */
+		d=(x-P.x[i+1])*(x-P.x[i+1])+(y-P.y[i+1])*(y-P.y[i+1]);
+		if (d<D)
+			return 1;
+		d=(x-P.x[i])*(x-P.x[i])+(y-P.y[i])*(y-P.y[i]);
+		if (d<D)
+			return 1;
+			
+		/* compute distance point to line */
+		/* line dx and dy values */
+		dx=P.x[i+1]-P.x[i];
+		dy=P.y[i+1]-P.y[i];
+		/* if the line is actually a point we can ignore it as we already checked the distance to he endpoints */
+		if ((dy*dy+dx*dx)>TINY)
+		{
+			/* Intersectipon point, perhaps not so readable but trust me, it is correct :) */
+			xx=(dx*dy*y-dx*dy*P.y[i]+dx*dx*x+dy*dy*P.x[i])/(dy*dy+dx*dx);
+			yy=(dy*dy*y+dx*dx*P.y[i]+dx*dy*x-dx*dy*P.x[i])/(dy*dy+dx*dx);
+			
+			/* perhaps not so readable but trust me, it is correct :) */
+			if (((P.x[i]-xx)*(P.x[i+1]-xx)<=0)&&((P.y[i]-yy)*(P.y[i+1]-yy)<=0))
+			{
+				d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
+				if (d<D)
+					return 1;
+			}
+		}
+	}
+	if (loop)
+	{
+		/* check endpoints */
+		d=(x-P.x[0])*(x-P.x[0])+(y-P.y[0])*(y-P.y[0]);
+		if (d<D)
+			return 1;
+		d=(x-P.x[P.N-1])*(x-P.x[P.N-1])+(y-P.y[P.N-1])*(y-P.y[P.N-1]);
+		if (d<D)
+			return 1;
+			
+		/* compute distance point to line */
+		/* line dx and dy values */
+		dx=P.x[0]-P.x[P.N-1];
+		dy=P.y[0]-P.y[P.N-1];
+		/* if the line is actually a point we can ignore it as we already checked the distance to he endpoints */
+		if ((dy*dy+dx*dx)>TINY)
+		{
+			/* Intersectipon point, perhaps not so readable but trust me, it is correct :) */
+			xx=(dx*dy*y-dx*dy*P.y[P.N-1]+dx*dx*x+dy*dy*P.x[P.N-1])/(dy*dy+dx*dx);
+			yy=(dy*dy*y+dx*dx*P.y[P.N-1]+dx*dy*x-dx*dy*P.x[P.N-1])/(dy*dy+dx*dx);
+			
+			/* perhaps not so readable but trust me, it is correct :) */
+			if (((P.x[P.N-1]-xx)*(P.x[0]-xx)<=0)&&((P.y[P.N-1]-yy)*(P.y[0]-yy)<=0))
+			{
+				d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
+				if (d<D)
+					return 1;
+			}
+		}
+	}
+	return 0;
+
+}
+
 int * PolySelectNodes(polygon P, mesh M, int *sel_nodes) 
+/* selects nodes within a polygon */
 {
 	int i, *old_sel;
 	
@@ -205,6 +276,38 @@ int * PolySelectNodes(polygon P, mesh M, int *sel_nodes)
 	}
 	if (sel_nodes[0]==0)
 		Warning("No nodes selected in PolySelectNodes\n");
+	return sel_nodes;		
+}
+
+int * PolyContourSelectNodes(double d, polygon P, int loop, mesh M, int *sel_nodes) 
+/* selects nodes around the contour described by a polygon */
+{
+	int i, *old_sel;
+	
+	if (sel_nodes[0]>0)
+	{
+		/* make selection within selection */
+		old_sel=DuplicateList(sel_nodes);
+		sel_nodes[0]=0;
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+		{
+			node *N;
+			N=SearchNode(M, old_sel[i]);			
+			if (IsNearPolygon(P, (N->x1+N->x2)/2, (N->y1+N->y2)/2, d,loop))
+				sel_nodes=AddToList(sel_nodes, N->id);
+		}		
+		free(old_sel);			
+	}
+	else
+	{
+		/* make new selection */
+		for (i=0;i<M.Nn;i++)
+			if (IsNearPolygon(P, (M.nodes[i].x1+M.nodes[i].x2)/2, (M.nodes[i].y1+M.nodes[i].y2)/2, d, loop))
+				sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+	}
+	if (sel_nodes[0]==0)
+		Warning("No nodes selected in PolyContourSelectNodes\n");
 	return sel_nodes;		
 }
 

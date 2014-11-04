@@ -261,7 +261,7 @@ node *SearchNode(mesh M, int id)
 	if (M.nodes[max].id==id)
 		return M.nodes+max;
 	
-	Print(DEBUG,"Chaos reighns the mesh!\nStarting a slow, exhaustive search for the requested node\n");	
+	Print(DEBUG,"Chaos reighns the mesh!\nStarting a slow, exhaustive search for the requested node");	
 	/* we can of course always search through the whole list  in case you make a mess of your mesh */
 	while (i<M.Nn)
 	{
@@ -284,13 +284,13 @@ void SearchLink(mesh M, int id)
 	for (i=0;i<M.Nn;i++)
 	{
 		if (IsInList(M.nodes[i].north, id))
-			Print(DEBUG, "node %d linked by %d.north\n",id, M.nodes[i].id);
+			Print(DEBUG, "node %d linked by %d.north",id, M.nodes[i].id);
 		if (IsInList(M.nodes[i].south, id))
-			Print(DEBUG, "node %d linked by %d.south\n",id, M.nodes[i].id);	
+			Print(DEBUG, "node %d linked by %d.south",id, M.nodes[i].id);	
 		if (IsInList(M.nodes[i].west, id))
-			Print(DEBUG, "node %d linked by %d.west\n",id, M.nodes[i].id);
+			Print(DEBUG, "node %d linked by %d.west",id, M.nodes[i].id);
 		if (IsInList(M.nodes[i].east, id))
-			Print(DEBUG, "node %d linked by %d.east\n",id, M.nodes[i].id);
+			Print(DEBUG, "node %d linked by %d.east",id, M.nodes[i].id);
 	}
 }
 
@@ -613,7 +613,7 @@ void AddElectrode(mesh *M)
 	for (i=0;i<M->Na;i++)
 	{
 		/* extend the properties arrays to add the new electrode */
-		Print(NORMAL,"Please define the properties for electrode %d in area %s\n", M->Nel, M->P[i].name);	
+		Print(NORMAL,"Please define the properties for electrode %d in area %s", M->Nel, M->P[i].name);	
 		M->P[i].Rel=realloc(M->P[i].Rel, (M->Nel+1)*sizeof(double));
 		M->P[i].Rvp=realloc(M->P[i].Rvp, (M->Nel+1)*sizeof(double));
 		M->P[i].Rvn=realloc(M->P[i].Rvn, (M->Nel+1)*sizeof(double));	
@@ -1093,7 +1093,7 @@ void SplitMeshWhileCoarse(mesh *M, double d)
 	
 	do
 	{
-		Print(DEBUG, "%i elements to check %i\n",list[0], c);
+		Print(DEBUG, "%i elements to check %i",list[0], c);
 		c++;
 		for (i=list[0];i>0;i--) 
 		{
@@ -1175,7 +1175,7 @@ void SplitListWhileCoarse(mesh *M, int *list, double d)
 	newlist[0]=0;
 	do
 	{
-		Print(DEBUG, "%i elements to check\n",list_c[0]);
+		Print(DEBUG, "%i elements to check",list_c[0]);
 		for (i=list_c[0];i>0;i--) 
 		/* Careful: This loop walks backward through the list. The reason is that any newly created node will end up at the 
 		  back or the list (as the lists are sorted and newly created lists have indices at the end of the node list). By walking
@@ -1327,7 +1327,7 @@ void Chunkify_east(mesh *M)
 	node *N, *Nl;
 	merged=malloc(LISTBLOCK*sizeof(int));
 	merged[0]=0;
-	Print(DEBUG,"Chunkify_east\n");
+	Print(DEBUG,"Chunkify_east");
 	for (i=0;i<M->Nn;i++)
 	{
 		if (!IsInList(merged, M->nodes[i].id))
@@ -1361,7 +1361,7 @@ void Chunkify_east(mesh *M)
 			if ((MRG)&&(N->east[0]>0))
 			{
 				int *a_nodes;
-				Print(DEBUG, "R: %e\n",R);
+				Print(DEBUG, "R: %e",R);
 				a_nodes=malloc(LISTBLOCK*sizeof(int));
 				a_nodes[0]=0;
 				
@@ -1445,7 +1445,7 @@ void Chunkify_west(mesh *M)
 	node *N, *Nl;
 	merged=malloc(LISTBLOCK*sizeof(int));
 	merged[0]=0;
-	Print(DEBUG,"Chunkify_west\n");
+	Print(DEBUG,"Chunkify_west");
 	
 	for (i=0;i<M->Nn;i++)
 	{
@@ -1478,7 +1478,7 @@ void Chunkify_west(mesh *M)
 			if ((MRG)&&(N->west[0]>0))
 			{
 				int *a_nodes;
-				Print(DEBUG, "R: %e\n",R);
+				Print(DEBUG, "R: %e",R);
 				a_nodes=malloc(LISTBLOCK*sizeof(int));
 				a_nodes[0]=0;
 				
@@ -1561,7 +1561,7 @@ void Chunkify_north(mesh *M)
 	node *N, *Nl;
 	merged=malloc(LISTBLOCK*sizeof(int));
 	merged[0]=0;
-	Print(DEBUG,"Chunkify_north\n");
+	Print(DEBUG,"Chunkify_north");
 	
 	for (i=0;i<M->Nn;i++)
 	{
@@ -1591,7 +1591,7 @@ void Chunkify_north(mesh *M)
 			if ((MRG)&&(N->north[0]>0))
 			{
 				int *a_nodes;
-				Print(DEBUG, "R: %e\n",R);
+				Print(DEBUG, "R: %e",R);
 				a_nodes=malloc(LISTBLOCK*sizeof(int));
 				a_nodes[0]=0;
 				
@@ -1672,7 +1672,7 @@ void Chunkify_south(mesh *M)
 	node *N, *Nl;
 	merged=malloc(LISTBLOCK*sizeof(int));
 	merged[0]=0;
-	Print(DEBUG,"Chunkify_south\n");
+	Print(DEBUG,"Chunkify_south");
 	
 	for (i=0;i<M->Nn;i++)
 	{
@@ -1703,7 +1703,7 @@ void Chunkify_south(mesh *M)
 			if ((MRG)&&(N->south[0]>0))
 			{
 				int *a_nodes;
-				Print(DEBUG, "R: %e\n",R);
+				Print(DEBUG, "R: %e",R);
 				a_nodes=malloc(LISTBLOCK*sizeof(int));
 				a_nodes[0]=0;
 				
@@ -2221,18 +2221,18 @@ void Chunkify_(mesh *M, int J)
 		Nold=M->Nn;
 		skip=J;
 		offset=J;
-		Print(DEBUG,"Skip:%i Offset %i\n",skip,offset);
+		Print(DEBUG,"Skip:%i Offset %i",skip,offset);
 		Chunkify_nodes_(M, skip, 0);
 		offset/=2;
 		while (skip>1)
 		{
-			Print(DEBUG,"Skip:%i Offset %i\n",skip,offset);
+			Print(DEBUG,"Skip:%i Offset %i",skip,offset);
 			Chunkify_nodes_(M, skip, offset);
 			offset/=2;
 			skip/=2;
 		}
 		i++;
-		Print(DEBUG,"Round %i, %i nodes left\n",i, M->Nn);
+		Print(DEBUG,"Round %i, %i nodes left",i, M->Nn);
 	}
 }
 
@@ -2314,7 +2314,7 @@ void Chunkify(mesh *M)
 		Shuffle (list);
 		skip=J;
 		offset=J;
-		Print(DEBUG,"Skip:%i Offset %i %i\n",skip,offset,M->Nn);
+		Print(DEBUG,"Skip:%i Offset %i %i",skip,offset,M->Nn);
 		Chunkify_nodes(M,  list, skip, 0);
 		list[0]=M->Nn;
 		for (j=0;j<M->Nn;j++)
@@ -2322,14 +2322,14 @@ void Chunkify(mesh *M)
 		offset/=2;
 		while (skip>1)
 		{
-			Print(DEBUG,"Skip:%i Offset %i %i\n",skip,offset,M->Nn);
+			Print(DEBUG,"Skip:%i Offset %i %i",skip,offset,M->Nn);
 			list[0]=M->Nn;
 			Chunkify_nodes(M, list, skip, offset);
 			offset/=2;
 			skip/=2;
 		}
 		i++;
-		Print(DEBUG,"Round %i, %i nodes left\n",i, M->Nn);
+		Print(DEBUG,"Round %i, %i nodes left",i, M->Nn);
 	}
 }
 

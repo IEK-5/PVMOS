@@ -542,7 +542,7 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 	cholmod_factorize (J, F, c) ;
 	if (c->nmethods >1)
 	{
-		Print(DEBUG, "Selected ordering: %i\n", c->selected);
+		Print(DEBUG, "Selected ordering: %i", c->selected);
 		c->nmethods = 1 ;
 		c->method [0].ordering =  c->method [c->selected].ordering;
 	}
@@ -576,7 +576,7 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 		i++;	
 	}
 	if (i>1)
-		Print(NORMAL,"Step size reduced by a factor of %e\n",a*2);
+		Print(NORMAL,"Step size reduced by a factor of %e",a*2);
 	if (!Vout)
 		free(vv);
 	cholmod_free_dense(&res, c);
@@ -615,8 +615,8 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 	double *V, *Vout, *vv;
 	int i, j, k;
 	clock_t start, end;
-	Print(NORMAL, "________________________________________________________________\n");
-	Print(NORMAL, "Mesh with %d layers, each with %d elements\n", M->Nel, M->Nn);
+	Print(NORMAL, "________________________________________________________________");
+	Print(NORMAL, "Mesh with %d layers, each with %d elements", M->Nel, M->Nn);
 	cholmod_start (&c);
 	c.nmethods = 2 ; /* seems that metis leads to less memory (less than 10% improvement) but it comes at a considerable speed penalty (up to a factor of 2!) */ 
 	                 /* this avoids metis (if you have it enabled in your cholmod version */
@@ -627,8 +627,8 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
      	end = clock();
 	cpu_time_system+=((double) (end - start)) / CLOCKS_PER_SEC;
 	
-	Print(NORMAL, "Va          iter    Ev          Ev_rel      Ekcl        Ekcl_rel\n");
-	Print(NORMAL, "----------------------------------------------------------------\n");
+	Print(NORMAL, "Va          iter    Ev          Ev_rel      Ekcl        Ekcl_rel");
+	Print(NORMAL, "----------------------------------------------------------------");
 	
 	V=calloc((M->Nel*M->Nn+1),sizeof(double));
 	Vout=calloc((M->Nel*M->Nn+1),sizeof(double));
@@ -671,16 +671,16 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 			vv=Vout;
 			Vout=V;
 			V=vv;
-			Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e\n",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
+			Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
 			i++;
 		} while ((i<max_iter)&&(((Ekcl>tol_kcl_abs)&&(Ekcl_rel>tol_kcl_rel))||((Ev>tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>tol_v_rel))));
 		if (verbose<VERBOSE)
-			Print(NORMAL, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e\n",Va, i,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
+			Print(NORMAL, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, i,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
 	
 		for (j=0;j<M->Nel*M->Nn;j++)				
 			M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]=V[j];	
 	}
-	Print(NORMAL, "----------------------------------------------------------------\n");
+	Print(NORMAL, "----------------------------------------------------------------");
 	free(V);
 	free(Vout);
 	cholmod_free_sparse(&S, &c);	
@@ -732,7 +732,7 @@ void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 		}
 	}
 	dvmax*=rel_threshold;
-	Print(NORMAL,"Split threshold set to %e V\n", dvmax);
+	Print(NORMAL,"Split threshold set to %e V", dvmax);
 	Nno=M->Nn;
 	for (i=0;i<Nno;i++)
 	{
@@ -788,10 +788,10 @@ double AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double t
 	
 	for (i=0;i<N;i++)
 	{
-		Print(NORMAL, "Adapting mesh iteration %d\n",i+1);
+		Print(NORMAL, "Adapting mesh iteration %d",i+1);
 		fflush(stdout);
 		AdaptMesh(M, M->res.Nva-1, rel_threshold);
-		Print(NORMAL, "Solving System\n");
+		Print(NORMAL, "Solving System");
 		fflush(stdout);
 		SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
 		E=0;
@@ -799,7 +799,7 @@ double AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double t
 			E+=(M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]-M->res.Vn[M->res.Nva-2][j/M->Nn][j%M->Nn])*(M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]-M->res.Vn[M->res.Nva-2][j/M->Nn][j%M->Nn]);
 		E/=(double)(M->Nel*M->Nn);
 		E=sqrt(E);
-		Print(NORMAL, "Adapt Mesh Error: %e\n\n",E);
+		Print(NORMAL, "Adapt Mesh Error: %e\n",E);
 		for (j=0;j<M->Nel;j++)
 		{
 			free(M->res.Vn[M->res.Nva-2][j]);
@@ -819,13 +819,13 @@ double *CollectionEfficiency(mesh *M, int *list, double Va, double dJph, double 
 	int i, j, Na;
 	
 
-	Print(NORMAL, "________________________________________________________________\n");
+	Print(NORMAL, "________________________________________________________________");
 	Print(NORMAL, "Solving operating point using a Mesh with %d elements\n", M->Nn);
 	cholmod_start (&c);
 	S=SystemMatrix(*M, &c);	
 	
-	Print(NORMAL, "Va          iter    Ev          Ev_rel      Ekcl        Ekcl_rel\n");
-	Print(NORMAL, "----------------------------------------------------------------\n");
+	Print(NORMAL, "Va          iter    Ev          Ev_rel      Ekcl        Ekcl_rel");
+	Print(NORMAL, "----------------------------------------------------------------");
 	
 	i=FindVa(Va, M->res.Va, M->res.Nva);
 		
@@ -844,13 +844,13 @@ double *CollectionEfficiency(mesh *M, int *list, double Va, double dJph, double 
 	do
 	{
 		NewtonStep(*M, M->res.Vn[M->res.Nva-1], M->res.Vn[M->res.Nva-1],Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,S, &c);
-		Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e\n",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
+		Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
 		i++;
 	} while ((i<max_iter)&&(((Ekcl>tol_kcl_abs)&&(Ekcl_rel>tol_kcl_rel))||((Ev>tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>tol_v_rel))));
 	if (verbose<VERBOSE)
-		Print(NORMAL, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e\n",Va, i,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
+		Print(NORMAL, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e",Va, i,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
 	
-	Print(NORMAL, "----------------------------------------------------------------\n");
+	Print(NORMAL, "----------------------------------------------------------------");
 
 
 

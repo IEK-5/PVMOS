@@ -49,16 +49,61 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <ctype.h>
 #include "main.h"
 #include "mesh2d.h"
 #include "utils.h"
+#define LINE_WIDTH 65
+#define LINE_SKIP 12
 
 void Print(VERB_LEVEL v_level, const char *format_str, ...)
 {
       	va_list ap;
       	va_start (ap, format_str);
 	if (v_level<=verbose)
-		vprintf(format_str, ap);
+	{
+		int numc;
+		char * s;
+		s=malloc((LINE_WIDTH+1)*sizeof(char));
+		numc=vsnprintf(s, LINE_WIDTH*sizeof(char), format_str, ap);
+		if (numc>LINE_WIDTH+1)
+		{
+			int br, i;
+			char *newline, c;
+			/* allocate more space and break result at last whitespace */
+			s=realloc(s,(numc+1)*sizeof(char));
+			numc=vsnprintf(s, (numc+1)*sizeof(char), format_str, ap);
+			newline=s;
+			while (strlen(newline)>LINE_WIDTH+1)
+			{
+				br=LINE_WIDTH-1;
+				while ((!isblank(newline[br]))&&(br>0))
+					br--;
+				if (br!=0)
+				{
+					newline[br]='\0';
+					printf("%s\n",newline);
+					for (i=0;i<LINE_SKIP;i++)
+						newline[br-i]=' ';
+					newline=newline+br-i+1;
+					
+				}
+				else
+				{
+					c=newline[LINE_WIDTH-1];
+					newline[LINE_WIDTH-1]='\0';
+					printf("%s",newline);
+					newline+=LINE_WIDTH-1;
+					newline[0]=c;
+				}
+			}
+			printf("%s\n",newline);
+		}
+		else
+			printf("%s\n",s);	
+		free(s);
+		/* vprintf(format_str, ap);*/
+	}
 }
 
 void Error( const char *format_str, ...)

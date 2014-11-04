@@ -78,6 +78,7 @@ function WriteMOSFile(fn, shunts)
 			% select and assign the area that is to be shunted
 			fprintf(f,"select_circ %e %e %e module\n", shunts(i,1), shunts(i,2), shunts(i,3));
 			fprintf(f,"assign_properties module.shunt%i\n", i);
+			fprintf(f,"deselect module\n");
 		endfor
 		fprintf(f,"solve 	module 	0 25 	3\n");
 		% adapt the mesh at 25V

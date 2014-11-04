@@ -121,6 +121,30 @@ static char *GetWord (char *begin, char *word)
 	return begin;
 }
 
+
+static char **GetArgs (char **begin, int Nw)
+{
+	char ** res;
+	int i;
+	res=malloc((Nw+1)*sizeof(char *));
+	for (i=0;i<Nw;i++)
+	{
+		res[i]=malloc((MAXSTRLEN)*sizeof(char));
+		(*begin)=GetWord ((*begin), res[i]);
+		if(res[i][0]=='\0')
+			return NULL;	
+	}
+	return res;
+}
+
+void FreeArgs (char **res, int Nw)
+{
+	int i;
+	for (i=0;i<Nw;i++)
+		free(res[i]);
+	free(res);
+}
+
 /* looks up a mesh by its name in the meshes array */
 /* a mesh vbariable consists of
 	1: a name
@@ -243,11 +267,11 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 	if (!MV)
 		Error("In SelectRectNodes: Mesh %s is not defined\n", name);
 	if (MV->nodes[0]>0)	
-		Print(NORMAL,"            -->  Making sub-selection\n");
+		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=RectSelectNodes(x1, y1, x2, y2, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectRectNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
-	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
+		Error("In SelectRectNodes: No nodes selected, try selecting a larger area or refine the mesh first");
+	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
 }
 /* select circular area in a mesh variable */
 /* Input: 
@@ -267,11 +291,11 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 	if (!MV)
 		Error("In SelectCircNodes: Mesh %s is not defined\n", name);
 	if (MV->nodes[0]>0)	
-		Print(NORMAL,"            -->  Making sub-selection\n");
+		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=CircSelectNodes(x, y, r, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectCircNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
-	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
+	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
 }
 /* select area enclosed by a polygon in a mesh variable */
 /* Input: 
@@ -289,11 +313,24 @@ void SelectPolyNodes (char *name,  meshvar * meshes, int Nm, polygon P)
 	if (!MV)
 		Error("In SelectPolyNodes: Mesh %s is not defined\n", name);
 	if (MV->nodes[0]>0)	
-		Print(NORMAL,"            -->  Making sub-selection\n");
+		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=PolySelectNodes(P, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectPolyNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
-	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
+	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+}
+void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, double d, int loop)
+{
+	meshvar *MV;
+	MV=LookupMesh (name,  meshes, Nm);
+	if (!MV)
+		Error("In SelectPolyContourNodes: Mesh %s is not defined\n", name);
+	if (MV->nodes[0]>0)	
+		Print(NORMAL,"            -->  Making sub-selection");
+	MV->nodes=PolyContourSelectNodes(d, P, loop,MV->M, MV->nodes);
+	if (MV->nodes[0]==0)
+		Error("In SelectPolyContourNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
+	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
 }
 
 void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
@@ -313,11 +350,11 @@ void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
 	if (!MV)
 		Error("In SelectAreaNodes: Mesh %s is not defined\n", name);
 	if (MV->nodes[0]>0)	
-		Print(NORMAL,"            -->  Making sub-selection %s\n", name+i+1);
+		Print(NORMAL,"            -->  Making sub-selection %s", name+i+1);
 	MV->nodes=SelectArea(MV->M, MV->nodes, name+i+1);
 	if (MV->nodes[0]==0)
 		Error("In SelectAreaNodes: No nodes selected.\n");
-	Print(NORMAL,"            -->  %d nodes selected\n",MV->nodes[0]);
+	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
 }
 
 /* looks up an area within a mesh by its name in the meshes array */
@@ -394,48 +431,26 @@ void Parse (char *file)
 					case NEWMESH:
 					{
 						double x1, x2, y1, y2;
+						char **args;
 						char *name;
 						int Nx, Ny, len;
-						/* read next word and process, if no next word trow an error */
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						x1=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						y1=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						x2=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						y2=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						Nx=atoi(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						Ny=atoi(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						args=GetArgs (&begin, 7);
+						if (args==NULL)
 							goto premature_end;	
-						len=strlen(word);
-						name=malloc((len+2)*sizeof(char));
-						name=strncpy(name,word,len+1);	
+						Print(NORMAL,"* line %3d: Creating new mesh %s", line_nr, args[6]);
 						
-						Print(NORMAL,"* line %3d: Creating new mesh %s\n", line_nr, word);
-						AddMeshVar (InitMesh(word, x1, x2, y1, y2, Nx, Ny), &name,  &Meshes, &Nm);
+								
+						x1=atof(args[0]);		
+						y1=atof(args[1]);	
+						x2=atof(args[2]);		
+						y2=atof(args[3]);								
+						Nx=atoi(args[4]);								
+						Ny=atoi(args[5]);	
+						len=strlen(args[6]);
+						name=malloc((len+2)*sizeof(char));
+						name=strncpy(name,args[6],len+1);					
+						AddMeshVar (InitMesh(args[6], x1, x2, y1, y2, Nx, Ny), &name,  &Meshes, &Nm);
+						FreeArgs (args, 7);
 						break;
 					}
 					case RMMESH:
@@ -446,12 +461,14 @@ void Parse (char *file)
 						
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
-							goto premature_end;	
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Removing mesh %s", line_nr, word);
+						
+								
 						len=strlen(word);
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,word,len+1);	
-						
-						Print(NORMAL,"* line %3d: Removing mesh %s\n", line_nr, word);			
+								
 						RemoveMeshVar (&name,  &Meshes, &Nm);
 						free(name);
 						break;
@@ -460,89 +477,59 @@ void Parse (char *file)
 					{
 						double xoff, yoff;
 						char *name;
+						char **args;
 						int len;
 						mesh *M1, *M2;
 						/* read next word and process, if no next word trow an error */
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						xoff=atof(word);
+						args=GetArgs (&begin, 5);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Joining mesh %s and mesh %s to %s", line_nr,args[2],args[3],args[4]);	
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						yoff=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M1=FetchMesh(word, Meshes, Nm);
+														
+						xoff=atof(args[0]);								
+						yoff=atof(args[1]);						
+						M1=FetchMesh(args[2], Meshes, Nm);
 						if (!M1)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-							
-						
-						Print(NORMAL,"* line %3d: Joining mesh %s ", line_nr,word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						M2=FetchMesh(word, Meshes, Nm);	
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[2]);
+						M2=FetchMesh(args[3], Meshes, Nm);
 						if (!M2)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[3]);	
 						
-						Print(NORMAL,"and mesh %s ", word);		
-								
-						begin=GetWord (begin, word);				
-						if(word[0]=='\0')
-							goto premature_end;
-							
-						len=strlen(word);
+						len=strlen(args[4]);
 						name=malloc((len+2)*sizeof(char));
-						name=strncpy(name,word,len+1);	
-										
-						Print(NORMAL,"to %s\n", word);
+						name=strncpy(name,args[4],len+1);
 						AddMeshVar (JoinMeshes(*M1, *M2, xoff, yoff), &name,  &Meshes, &Nm);
+						FreeArgs (args, 5);
 						break;
 					}
 					case JOINMESH_H:
 					{
 						double yoff;
 						char *name;
+						char **args;
 						int len;
 						mesh *M1, *M2;
 						/* read next word and process, if no next word trow an error */
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						yoff=atof(word);
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Joining mesh %s and mesh %s to %s", line_nr,args[1],args[2],args[3]);	
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M1=FetchMesh(word, Meshes, Nm);						
+											
+						yoff=atof(args[0]);						
+						M1=FetchMesh(args[1], Meshes, Nm);
 						if (!M1)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						
-						Print(NORMAL,"* line %3d: Joining mesh %s ",line_nr, word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						M2=FetchMesh(word, Meshes, Nm);	
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
+						M2=FetchMesh(args[2], Meshes, Nm);
 						if (!M2)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-							
-						Print(NORMAL,"and mesh %s ", word);		
-								
-						begin=GetWord (begin, word);				
-						if(word[0]=='\0')
-							goto premature_end;
-							
-						len=strlen(word);
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[2]);	
+						
+						len=strlen(args[3]);
 						name=malloc((len+2)*sizeof(char));
-						name=strncpy(name,word,len+1);	
-										
-						Print(NORMAL,"to %s\n", word);
+						name=strncpy(name,args[3],len+1);
 						AddMeshVar (JoinMeshes_H(*M1, *M2, yoff), &name,  &Meshes, &Nm);
+						FreeArgs (args, 4);
 						break;
 					
 					}
@@ -550,41 +537,29 @@ void Parse (char *file)
 					{
 						double xoff;
 						char *name;
+						char **args;
 						int len;
 						mesh *M1, *M2;
 						/* read next word and process, if no next word trow an error */
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						xoff=atof(word);
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;	
+						Print(NORMAL,"* line %3d: Joining mesh %s and mesh %s to %s", line_nr,args[1],args[2],args[3]);	
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M1=FetchMesh(word, Meshes, Nm);
-						if (!M1)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						
-						Print(NORMAL,"* line %3d: Joining mesh %s ",line_nr, word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						M2=FetchMesh(word, Meshes, Nm);	
-						if (!M2)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						
-						Print(NORMAL,"and mesh %s ", word);		
-								
-						begin=GetWord (begin, word);				
-						if(word[0]=='\0')
-							goto premature_end;
-							
-						len=strlen(word);
-						name=malloc((len+2)*sizeof(char));
-						name=strncpy(name,word,len+1);	
 										
-						Print(NORMAL,"to %s\n", word);
+						xoff=atof(args[0]);						
+						M1=FetchMesh(args[1], Meshes, Nm);
+						if (!M1)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
+						M2=FetchMesh(args[2], Meshes, Nm);
+						if (!M2)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[2]);	
+						
+						len=strlen(args[3]);
+						name=malloc((len+2)*sizeof(char));
+						name=strncpy(name,args[3],len+1);
 						AddMeshVar (JoinMeshes_V(*M1, *M2, xoff), &name,  &Meshes, &Nm);
+						FreeArgs (args, 4);
 						break;
 					
 					}
@@ -593,26 +568,23 @@ void Parse (char *file)
 						int len;
 						char *name;
 						mesh Mnew;
+						char **args;
 						mesh *M;
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
 							goto premature_end;
-						Print(NORMAL, "* line %3d: Duplicating mesh %s",line_nr, word);	
-						M=FetchMesh (word,  Meshes, Nm);
+						Print(NORMAL, "* line %3d: Duplicating mesh %s and storing duplicate in %s",line_nr, args[0], args[1]);
+						
+						M=FetchMesh (args[0],  Meshes, Nm);							
 						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);			
-						Mnew=DuplicateMesh((*M));
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						len=strlen(word);
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);											
+						Mnew=DuplicateMesh((*M));						
+						len=strlen(args[1]);
 						name=malloc((len+2)*sizeof(char));
-						name=strncpy(name,word,len+1);	
-						Print(NORMAL, ", storing duplicate in %s\n",word);						
-						
+						name=strncpy(name,args[1],len+1);						
 						AddMeshVar (Mnew, &name,  &Meshes, &Nm);
+						FreeArgs (args, 2);
 						break;					
 					}
 					case ADDEL:
@@ -620,13 +592,14 @@ void Parse (char *file)
 						meshvar *MV;
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
-							goto premature_end;								
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Adding an electrode to mesh %s",line_nr, word);
+						Print(NORMAL,"            Please define the appropriate properties");	
+													
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr, word);		
 						
-						Print(NORMAL,"* line %3d: Adding an electrode to mesh %s\n",line_nr, word);
-						Print(NORMAL,"            Please define the appropriate properties\n");
 						AddElectrode(&(MV->M));			
 						break;		
 					}
@@ -643,18 +616,18 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s in x-direction\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting all nodes in %s in x-direction",line_nr, word);
 							fflush(stdout);
 							SplitMeshX(&(MV->M));
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in x-direction\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in x-direction",line_nr, word);
 							fflush(stdout);
 							SplitListX(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
 						}	
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);				
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);				
 						break;
 					}
 					case SPLITY:
@@ -670,18 +643,18 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s in y-direction\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting all nodes in %s in y-direction",line_nr, word);
 							fflush(stdout);
 							SplitMeshY(&(MV->M));
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in y-direction\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in y-direction",line_nr, word);
 							fflush(stdout);
 							SplitListY(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
 						}	
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);					
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);					
 						break;
 					}
 					case SPLITXY:
@@ -697,18 +670,18 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s in x- and y-direction\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting all nodes in %s in x- and y-direction",line_nr, word);
 							fflush(stdout);
 							SplitMeshXY(&(MV->M));
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in x- and y-direction\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in x- and y-direction",line_nr, word);
 							fflush(stdout);
 							SplitListXY(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
 						}	
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);					
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);					
 						break;
 					}
 					case SPLITLONG:
@@ -724,51 +697,52 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s in the longest direction\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting all nodes in %s in the longest direction",line_nr, word);
 							fflush(stdout);
 							SplitMeshLong(&(MV->M));
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in the longest direction\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in the longest direction",line_nr, word);
 							fflush(stdout);
 							SplitListLong(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
 						}
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);						
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);
 						break;
 					}
 					case SPLITCOARSE:
 					{
 						meshvar *MV;
 						double d;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMesh (word,  Meshes, Nm);
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
 							
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						d=atof(word);
+						d=atof(args[1]);
 											
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s until all\n            edges shorter than %e\n",line_nr, MV->name, d);
+							Print(NORMAL,"* line %3d: Splitting all nodes in %s until all edges shorter than %e",line_nr, MV->name, d);
 							fflush(stdout);
 							SplitMeshWhileCoarse(&(MV->M), d);
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s until all\n            edges shorter than %e\n",line_nr, MV->name, d);
+							Print(NORMAL,"* line %3d: Splitting selected nodes in %s until all edges shorter than %e",line_nr, MV->name, d);
 							fflush(stdout);
 							SplitListWhileCoarse(&(MV->M), MV->nodes, d);
 							MV->nodes[0]=0;
 						}	
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);					
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);
+						FreeArgs (args, 2);											
 						break;
 					}
 					case SIMPLIFY_MESH:
@@ -780,11 +754,11 @@ void Parse (char *file)
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);							
-						Print(NORMAL,"* line %3d: Simplifying mesh of %d nodes\n",line_nr, MV->M.Nn);
+						Print(NORMAL,"* line %3d: Simplifying mesh of %d nodes",line_nr, MV->M.Nn);
 						fflush(stdout);		
 						Chunkify(&(MV->M));
 						MV->nodes[0]=0;
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes\n",MV->name, MV->M.Nn);	
+						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);	
 						break;
 					}
 					case LOADMESH:
@@ -792,459 +766,312 @@ void Parse (char *file)
 						int len;
 						char *name;
 						mesh Mnew;
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+							
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Print(NORMAL, "* line %3d: Reading mesh from file %s\n",line_nr, word);
-						ReadMesh(word, &Mnew);
+						Print(NORMAL, "* line %3d: Reading mesh from file %s into new mesh %s",line_nr, args[0],args[1]);
+						ReadMesh(args[0], &Mnew);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						len=strlen(word);
+						len=strlen(args[1]);
 						name=malloc((len+2)*sizeof(char));
-						name=strncpy(name,word,len+1);							
+						name=strncpy(name,args[1],len+1);							
 						
 						AddMeshVar (Mnew, &name,  &Meshes, &Nm);
-						Print(NORMAL, "* line %3d: Asigning %s as a name for the new mesh\n",line_nr,word);
+						FreeArgs (args, 2);								
 						break;
 					}
 					case SAVEMESH:
 					{
-						mesh *M;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Saving mesh %s ",line_nr,word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						mesh *M;						
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
 							goto premature_end;
-						Print(NORMAL, "to file %s\n",word);
-						WriteMesh(word,M);
+							
+						Print(NORMAL, "* line %3d: Saving mesh %s to file %s",line_nr,args[0], args[1]);
+														
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
+						WriteMesh(args[1],M);
+						FreeArgs (args, 2);						
 						break;
 					}
 					/********************************* Secion Output */
 					/********************************* SubSecion mesh data */
 					case PRINTMESH:
 					{
-						mesh *M;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print nodes of mesh %s ",line_nr,word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						mesh *M;						
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
 							goto premature_end;
+							
+						Print(NORMAL, "* line %3d: Print elements of mesh %s to file %s",line_nr,args[0],args[1]);
 						
-						Print(NORMAL, "to file %s\n",word);
-						PrintMesh(word,M);
+												
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+								
+						PrintMesh(args[1],M);
+						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTCONN:
 					{
-						mesh *M;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print connections in mesh %s ",line_nr,word);
+						mesh *M;					
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print connections in mesh %s to file %s",line_nr,args[0], args[1]);
+							
 												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Print(NORMAL, "to file %s\n",word);
-						
-						PrintConn(word,M);
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+															
+						PrintConn(args[1],M);
+						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTSURF:
 					{
-						mesh *M;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print area definition per node in mesh %s ",line_nr,word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						mesh *M;					
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
 							goto premature_end;
-						Print(NORMAL, "to file %s\n",word);	
-						
-						PrintSurfDef(word,M);
+						Print(NORMAL, "* line %3d: Print area definition per node in mesh %s to file %s",line_nr,args[0], args[1]);
+							
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+							
+						PrintSurfDef(args[1],M);
+						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTPOT:
 					{
-						mesh *M;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
+						mesh *M;					
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print node potentials in mesh %s to file %s",line_nr,args[0], args[1]);
+											
 						M=FetchMesh (word,  Meshes, Nm);
 						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print node potentials in mesh %s ",line_nr,word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						
-						Print(NORMAL, "to file %s\n",word);
-						PrintSurfV(word,M);
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+							
+						PrintSurfV(args[1],M);
+						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTMESHSEL:
 					{
 						double x1,y1,x2,y2;
-						mesh *M;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print selected nodes of mesh %s ",line_nr,word);
-									
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						mesh *M;					
+						char **args;
+						args=GetArgs (&begin, 6);
+						if (args==NULL)
 							goto premature_end;
-						x1=atof(word);		
+						Print(NORMAL, "* line %3d: Print selected nodes of mesh %s to file %s",line_nr,args[0], args[5]);
 							
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y1=atof(word);		
-			
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x2=atof(word);		
-			
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y2=atof(word);								
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
 												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+									
 						
-						Print(NORMAL, "to file %s\n",word);
-						PrintMeshSel(word,M, x1, y1, x2, y2);
+						PrintMeshSel(args[5],M, x1, y1, x2, y2);
+						FreeArgs (args, 6);	
 						break;
 					}
 					case PRINTCONNSEL:
 					{
 						double x1,y1,x2,y2;
-						mesh *M;
+						mesh *M;					
+						char **args;
+						args=GetArgs (&begin, 6);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print selected connections in mesh %s to file %s",line_nr,args[0], args[5]);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-									
-						Print(NORMAL, "* line %3d: Print selected connections in mesh %s ",line_nr,word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x1=atof(word);		
-							
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y1=atof(word);		
-			
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x2=atof(word);		
-			
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y2=atof(word);								
-
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
 												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+							
 						
-						Print(NORMAL, "to file %s\n",word);
-						PrintConnSel(word,M, x1, y1, x2, y2);
+						PrintConnSel(args[5],M, x1, y1, x2, y2);
+						FreeArgs (args, 6);	
 						break;
 					}
 					case PRINTSURFSEL:
 					{
 						double x1,y1,x2,y2;
-						mesh *M;
+						mesh *M;				
+						char **args;
+						args=GetArgs (&begin, 6);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print area definition per selected element in mesh %s to file %s",line_nr,args[0], args[5]);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print area definition per selected node in mesh %s ",line_nr,word);
-									
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x1=atof(word);		
-							
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y1=atof(word);		
-			
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x2=atof(word);		
-			
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y2=atof(word);								
-
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
 												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						
-						Print(NORMAL, "to file %s\n",word);
-						PrintSurfDefSel(word,M, x1, y1, x2, y2);
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+							
+						PrintSurfDefSel(args[5],M, x1, y1, x2, y2);
+						FreeArgs (args, 6);	
 						break;
 					}
 					case PRINTPOTSEL:
 					{
 						double x1,y1,x2,y2;
-						mesh *M;
+						mesh *M;				
+						char **args;
+						args=GetArgs (&begin, 6);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print selected node potentials in mesh %s to file %s",line_nr,args[0], args[5]);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print selected node potentials in mesh %s ",line_nr,word);
-									
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x1=atof(word);		
-							
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y1=atof(word);		
-			
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x2=atof(word);		
-			
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y2=atof(word);								
-
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
 												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
-						Print(NORMAL, "to file %s\n",word);
-						PrintSurfVSel(word,M, x1, y1, x2, y2);
+						PrintSurfVSel(args[5],M, x1, y1, x2, y2);
+						FreeArgs (args, 6);	
 						break;
 					}
 					case PRINTIV:
 					{
-						mesh *M;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
+						mesh *M;				
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print simulated I-V pairs of mesh %s to file %s",line_nr,args[0], args[1]);
+											
+						M=FetchMesh (args[0],  Meshes, Nm);
 						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print simulated I-V pairs of mesh %s ",line_nr,word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						
-						Print(NORMAL, "to file %s\n",word);
-						PrintIV(word,M);
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						PrintIV(args[1],M);
+						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTPARS:
 					{
-						mesh *M;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Print parameters per area in mesh %s ",line_nr,word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						mesh *M;				
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
 							goto premature_end;
-						
-						Print(NORMAL, "to file %s\n",word);
-						PrintPars(word, M);
+						Print(NORMAL, "* line %3d: Print parameters per area in mesh %s to file %s",line_nr,args[0], args[1]);
+											
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+								
+						PrintPars(args[1], M);
+						FreeArgs (args, 2);	
 						break;
 					}
 					case SURFVPLOT:
 					{
 						mesh *M;
 						double x1, y1, x2, y2, Va;
-						int Nx, Ny, Vai;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Export potentials from mesh %s ",line_nr,word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						x1=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						y1=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						x2=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						y2=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Nx=atoi(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Ny=atoi(word);	
-									
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Va=atof(word);						
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						int Nx, Ny, Vai;				
+						char **args;
+						args=GetArgs (&begin, 9);
+						if (args==NULL)
 							goto premature_end;
+						Print(NORMAL, "* line %3d: Export potentials from mesh %s to file %s",line_nr,args[0], args[8]);
+							
+								
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
+						
+						Nx=atoi(args[5]);	
+						Ny=atoi(args[6]);	
+						Va=atof(args[7]);
+																	
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
 						Vai=FindVa(Va, M->res.Va, M->res.Nva);
 						if (Vai>=0)
 						{
-							Print(NORMAL, "to file %s\n",word);
-							Print(NORMAL,"            -->  Using simulation at %e V\n", M->res.Va[Vai]);
+							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
 							SurfVPlot(word, M, Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
 							
+						FreeArgs (args, 9);	
 						break;
 					}
 					case SURFPPLOT:
 					{
 						mesh *M;
 						double x1, y1, x2, y2, Va;
-						int Nx, Ny, Vai;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL, "* line %3d: Export power density from mesh %s ",line_nr,word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						x1=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						y1=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						x2=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						y2=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Nx=atoi(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Ny=atoi(word);	
-									
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Va=atof(word);						
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						int Nx, Ny, Vai;				
+						char **args;
+						args=GetArgs (&begin, 9);
+						if (args==NULL)
 							goto premature_end;
+						Print(NORMAL, "* line %3d: Export power density from mesh %s  to file %s",line_nr,args[0], args[8]);
+								
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
+						
+						Nx=atoi(args[5]);	
+						Ny=atoi(args[6]);	
+						Va=atof(args[7]);
+													
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
 						
 						Vai=FindVa(Va, M->res.Va, M->res.Nva);
 						if (Vai>=0)
 						{
-							Print(NORMAL, "to file %s\n",word);
-							Print(NORMAL,"            -->  Using simulation at %e V\n", M->res.Va[Vai]);
+							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
 							SurfPPlot(word, M, Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present\n", line_nr);	
+						FreeArgs (args, 9);	
 						break;
 					}
 					/********************************* Secion Node Selection */
@@ -1253,59 +1080,41 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
-						Print(NORMAL, "* line %3d: Load polygon from file %s \n",line_nr,word);
+						Print(NORMAL, "* line %3d: Load polygon from file %s",line_nr,word);
 						P=ReadPoly(word);
 						break;
 					}	
 					case SELECT_RECT:
 					{
-						double x1,x2,y1,y2;
+						double x1,x2,y1,y2;			
+						char **args;
+						args=GetArgs (&begin, 5);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Make rectangular selection of elements in mesh %s", line_nr, args[4]);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x1=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y1=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						x2=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y2=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Print(NORMAL,"* line %3d: Make rectangular selection of nodes\n", line_nr, word);
-						fflush(stdout);
-						SelectRectNodes (word,  Meshes, Nm, x1,y1,x2,y2);
+						x1=atof(args[0]);
+						y1=atof(args[1]);
+						x2=atof(args[2]);
+						y2=atof(args[3]);
+						SelectRectNodes (args[4],  Meshes, Nm, x1,y1,x2,y2);
+						FreeArgs (args, 5);	
 						break;
 					}	
 					case SELECT_CIRC:
 					{
-						double x,y,r;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
+						double x,y,r;			
+						char **args;
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
 							goto premature_end;
-						x=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						y=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						r=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Print(NORMAL,"* line %3d: Make circular selection of nodes\n", line_nr, word);
-						SelectCircNodes (word,  Meshes, Nm, x,y,r);
+						Print(NORMAL,"* line %3d: Make circular selection of elements in mesh %s", line_nr, args[3]);
+						x=atof(args[0]);
+						y=atof(args[1]);
+						r=atof(args[2]);
+
+						SelectCircNodes (args[3],  Meshes, Nm, x,y,r);
+						FreeArgs (args, 4);	
 						break;
 					}
 					case SELECT_POLY:
@@ -1313,9 +1122,24 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						Print(NORMAL,"* line %3d: Make poly-selection of nodes in mesh %s\n", line_nr, word);
-						fflush(stdout);
+						Print(NORMAL,"* line %3d: Make poly-selection of elements in mesh %s", line_nr, word);
 						SelectPolyNodes (word,  Meshes, Nm, P);
+						break;
+					}
+					case SELECT_POLY_CONTOUR:
+					{
+						double d;	
+						int loop=0;		
+						char **args;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+							
+						Print(NORMAL,"* line %3d: Make poly-contour selection of elements in mesh %s", line_nr, args[1]);
+						d=atof(args[0]);
+						loop=atoi(args[1]);
+						SelectPolyContourNodes (args[2],  Meshes, Nm, P, d, loop);
+						FreeArgs (args, 3);	
 						break;
 					}
 					case SELECT_AREA:
@@ -1324,8 +1148,7 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						Print(NORMAL,"* line %3d: Make area selection of nodes\n", line_nr, word);
-						fflush(stdout);
+						Print(NORMAL,"* line %3d: Make area selection of elements in mesh %s", line_nr, word);
 						SelectAreaNodes (word,  Meshes, Nm);
 						break;
 					}	
@@ -1338,7 +1161,7 @@ void Parse (char *file)
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);	
-						Print(NORMAL,"* line %3d: Deselecting selection in mesh %s\n", line_nr, MV->name);	
+						Print(NORMAL,"* line %3d: Deselecting selection in mesh %s", line_nr, MV->name);	
 						MV->nodes[0]=0;
 						break;
 					}
@@ -1361,13 +1184,13 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Assigning all nodes in the mesh to area %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Assigning all nodes in the mesh to area %s",line_nr, word);
 							fflush(stdout);
 							AssignPropertiesMesh(&(MV->M), P);
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Assigning selected nodes to area %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Assigning selected nodes to area %s",line_nr, word);
 							fflush(stdout);
 							AssignProperties(&(MV->M), MV->nodes, P);
 						}					
@@ -1377,144 +1200,134 @@ void Parse (char *file)
 					{
 						meshvar *MV;
 						int P, el;
-						double R;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						double R;		
+						char **args;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+										
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, args[0]);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
 						}
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						el=atoi(word);	
+							
+						el=atoi(args[1]);	
+						
+						
 						if ((el<0)||(el>=MV->M.Nel))
 							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);
-						Print(NORMAL,"* line %3d: Setting R for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);	
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Print(NORMAL,"to %s\n",word);								
-						R=atof(word);
+						Print(NORMAL,"* line %3d: Setting R for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[P].name, args[2]);
+												
+						R=atof(args[2]);
 						MV->M.P[P].Rel[el]=R;
+						FreeArgs (args, 3);	
 						break;
 					}
 					case SET_RVP:
 					{
 						meshvar *MV;
 						int P, el;
-						double R;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						double R;		
+						char **args;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+													
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, args[0]);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
 						}
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						el=atoi(word);	
+						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel))
 							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);
-						Print(NORMAL,"* line %3d: Setting Rvp for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Print(NORMAL,"to %s\n",word);										
-						R=atof(word);
+						Print(NORMAL,"* line %3d: Setting Rvp for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[P].name, args[2]);
+															
+						R=atof(args[2]);
 						MV->M.P[P].Rvp[el]=R;
+						FreeArgs (args, 3);	
 						break;
 					}
 					case SET_RVN:
 					{
 						meshvar *MV;
 						int P, el;
-						double R;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						double R;	
+						char **args;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+													
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, args[0]);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);
 						}	
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						el=atoi(word);	
+						el=atoi(args[1]);
+						
 						if ((el<0)||(el>=MV->M.Nel))
 							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);
 							
-						Print(NORMAL,"* line %3d: Setting Rvn for electrode %d in %s.%s ",line_nr, el, MV->name, MV->M.P[P].name);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Print(NORMAL,"to %s\n",word);									
-						R=atof(word);
+						Print(NORMAL,"* line %3d: Setting Rvn for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[P].name, args[2]);
+														
+						R=atof(args[2]);
 						MV->M.P[P].Rvn[el]=R;
+						FreeArgs (args, 3);	
 						break;
 					}
 					case SET_JV:
 					{
 						meshvar *MV;
 						int P, el;
-						polygon JV;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						polygon JV;							
+						char **args;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+												
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, args[0]);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
 						}	
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						el=atoi(word);	
+						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel-1))
 							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 							
-						Print(NORMAL,"* line %3d: Setting tabular JV between electrodes %d and %d in %s.%s ",line_nr, el, el+1, MV->name, MV->M.P[P].name);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Print(NORMAL,"to data from file %s\n",word);	
-						JV=ReadPoly(word);
+						Print(NORMAL,"* line %3d: Setting tabular JV between electrodes %d and %d in %s.%s to data from file %s",line_nr, el, el+1, MV->name, MV->M.P[P].name, args[2]);
+						
+						JV=ReadPoly(args[2]);
 						if (JV.N<2)
 							Error("JV characteristic from file %s is too short\nAt least two voltage current pairs are requires\n", word);
 						free(MV->M.P[P].conn[el].V);
@@ -1524,168 +1337,115 @@ void Parse (char *file)
 						MV->M.P[P].conn[el].V=JV.x;
 						MV->M.P[P].conn[el].J=JV.y;
 						MV->M.P[P].conn[el].N=JV.N;
-						MV->M.P[P].conn[el].model=JVD;						
+						MV->M.P[P].conn[el].model=JVD;	
+						FreeArgs (args, 3);						
 						break;
 					}
 					case SET_2DJV:
 					{
 						meshvar *MV;
-						int P, el;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						int P, el;						
+						char **args;
+						args=GetArgs (&begin, 8);
+						if (args==NULL)
+							goto premature_end;
+							
+													
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, area);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, area);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
-						}	
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						el=atoi(word);	
+						}
+						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel-1))
 							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 							
-						Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s\n",line_nr, el, el+1, MV->name, MV->M.P[P].name);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].J01=atof(word);
+						Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].J02=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].Jph=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].Rs=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].Rsh=atof(word);
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].Eg=atof(word);
+						MV->M.P[P].conn[el].J01=atof(args[2]);
+						MV->M.P[P].conn[el].J02=atof(args[3]);
+						MV->M.P[P].conn[el].Jph=atof(args[4]);
+						MV->M.P[P].conn[el].Rs=atof(args[5]);
+						MV->M.P[P].conn[el].Rsh=atof(args[6]);
+						MV->M.P[P].conn[el].Eg=atof(args[7]);
 						MV->M.P[P].conn[el].nid1=1.0;
 						MV->M.P[P].conn[el].nid2=2.0;							
 						MV->M.P[P].conn[el].model=TWOD;	
+						FreeArgs (args, 8);		
 						break;
 					}
 					case SET_1DJV:
 					{
 						meshvar *MV;
-						int P, el;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						int P, el;						
+						char **args;
+						args=GetArgs (&begin, 8);
+						if (args==NULL)
+							goto premature_end;
+								
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, area);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
-						}	
-												
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						el=atoi(word);	
+						}
+						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel-1))
 							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 							
-						Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s\n",line_nr, el, el+1, MV->name, MV->M.P[P].name);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].J01=atof(word);
+						Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].nid1=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].Jph=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].Rs=atof(word);
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].Rsh=atof(word);
-					
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						MV->M.P[P].conn[el].Eg=atof(word);					
-						MV->M.P[P].conn[el].model=ONED;							
+						MV->M.P[P].conn[el].J01=atof(args[2]);
+						MV->M.P[P].conn[el].nid1=atof(args[3]);
+						MV->M.P[P].conn[el].Jph=atof(args[4]);
+						MV->M.P[P].conn[el].Rs=atof(args[5]);
+						MV->M.P[P].conn[el].Rsh=atof(args[6]);
+						MV->M.P[P].conn[el].Eg=atof(args[7]);					
+						MV->M.P[P].conn[el].model=ONED;	
+						FreeArgs (args, 8);								
 						break;
 					}
 					case SET_R:
 					{
 						meshvar *MV;
 						int P, el;
-						double R;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						double R;						
+						char **args;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+								
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, area);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
 						}
-							
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						el=atoi(word);	
+						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel-1))
 							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 							
-						Print(NORMAL,"* line %3d: Setting R between electrodes %d and %d in %s.%s ",line_nr, el, el+1, MV->name, MV->M.P[P].name);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Print(NORMAL,"to %s\n",word);	
-						R=atof(word);
+						Print(NORMAL,"* line %3d: Setting R between electrodes %d and %d in %s.%s to %s",line_nr, el, el+1, MV->name, MV->M.P[P].name, args[2]);
+						R=atof(args[2]);
 						if (MV->M.P[P].conn[el].V)
 							free(MV->M.P[P].conn[el].V);
 						if (MV->M.P[P].conn[el].J)
@@ -1698,92 +1458,95 @@ void Parse (char *file)
 						MV->M.P[P].conn[el].V[1]=1.0;
 						MV->M.P[P].conn[el].J[1]=1.0/R;
 						MV->M.P[P].conn[el].model=JVD;	
+						FreeArgs (args, 3);		
 						break;
 					}
 					case SET_T:
 					{
 						meshvar *MV;
 						int P;
-						double T;
-						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						double T;						
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+												
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, args[0]);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
 						}
 														
-						Print(NORMAL,"* line %3d: Setting initial temperature in %s ",line_nr, word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;	
-						Print(NORMAL,"to %s\n",word);	
-						T=atof(word);
+						Print(NORMAL,"* line %3d: Setting initial temperature in %s to %s",line_nr, args[0], args[1]);
+						T=atof(args[1]);
 						
 						MV->M.P[P].T=T;
+						FreeArgs (args, 2);		
 						break;
 					}
 					case SET_SPLITY:
 					{
 						meshvar *MV;
-						int P;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						int P;						
+						char **args;
+						args=GetArgs (&begin, 1);
+						if (args==NULL)
+							goto premature_end;
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, args[0]);
 							P=MV->M.Na;
 							NewProperties(&(MV->M), area);	
-						}	
+						}
 						
-						Print(NORMAL,"* line %3d: Toggle split-y parameter of %s\n",line_nr, word);
+						Print(NORMAL,"* line %3d: Toggle split-y parameter of %s\n",line_nr, args[0]);
 						if (MV->M.P[P].SplitY)
 							MV->M.P[P].SplitY=0;
 						else
 							MV->M.P[P].SplitY=1;
 						break;
+						FreeArgs (args, 1);
 					}					
 					case SET_SPLITX:
 					{
 						meshvar *MV;
-						int P;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;								
-						MV=LookupMeshArea (word,  Meshes, Nm, &P);
+						int P;					
+						char **args;
+						args=GetArgs (&begin, 1);
+						if (args==NULL)
+							goto premature_end;
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
 						if (P<0)
 						{
 							char *area;
-							area=word;
+							area=args[0];
 							while ((*area)!='.')
 								area++;
 							area++;
-							Print(NORMAL,"* line %3d: Creating new area definition %s\n",line_nr, word);
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, args[0]);
 							P=MV->M.Na;
-							NewProperties(&(MV->M), area);
-						}	
+							NewProperties(&(MV->M), area);	
+						}
 						
-						Print(NORMAL,"* line %3d: Toggle split-x parameter of %s\n",line_nr, word);
+						Print(NORMAL,"* line %3d: Toggle split-x parameter of %s\n",line_nr, args[0]);
 						if (MV->M.P[P].SplitX)
 							MV->M.P[P].SplitX=0;
 						else
 							MV->M.P[P].SplitX=1;
+						FreeArgs (args, 1);
 						break;
 					}
 					/********************************* Solving*/		
@@ -1826,57 +1589,47 @@ void Parse (char *file)
 					{
 						mesh *M;
 						double Vstart, Vend;
-						int Nstep;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
+						int Nstep;				
+						char **args;
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;
+							
+						Print(NORMAL,"* line %3d: Solving potentials in mesh %s",line_nr, args[0]);						
+						M=FetchMesh (args[0],  Meshes, Nm);
 						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL,"* line %3d: Solving potentials in mesh %s\n",line_nr, word);
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Vstart=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Vend=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Nstep=atoi(word);
+						
+						Vstart=atof(args[1]);
+						Vend=atof(args[2]);
+						Nstep=atoi(args[3]);
 						
 						SolveVa(M, Vstart, Vend, Nstep, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						FreeArgs (args, 4);
 						break;
 					}
 					case ADAPTIVE_SOLVE:
 					{
 						mesh *M;
 						double Va, rel_th;
-						int Na;
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;							
-						M=FetchMesh (word,  Meshes, Nm);
+						int Na;				
+						char **args;
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;
+							
+						Print(NORMAL,"* line %3d: Adaptive solving of potentials in mesh %s\n",line_nr, args[0]);					
+						M=FetchMesh (args[0],  Meshes, Nm);
 						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);
-						Print(NORMAL,"* line %3d: Adaptive solving of potentials in mesh %s\n",line_nr, word);
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Va=atof(word);
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						rel_th=atof(word);	
-						begin=GetWord (begin, word);
-						if(word[0]=='\0')
-							goto premature_end;
-						Na=atoi(word);	
+						Va=atof(args[1]);
+						rel_th=atof(args[2]);
+						Na=atoi(args[3]);
+						
 						AdaptiveSolveVa(M, Va, rel_th, Na, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						FreeArgs (args, 4);
 						break;
 					
 					}
