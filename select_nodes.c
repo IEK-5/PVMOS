@@ -55,80 +55,181 @@
 #define TWOPI 6.28318530717959
 #define TINY 1e-12
 
+
+node *NextNodeNE(mesh M, node *N, double a, double b)
+{
+	/* we are in node N and follow the line a*x+b, in NE direction */
+	/* this function returns the next node */
+	double x,y;
+	node *N2;
+	int i;
+	if (a<0)
+		Error("Cannot open follow line y=%e x + %e in north-east direction\n", a,b);
+	x=(N->y2-b)/a;
+	if ((x>=N->x1)&&(x<=N->x2))
+		for (i=1;i<=N->north[0];i++)
+		{
+			N2=SearchNode(M, N->north[i]);
+			if ((x>=N2->x1)&&(x<=N2->x2))
+				return N2;			
+		}
+	y=a*N->x2+b;
+	if ((y>=N->y1)&&(y<=N->y2))
+		for (i=1;i<=N->east[0];i++)
+		{
+			N2=SearchNode(M, N->east[i]);
+			if ((y>=N2->y1)&&(y<=N2->y2))
+				return N2;			
+		}
+	
+	return NULL;
+}
+
+node *NextNodeSW(mesh M, node *N, double a, double b)
+{
+	/* we are in node N and follow the line a*x+b, in SW direction */
+	/* this function returns the next node */
+	double x,y;
+	node *N2;
+	int i;
+	if (a<0)
+		Error("Cannot open follow line y=%e x + %e in north-east direction\n", a,b);
+	x=(N->y1-b)/a;
+	if ((x>=N->x1)&&(x<=N->x2))
+		for (i=1;i<=N->south[0];i++)
+		{
+			N2=SearchNode(M, N->south[i]);
+			if ((x>=N2->x1)&&(x<=N2->x2))
+				return N2;			
+		}
+	y=a*N->x1+b;
+	if ((y>=N->y1)&&(y<=N->y2))
+		for (i=1;i<=N->west[0];i++)
+		{
+			N2=SearchNode(M, N->west[i]);
+			if ((y>=N2->y1)&&(y<=N2->y2))
+				return N2;			
+		}
+	
+	return NULL;
+}
+
+node *NextNodeNW(mesh M, node *N, double a, double b)
+{
+	/* we are in node N and follow the line a*x+b, in NW direction */
+	/* this function returns the next node */
+	double x,y;
+	node *N2;
+	int i;
+	if (a>0)
+		Error("Cannot open follow line y=%e x + %e in north-west direction\n", a,b);
+	x=(N->y2-b)/a;
+	if ((x>=N->x1)&&(x<=N->x2))
+		for (i=1;i<=N->north[0];i++)
+		{
+			N2=SearchNode(M, N->north[i]);
+			if ((x>=N2->x1)&&(x<=N2->x2))
+				return N2;			
+		}
+	y=a*N->x1+b;
+	if ((y>=N->y1)&&(y<=N->y2))
+		for (i=1;i<=N->west[0];i++)
+		{
+			N2=SearchNode(M, N->west[i]);
+			if ((y>=N2->y1)&&(y<=N2->y2))
+				return N2;			
+		}
+	
+	return NULL;
+}
+
+node *NextNodeSE(mesh M, node *N, double a, double b)
+{
+	/* we are in node N and follow the line a*x+b, in SE direction */
+	/* this function returns the next node */
+	double x,y;
+	node *N2;
+	int i;
+	if (a>0)
+		Error("Cannot open follow line y=%e x + %e in north-west direction\n", a,b);
+	x=(N->y1-b)/a;
+	if ((x>=N->x1)&&(x<=N->x2))
+		for (i=1;i<=N->south[0];i++)
+		{
+			N2=SearchNode(M, N->south[i]);
+			if ((x>=N2->x1)&&(x<=N2->x2))
+				return N2;			
+		}
+	y=a*N->x2+b;
+	if ((y>=N->y1)&&(y<=N->y2))
+		for (i=1;i<=N->east[0];i++)
+		{
+			N2=SearchNode(M, N->east[i]);
+			if ((y>=N2->y1)&&(y<=N2->y2))
+				return N2;			
+		}
+	
+	return NULL;
+}
+
+
 int FindPos(mesh M, int id, double x, double y)
 /* find the node within which the coordinate x,y falls */
 {
-	int n_id=0, i, *list;
-	double mind=-1;
+	double a,b, xx, yy, d, mind;
+	int n_id;
 	node *N;
-	
-	list=malloc(LISTBLOCK*sizeof(int));
-	list[0]=0;
-	while(!IsInList(list, id))
+	N=SearchNode(M, id);
+	n_id=N->id;
+	/* parameterize the line from current node center to desired point */
+	xx=(N->x1+N->x2)/2;
+	yy=(N->y1+N->y2)/2;
+	b=(x-xx);
+	if (fabs(b)<1e-12)
 	{
-newid:		list=AddToList(list,id);
-		N=SearchNode(M, id);
-		if ((fabs(x-1.047500e+01)<1e-5)&&(fabs(y-3.819900e+01)<1e-5))
-		{
-			Print(DEBUG,"%e %e %i\n",(N->x1+N->x2)/2, (N->y1+N->y2)/2, N->id);
-			Print(DEBUG,"%e %e %e %e\n",N->x1, N->x2, N->y1, N->y2);
-		}
-		if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY)&&(y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-		{
-			free(list);
-			return N->id;
-		}
-			
-		if ((mind<0)||(mind>((N->x1+N->x2)/2-x)*((N->x1+N->x2)/2-x)+((N->y1+N->y2)/2-y)*((N->y1+N->y2)/2-y)))
-		{
-			mind=((N->x1+N->x2)/2-x)*((N->x1+N->x2)/2-x)+((N->y1+N->y2)/2-y)*((N->y1+N->y2)/2-y);
-			n_id=id;
-		}
-		
-		if (N->x2<x)
-			for (i=1;i<=N->east[0];i++)
-				if (!IsInList(list, N->east[i]))
-				{
-					id=N->east[i];
-					goto newid;
-				}		
-		if (N->x1>x)
-			for (i=1;i<=N->west[0];i++)
-				if (!IsInList(list, N->west[i]))
-				{
-					id=N->west[i];
-					goto newid;
-				}
-		if (N->y2<y)
-			for (i=1;i<=N->north[0];i++)
-				if (!IsInList(list, N->north[i]))
-				{
-					id=N->north[i];
-					goto newid;
-				}		
-		if (N->y1>y)
-			for (i=1;i<=N->south[0];i++)
-				if (!IsInList(list, N->south[i]))
-				{
-					id=N->south[i];
-					goto newid;
-				}
+		if (b<0)
+			b-=1e-12;
+		else
+			b+=1e-12;
 	}
-	free(list);
-	/* fallback option, check all nodes 
+	a=(y-yy)/b;
+	b=yy-a*xx;
+	
+	/* In the next loop we try to walk in a straight line from the current node to the desired coordinate */
+	
+	while(N!=NULL)
+	{
+		if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY)&&(y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+			return N->id;
+		if ((x-xx>=0)&&(y-yy>=0))
+			N=NextNodeNE(M, N, a, b);			
+		else if ((x-xx<0)&&(y-yy>=0))
+			N=NextNodeNW(M, N, a, b);			
+		else if ((x-xx>=0)&&(y-yy<=0))
+			N=NextNodeSE(M, N, a, b);			
+		else if ((x-xx<0)&&(y-yy<=0))
+			N=NextNodeSW(M, N, a, b);
+		else
+			N=NULL;	
+	}
+	/* That did not work */
+	/* It could be that the coordinate is not within the mesh or the shape of the mesh is such that ther is no straight line */
+	/* between start and end which connects the two. Here we do a brute force search */
+	Warning("Warning: could not follow a straight line from\n(%e,%e)\nto\n(%e,%e)\nwithin the mesh\n", xx, yy, x, y);
+	/* fallback option, check all nodes */
+	mind=(y-yy)*(y-yy)+(x-xx)*(x-xx);
 	for (id=1;id<M.Nn;id++)
 	{
 		N=SearchNode(M, id);
-		d=((N->x1+N->x2)/2-x)*((N->x1+N->x2)/2-x)+((N->y1+N->y2)/2-y)*((N->y1+N->y2)/2-y);
+		xx=(N->x1+N->x2)/2;
+		yy=(N->y1+N->y2)/2;
+		d=(y-yy)*(y-yy)+(x-xx)*(x-xx);
 		if (d<mind)
-		{
-			mind=d;
-			n_id=id;
-		}
+			n_id=N->id;
 		if ((x>=N->x1)&&(x<=N->x2)&&(y>=N->y1)&&(y<=N->y2))
 			return N->id;
-	} */
-	Warning("Warning: No node at coordinate (%e,%e)\n", x, y);
+	}
+	Warning("Warning: No node at coordinate (%e,%e), returning closest node\n", x, y);
 	return n_id;
 }
 
@@ -271,8 +372,11 @@ int * PolySelectNodes(polygon P, mesh M, int *sel_nodes)
 	{
 		/* make new selection */
 		for (i=0;i<M.Nn;i++)
+		{
+			Print(DEBUG, "node %i of %i\n",i, M.Nn);
 			if (IsInPolygon(P, (M.nodes[i].x1+M.nodes[i].x2)/2, (M.nodes[i].y1+M.nodes[i].y2)/2))
 				sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+		}
 	}
 	if (sel_nodes[0]==0)
 		Warning("No nodes selected in PolySelectNodes\n");

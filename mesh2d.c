@@ -932,11 +932,11 @@ void SplitNodeX(int id, mesh *M)
 	for (i=1;i<=list[0];i++)
 	{
 		a=SearchNode(*M, list[i]);
-		if (R_Overlap(a->x1,new->x1, a->x2, new->x2) > TINY)
+		if (R_Overlap(a->x1,new->x1, a->x2, new->x2) > 0)
 			a->south=AddToList(a->south, newid);
 		else
 			new->north=RemoveFromList(new->north, a->id);
-		if (R_Overlap(a->x1,old->x1, a->x2, old->x2) < TINY)
+		if (R_Overlap(a->x1,old->x1, a->x2, old->x2) < 0)
 		{
 			old->north=RemoveFromList(old->north, a->id);
 			a->south=RemoveFromList(a->south, id);
@@ -947,11 +947,11 @@ void SplitNodeX(int id, mesh *M)
 	for (i=1;i<=list[0];i++)
 	{
 		a=SearchNode(*M, list[i]);
-		if (R_Overlap(a->x1,new->x1, a->x2, new->x2) > TINY)
+		if (R_Overlap(a->x1,new->x1, a->x2, new->x2) > 0)
 			a->north=AddToList(a->north, newid);
 		else
 			new->south=RemoveFromList(new->south, a->id);
-		if (R_Overlap(a->x1,old->x1, a->x2, old->x2) < TINY)
+		if (R_Overlap(a->x1,old->x1, a->x2, old->x2) < 0)
 		{
 			old->south=RemoveFromList(old->south, a->id);
 			a->north=RemoveFromList(a->north, id);
@@ -1011,11 +1011,11 @@ void SplitNodeY(int id, mesh *M)
 	for (i=1;i<=list[0];i++)
 	{
 		a=SearchNode(*M, list[i]);
-		if (R_Overlap(a->y1,new->y1, a->y2, new->y2) > TINY)
+		if (R_Overlap(a->y1,new->y1, a->y2, new->y2) > 0)
 			a->east=AddToList(a->east, newid);
 		else
 			new->west=RemoveFromList(new->west, a->id);
-		if (R_Overlap(a->y1,old->y1, a->y2, old->y2) < TINY)
+		if (R_Overlap(a->y1,old->y1, a->y2, old->y2) < 0)
 		{
 			old->west=RemoveFromList(old->west, a->id);
 			a->east=RemoveFromList(a->east, id);
@@ -1026,11 +1026,11 @@ void SplitNodeY(int id, mesh *M)
 	for (i=1;i<=list[0];i++)
 	{
 		a=SearchNode(*M, list[i]);
-		if (R_Overlap(a->y1,new->y1, a->y2, new->y2) > TINY)
+		if (R_Overlap(a->y1,new->y1, a->y2, new->y2) > 0)
 			a->west=AddToList(a->west, newid);
 		else
 			new->east=RemoveFromList(new->east, a->id);
-		if (R_Overlap(a->y1,old->y1, a->y2, old->y2) < TINY)
+		if (R_Overlap(a->y1,old->y1, a->y2, old->y2) < 0)
 		{
 			old->east=RemoveFromList(old->east, a->id);
 			a->west=RemoveFromList(a->west, id);
@@ -1318,464 +1318,8 @@ void CleanUpMesh(mesh *M, int *merged)
 }
 
 #define MaxR 2.0
-void Chunkify_east(mesh *M)
-{
-	int i, j;
-	int *merged;
-	int *list;
-	int MRG;
-	node *N, *Nl;
-	merged=malloc(LISTBLOCK*sizeof(int));
-	merged[0]=0;
-	Print(DEBUG,"Chunkify_east");
-	for (i=0;i<M->Nn;i++)
-	{
-		if (!IsInList(merged, M->nodes[i].id))
-		{
-			/* check east nodes to merge with */
-			double R;	
-			double newx2;
-			
-			N=M->nodes+i;		
-			j=1;
-			MRG=1;	
-			while ((j<=N->east[0])&&(MRG==1))
-			{
-				Nl=SearchNode(*M,N->east[j]);
-				if (j==1)
-					newx2=Nl->x2;
-				newx2=MIN(newx2,Nl->x2);
-					
-				if (Nl->P!=N->P)
-					MRG=0;											
-				else if ((Nl->y2>N->y2+TINY)||(Nl->y1<N->y1-TINY))
-					MRG=0;	
-				j++;
-			}
-			
-			R=(newx2-N->x1)/(N->y2-N->y1);
-			if (R>MaxR)
-				MRG=0;
-				
-						
-			if ((MRG)&&(N->east[0]>0))
-			{
-				int *a_nodes;
-				Print(DEBUG, "R: %e",R);
-				a_nodes=malloc(LISTBLOCK*sizeof(int));
-				a_nodes[0]=0;
-				
-				j=1;
-				Nl=SearchNode(*M,N->east[j]);
-				merged=AddToList(merged,Nl->id);	
-				
-				a_nodes=AddListToList(a_nodes, Nl->north);
-				a_nodes=AddListToList(a_nodes, Nl->south);
-				a_nodes=AddListToList(a_nodes, Nl->east);
-				
-				j++;
-				while (j<=N->east[0])
-				{
-					Nl=SearchNode(*M,N->east[j]);
-					merged=AddToList(merged,Nl->id);	
-				
-					a_nodes=AddListToList(a_nodes, Nl->north);
-					a_nodes=AddListToList(a_nodes, Nl->south);
-					a_nodes=AddListToList(a_nodes, Nl->east);
-					
-					j++;
-				}
-				N->x2=newx2;
-				
-				j=1;
-				while (j<=N->east[0])
-				{
-					Nl=SearchNode(*M,N->east[j]);
-					if (newx2<Nl->x2-TINY)
-					{
-						int k=1;
-						node *L;
-						merged=RemoveFromList(merged,Nl->id);
-						Nl->x1=newx2;
-						/* filter out the north and south nodes */
-						list=DuplicateList(Nl->north);
-						while (k<=list[0])
-						{
-							L=SearchNode(*M,list[k]);
-							NodeConnector(Nl, L);
-							k++;
-						}
-						free(list);
-						list=DuplicateList(Nl->south);
-						k=1;
-						while (k<=list[0])
-						{
-							L=SearchNode(*M,list[k]);
-							NodeConnector(Nl, L);
-							k++;
-						}
-						free(list);
-						
-					}	
-					j++;
-				}
-				j=1;
-				while (j<=a_nodes[0])
-				{
-					Nl=SearchNode(*M,a_nodes[j]);
-					NodeConnector(Nl, N);
-					j++;
-				}
-				free(a_nodes);
-								
-			}
-		}
-		
-	}
-	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
-	CleanUpMesh(M, merged);
-	free(merged);
-}
-void Chunkify_west(mesh *M)
-{
-	int i, j;
-	int *merged;
-	int *list;
-	int MRG;
-	node *N, *Nl;
-	merged=malloc(LISTBLOCK*sizeof(int));
-	merged[0]=0;
-	Print(DEBUG,"Chunkify_west");
-	
-	for (i=0;i<M->Nn;i++)
-	{
-		if (!IsInList(merged, M->nodes[i].id))
-		{
-			/* check east nodes to merge with */	
-			double R;
-			double newx1;	
-			N=M->nodes+i;		
-			j=1;
-			MRG=1;
-			while ((j<=N->west[0])&&(MRG==1))
-			{
-				Nl=SearchNode(*M,N->west[j]);
-				if (j==1)
-					newx1=Nl->x1;
-				newx1=MAX(newx1,Nl->x1);
-					
-				if (Nl->P!=N->P)
-					MRG=0;										
-				else if ((Nl->y2>N->y2+TINY)||(Nl->y1<N->y1-TINY))
-					MRG=0;	
-				j++;
-			}
-			
-			R=(N->x2-newx1)/(N->y2-N->y1);
-			if (R>MaxR)
-				MRG=0;	
-				
-			if ((MRG)&&(N->west[0]>0))
-			{
-				int *a_nodes;
-				Print(DEBUG, "R: %e",R);
-				a_nodes=malloc(LISTBLOCK*sizeof(int));
-				a_nodes[0]=0;
-				
-				j=1;
-				Nl=SearchNode(*M,N->west[j]);
-				merged=AddToList(merged,Nl->id);	
-				
-				a_nodes=AddListToList(a_nodes, Nl->north);
-				a_nodes=AddListToList(a_nodes, Nl->south);
-				a_nodes=AddListToList(a_nodes, Nl->west);
-				
-				j++;
-				while (j<=N->west[0])
-				{
-					Nl=SearchNode(*M,N->west[j]);
-					merged=AddToList(merged,Nl->id);	
-				
-					a_nodes=AddListToList(a_nodes, Nl->north);
-					a_nodes=AddListToList(a_nodes, Nl->south);
-					a_nodes=AddListToList(a_nodes, Nl->west);
-					
-					j++;
-				}
-				N->x1=newx1;
-				
-				j=1;
-				while (j<=N->west[0])
-				{
-					Nl=SearchNode(*M,N->west[j]);
-					if (newx1>Nl->x1+TINY)
-					{
-						int k=1;
-						node *L;
-						merged=RemoveFromList(merged,Nl->id);
-						Nl->x2=newx1;
-						/* filter out the north and south nodes */
-						list=DuplicateList(Nl->north);
-						while (k<=list[0])
-						{
-							L=SearchNode(*M,list[k]);
-							NodeConnector(Nl, L);
-							k++;
-						}
-						free(list);
-						list=DuplicateList(Nl->south);
-						k=1;
-						while (k<=list[0])
-						{
-							L=SearchNode(*M,list[k]);
-							NodeConnector(Nl, L);
-							k++;
-						}
-						free(list);
-						
-					}	
-					j++;
-				}
-				j=1;
-				while (j<=a_nodes[0])
-				{
-					Nl=SearchNode(*M,a_nodes[j]);
-					NodeConnector(Nl, N);
-					j++;
-				}
-				free(a_nodes);
-								
-			}
-		}
-	}
-	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
-	CleanUpMesh(M, merged);
-	free(merged);
-}
-void Chunkify_north(mesh *M)
-{
-	int i, j;
-	int *merged;
-	int *list;
-	int MRG;
-	node *N, *Nl;
-	merged=malloc(LISTBLOCK*sizeof(int));
-	merged[0]=0;
-	Print(DEBUG,"Chunkify_north");
-	
-	for (i=0;i<M->Nn;i++)
-	{
-		if (!IsInList(merged, M->nodes[i].id))
-		{
-			double R;
-			double newy2;	
-			N=M->nodes+i;		
-			j=1;
-			MRG=1;
-			while ((j<=N->north[0])&&(MRG==1))
-			{
-				Nl=SearchNode(*M,N->north[j]);
-				if (j==1)
-					newy2=Nl->y2;
-				newy2=MIN(newy2,Nl->y2);
-					
-				if (Nl->P!=N->P)
-					MRG=0;										
-				else if ((Nl->x2>N->x2+TINY)||(Nl->x1<N->x1-TINY))
-					MRG=0;	
-				j++;
-			}
-			R=(N->x2-N->x1)/(newy2-N->y1);
-			if (R<1.0/MaxR)
-				MRG=0;		
-			if ((MRG)&&(N->north[0]>0))
-			{
-				int *a_nodes;
-				Print(DEBUG, "R: %e",R);
-				a_nodes=malloc(LISTBLOCK*sizeof(int));
-				a_nodes[0]=0;
-				
-				j=1;
-				Nl=SearchNode(*M,N->north[j]);
-				merged=AddToList(merged,Nl->id);	
-				
-				a_nodes=AddListToList(a_nodes, Nl->north);
-				a_nodes=AddListToList(a_nodes, Nl->west);
-				a_nodes=AddListToList(a_nodes, Nl->east);
-				
-				j++;
-				while (j<=N->north[0])
-				{
-					Nl=SearchNode(*M,N->north[j]);
-					merged=AddToList(merged,Nl->id);	
-				
-					a_nodes=AddListToList(a_nodes, Nl->north);
-					a_nodes=AddListToList(a_nodes, Nl->west);
-					a_nodes=AddListToList(a_nodes, Nl->east);
-					
-					j++;
-				}
-				N->y2=newy2;
-				
-				j=1;
-				while (j<=N->north[0])
-				{
-					Nl=SearchNode(*M,N->north[j]);
-					if (newy2<Nl->y2-TINY)
-					{
-						int k=1;
-						node *L;
-						merged=RemoveFromList(merged,Nl->id);
-						Nl->y1=newy2;
-						/* filter out the west and east nodes */
-						list=DuplicateList(Nl->west);
-						while (k<=list[0])
-						{
-							L=SearchNode(*M,list[k]);
-							NodeConnector(Nl, L);
-							k++;
-						}
-						free(list);
-						list=DuplicateList(Nl->east);
-						k=1;
-						while (k<=list[0])
-						{
-							L=SearchNode(*M,list[k]);
-							NodeConnector(Nl, L);
-							k++;
-						}
-						free(list);
-					}	
-					j++;
-				}
-				j=1;
-				while (j<=a_nodes[0])
-				{
-					Nl=SearchNode(*M,a_nodes[j]);
-					NodeConnector(Nl, N);
-					j++;
-				}
-				free(a_nodes);
-			}
-		}
-	}
-	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
-	CleanUpMesh(M, merged);
-	free(merged);
-}
-void Chunkify_south(mesh *M)
-{
-	int i, j;
-	int *merged;
-	int *list;
-	int MRG;
-	node *N, *Nl;
-	merged=malloc(LISTBLOCK*sizeof(int));
-	merged[0]=0;
-	Print(DEBUG,"Chunkify_south");
-	
-	for (i=0;i<M->Nn;i++)
-	{
-		if (!IsInList(merged, M->nodes[i].id))
-		{
-			double R;
-			double newy1;	
-			N=M->nodes+i;		
-			j=1;
-			MRG=1;
-			while ((j<=N->south[0])&&(MRG==1))
-			{
-				Nl=SearchNode(*M,N->south[j]);
-				
-				if (j==1)
-					newy1=Nl->y1;
-				newy1=MAX(newy1,Nl->y1);
-				
-				if (Nl->P!=N->P)
-					MRG=0;						
-				else if ((Nl->x2>N->x2+TINY)||(Nl->x1<N->x1-TINY))
-					MRG=0;	
-				j++;
-			}
-			R=(N->x2-N->x1)/(N->y2-newy1);
-			if (R<1.0/MaxR)
-				MRG=0;		
-			if ((MRG)&&(N->south[0]>0))
-			{
-				int *a_nodes;
-				Print(DEBUG, "R: %e",R);
-				a_nodes=malloc(LISTBLOCK*sizeof(int));
-				a_nodes[0]=0;
-				
-				j=1;
-				Nl=SearchNode(*M,N->south[j]);
-				merged=AddToList(merged,Nl->id);	
-				
-				a_nodes=AddListToList(a_nodes, Nl->south);
-				a_nodes=AddListToList(a_nodes, Nl->west);
-				a_nodes=AddListToList(a_nodes, Nl->east);
-				
-				j++;
-				while (j<=N->south[0])
-				{
-					Nl=SearchNode(*M,N->south[j]);
-					merged=AddToList(merged,Nl->id);	
-				
-					a_nodes=AddListToList(a_nodes, Nl->south);
-					a_nodes=AddListToList(a_nodes, Nl->west);
-					a_nodes=AddListToList(a_nodes, Nl->east);
-					
-					j++;
-				}
-				N->y1=newy1;
-				
-				j=1;
-				while (j<=N->south[0])
-				{
-					Nl=SearchNode(*M,N->south[j]);
-					if (newy1>Nl->y1+TINY)
-					{
-						int k=1;
-						node *L;
-						merged=RemoveFromList(merged,Nl->id);
-						Nl->y2=newy1;
-						/* filter out the west and east nodes */
-						list=DuplicateList(Nl->west);
-						while (k<=list[0])
-						{
-							L=SearchNode(*M,list[k]);
-							NodeConnector(Nl, L);
-							k++;
-						}
-						free(list);
-						list=DuplicateList(Nl->east);
-						k=1;
-						while (k<=list[0])
-						{
-							L=SearchNode(*M,list[k]);
-							NodeConnector(Nl, L);
-							k++;
-						}
-						free(list);
-					}	
-					j++;
-				}
-				j=1;
-				while (j<=a_nodes[0])
-				{
-					Nl=SearchNode(*M,a_nodes[j]);
-					NodeConnector(Nl, N);
-					j++;
-				}
-				free(a_nodes);
-			}
-		}
-	}
-	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
-	CleanUpMesh(M, merged);
-	free(merged);
-}
 /************************************************/
+
 int *Chunkify_node(mesh *M, int id, int * merged)
 {
 	int j;
@@ -2307,15 +1851,20 @@ void Chunkify(mesh *M)
 	InitRandom();
 	while ((M->Nn<Nold)&&(i<100))
 	{
+		/* we add a random component here to make the algorithm a bit more robust against special cases where a certain regular pattern may make everything turn bad */
+		/* we therefore create a list of nodes and shuffle it to process the list in random order. This is only used to "seed" the "chunks" */
 		Nold=M->Nn;
 		list[0]=M->Nn;
 		for (j=0;j<M->Nn;j++)
 			list[j+1]=j;
 		Shuffle (list);
+		
 		skip=J;
 		offset=J;
 		Print(DEBUG,"Skip:%i Offset %i %i",skip,offset,M->Nn);
 		Chunkify_nodes(M,  list, skip, 0);
+		
+		/* here we proceed in normal order */
 		list[0]=M->Nn;
 		for (j=0;j<M->Nn;j++)
 			list[j+1]=j;
