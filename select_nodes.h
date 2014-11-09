@@ -49,6 +49,8 @@ int FindPos(mesh M, int id, double x, double y);
 int * PolySelectNodes(polygon P, mesh M, int *sel_nodes);
 int * PolyContourSelectNodes(double d, polygon P, int loop, mesh M, int *sel_nodes);
 int * CircSelectNodes(double x, double y, double r, mesh M, int *sel_nodes);
+int * CircContourSelectNodes(double x, double y, double r, double d, mesh M, int *sel_nodes);
 int * RectSelectNodes(double x1, double y1, double x2, double y2, mesh M, int *sel_nodes);
+int * RectContourSelectNodes(double x1, double y1, double x2, double y2, double d, mesh M, int *sel_nodes);
 polygon ReadPoly(char *fn);
 int * SelectArea(mesh M, int *sel_nodes, char *name);

@@ -453,6 +453,48 @@ int * CircSelectNodes(double x, double y, double r, mesh M, int *sel_nodes)
 		Warning("No nodes selected in CircSelectNodes\n");	
 	return sel_nodes;		
 }
+
+int * CircContourSelectNodes(double x, double y, double r, double d, mesh M, int *sel_nodes)
+{
+	int i, *old_sel;
+	double xn, yn, r1, r2;
+	r1=(r-d)*(r-d);
+	r2=(r+d)*(r+d);
+	
+	if (sel_nodes[0]>0)
+	{
+		/* make selection within selection */
+		old_sel=DuplicateList(sel_nodes);
+		sel_nodes[0]=0;
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+		{
+			node *N;
+			N=SearchNode(M, old_sel[i]);
+			xn=x-(N->x1+N->x2)/2;
+			yn=y-(N->y1+N->y2)/2;
+			if ((xn*xn+yn*yn<=r2)&&(xn*xn+yn*yn>=r1))
+				sel_nodes=AddToList(sel_nodes, N->id);
+		}
+		
+		free(old_sel);	
+	}
+	else
+	{
+		/* make new selection */
+		for (i=0;i<M.Nn;i++)
+		{
+			xn=x-(M.nodes[i].x1+M.nodes[i].x2)/2;
+			yn=y-(M.nodes[i].y1+M.nodes[i].y2)/2;
+			if ((xn*xn+yn*yn<=r2)&&(xn*xn+yn*yn>=r1))
+				sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+		}
+	}
+	if (sel_nodes[0]==0)
+		Warning("No nodes selected in CircContourSelectNodes\n");	
+	return sel_nodes;		
+}
+
 int * RectSelectNodes(double x1, double y1, double x2, double y2, mesh M, int *sel_nodes)
 {
 	int i, *old_sel;
@@ -487,6 +529,71 @@ int * RectSelectNodes(double x1, double y1, double x2, double y2, mesh M, int *s
 	}
 	if (sel_nodes[0]==0)
 		Warning("No nodes selected in RectSelectNodes\n");
+	return sel_nodes;		
+}
+
+int * RectContourSelectNodes(double x1, double y1, double x2, double y2, double d, mesh M, int *sel_nodes)
+{
+	int i, *old_sel;
+	double xn, yn;
+	if (sel_nodes[0]>0)
+	{
+		/* make selection within selection */
+		old_sel=DuplicateList(sel_nodes);
+		sel_nodes[0]=0;
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+		{
+			node *N;
+			N=SearchNode(M, old_sel[i]);
+			xn=(N->x1+N->x2)/2;
+			yn=(N->y1+N->y2)/2;
+			if ((yn>=y1-d)&&(yn<=y2+d))
+			{
+				/* select around vertical edges */
+				if ((xn>=x1-d)&&(xn<=x1+d))
+					sel_nodes=AddToList(sel_nodes, N->id);					
+				if ((xn>=x2-d)&&(xn<=x2+d))
+					sel_nodes=AddToList(sel_nodes, N->id);
+			}
+			if ((xn>=x1-d)&&(xn<=x2+d))
+			{
+				/* select around horizontal edges */
+				if ((yn>=y1-d)&&(yn<=y1+d))
+					sel_nodes=AddToList(sel_nodes, N->id);					
+				if ((yn>=y2-d)&&(yn<=y2+d))
+					sel_nodes=AddToList(sel_nodes, N->id);
+			}
+		}
+		free(old_sel);						
+	}
+	else
+	{
+		/* make new selection */
+		for (i=0;i<M.Nn;i++)
+		{
+			xn=(M.nodes[i].x1+M.nodes[i].x2)/2;
+			yn=(M.nodes[i].y1+M.nodes[i].y2)/2;
+			if ((yn>=y1-d)&&(yn<=y2+d))
+			{
+				/* select around vertical edges */
+				if ((xn>=x1-d)&&(xn<=x1+d))
+					sel_nodes=AddToList(sel_nodes, M.nodes[i].id);					
+				if ((xn>=x2-d)&&(xn<=x2+d))
+					sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+			}
+			if ((xn>=x1-d)&&(xn<=x2+d))
+			{
+				/* select around horizontal edges */
+				if ((yn>=y1-d)&&(yn<=y1+d))
+					sel_nodes=AddToList(sel_nodes, M.nodes[i].id);					
+				if ((yn>=y2-d)&&(yn<=y2+d))
+					sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
+			}
+		}
+	}
+	if (sel_nodes[0]==0)
+		Warning("No nodes selected in RectContourSelectNodes\n");
 	return sel_nodes;		
 }
 

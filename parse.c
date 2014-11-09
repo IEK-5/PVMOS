@@ -273,6 +273,19 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 		Error("In SelectRectNodes: No nodes selected, try selecting a larger area or refine the mesh first");
 	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
 }
+void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, double y1, double x2, double y2, double d)
+{
+	meshvar *MV;
+	MV=LookupMesh (name,  meshes, Nm);
+	if (!MV)
+		Error("In SelectRectContourNodes: Mesh %s is not defined\n", name);
+	if (MV->nodes[0]>0)	
+		Print(NORMAL,"            -->  Making sub-selection");
+	MV->nodes=RectContourSelectNodes(x1, y1, x2, y2, d, MV->M, MV->nodes);
+	if (MV->nodes[0]==0)
+		Error("In SelectRectContourNodes: No nodes selected, try selecting a larger area or refine the mesh first");
+	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+}
 /* select circular area in a mesh variable */
 /* Input: 
 	name: name of the mesh
@@ -295,6 +308,19 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 	MV->nodes=CircSelectNodes(x, y, r, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectCircNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
+	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+}
+void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, double y, double r,double d)
+{
+	meshvar *MV;
+	MV=LookupMesh (name,  meshes, Nm);
+	if (!MV)
+		Error("In SelectCircContourNodes: Mesh %s is not defined\n", name);
+	if (MV->nodes[0]>0)	
+		Print(NORMAL,"            -->  Making sub-selection");
+	MV->nodes=CircContourSelectNodes(x, y, r, d, MV->M, MV->nodes);
+	if (MV->nodes[0]==0)
+		Error("In SelectCircContourNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
 	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
 }
 /* select area enclosed by a polygon in a mesh variable */
@@ -1100,6 +1126,24 @@ void Parse (char *file)
 						SelectRectNodes (args[4],  Meshes, Nm, x1,y1,x2,y2);
 						FreeArgs (args, 5);	
 						break;
+					}		
+					case SELECT_RECT_CONTOUR:
+					{
+						double x1,x2,y1,y2, d;			
+						char **args;
+						args=GetArgs (&begin, 6);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Make selection of elements near a rectangular contour in mesh %s", line_nr, args[5]);
+						
+						x1=atof(args[0]);
+						y1=atof(args[1]);
+						x2=atof(args[2]);
+						y2=atof(args[3]);
+						d=atof(args[4]);
+						SelectRectContourNodes (args[5],  Meshes, Nm, x1,y1,x2,y2,d);
+						FreeArgs (args, 6);	
+						break;
 					}	
 					case SELECT_CIRC:
 					{
@@ -1115,6 +1159,23 @@ void Parse (char *file)
 
 						SelectCircNodes (args[3],  Meshes, Nm, x,y,r);
 						FreeArgs (args, 4);	
+						break;
+					}	
+					case SELECT_CIRC_CONTOUR:
+					{
+						double x,y,r, d;			
+						char **args;
+						args=GetArgs (&begin, 5);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Make selection of elements near a circular contour in mesh %s", line_nr, args[4]);
+						x=atof(args[0]);
+						y=atof(args[1]);
+						r=atof(args[2]);
+						d=atof(args[3]);
+
+						SelectCircContourNodes (args[4],  Meshes, Nm, x,y,r,d);
+						FreeArgs (args, 5);	
 						break;
 					}
 					case SELECT_POLY:
