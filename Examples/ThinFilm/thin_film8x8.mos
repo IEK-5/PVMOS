@@ -169,6 +169,7 @@ split_coarse minimodule 0.01
 ###################################################################################################
 select_circ 2.5 4 0.1 minimodule
 assign_properties minimodule.shunt
+deselect
 printmesh minimodule mesh0.dat
 adaptive_solve 	minimodule 	5 	0.3 	2
 printmesh minimodule mesh1.dat
