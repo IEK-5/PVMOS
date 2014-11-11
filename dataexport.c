@@ -313,92 +313,170 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	fclose(f);
 }
 
-void PrintMesh(char *fn, mesh *M)
+void PrintMesh(char *fn, mesh *M, int *selected)
 {
 	int i;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
 	PrintFileHeader(f);
-	fprintf(f, "# Mesh element borders\n");
+	if (selected[0]==0)
+		fprintf(f, "# Mesh element borders\n");
+	else
+		fprintf(f, "# Selected mesh element borders\n");
 	fprintf(f, "# gnuplot line plot\n");
 	fprintf(f, "# x [cm]\ty [cm]\tElement-id\n");
-	for (i=0;i<M->Nn;i++)
+	if (selected[0]==0)
+		for (i=0;i<M->Nn;i++)
+		{
+			fprintf(f,"%e %e %i\n", M->nodes[i].x1, M->nodes[i].y1, M->nodes[i].id);
+			fprintf(f,"%e %e %i\n", M->nodes[i].x2, M->nodes[i].y1, M->nodes[i].id);		
+			fprintf(f,"%e %e %i\n", M->nodes[i].x2, M->nodes[i].y2, M->nodes[i].id);
+			fprintf(f,"%e %e %i\n", M->nodes[i].x1, M->nodes[i].y2, M->nodes[i].id);
+			fprintf(f,"%e %e %i\n", M->nodes[i].x1, M->nodes[i].y1, M->nodes[i].id);
+			fprintf(f,"\n");		
+		}
+	else
 	{
-		fprintf(f,"%e %e %i\n", M->nodes[i].x1, M->nodes[i].y1, M->nodes[i].id);
-		fprintf(f,"%e %e %i\n", M->nodes[i].x2, M->nodes[i].y1, M->nodes[i].id);		
-		fprintf(f,"%e %e %i\n", M->nodes[i].x2, M->nodes[i].y2, M->nodes[i].id);
-		fprintf(f,"%e %e %i\n", M->nodes[i].x1, M->nodes[i].y2, M->nodes[i].id);
-		fprintf(f,"%e %e %i\n\n", M->nodes[i].x1, M->nodes[i].y1, M->nodes[i].id);
-		fprintf(f,"\n");		
+		node *N;
+		for (i=1;i<=selected[0];i++)
+		{
+			
+			N=SearchNode(*M, selected[i]);
+			fprintf(f,"%e %e %i\n", N->x1, N->y1, N->id);
+			fprintf(f,"%e %e %i\n", N->x2, N->y1, N->id);		
+			fprintf(f,"%e %e %i\n", N->x2, N->y2, N->id);
+			fprintf(f,"%e %e %i\n", N->x1, N->y2, N->id);
+			fprintf(f,"%e %e %i\n", N->x1, N->y1, N->id);
+			fprintf(f,"\n");		
+		}
 	}
+		
 	fclose(f);
 }
-void PrintSurfDef(char *fn, mesh *M)
+void PrintSurfDef(char *fn, mesh *M, int *selected)
 {
 	int i;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
 	PrintFileHeader(f);
-	fprintf(f, "# Mesh element area definition\n");
+	if (selected[0]==0)
+		fprintf(f, "# Mesh element area definition\n");
+	else
+		fprintf(f, "# Selected mesh element area definition\n");
 	fprintf(f, "# gnuplot surface plot\n");
 	fprintf(f, "# x [cm]\ty [cm]\tElement-id\tArea-id\n");
-	for (i=0;i<M->Nn;i++)
+	if (selected[0]==0)
+		for (i=0;i<M->Nn;i++)
+		{
+			fprintf(f,"%e %e %i %i\n", M->nodes[i].x1, M->nodes[i].y1, M->nodes[i].id, M->nodes[i].P);
+			fprintf(f,"%e %e %i %i\n\n", M->nodes[i].x1, M->nodes[i].y2, M->nodes[i].id, M->nodes[i].P);
+			fprintf(f,"%e %e %i %i\n", M->nodes[i].x2, M->nodes[i].y1, M->nodes[i].id, M->nodes[i].P);		
+			fprintf(f,"%e %e %i %i\n\n", M->nodes[i].x2, M->nodes[i].y2, M->nodes[i].id, M->nodes[i].P);
+			fprintf(f,"\n");
+		}
+	else
 	{
-		fprintf(f,"%e %e %i %i\n", M->nodes[i].x1, M->nodes[i].y1, M->nodes[i].id, M->nodes[i].P);
-		fprintf(f,"%e %e %i %i\n\n", M->nodes[i].x1, M->nodes[i].y2, M->nodes[i].id, M->nodes[i].P);
-		fprintf(f,"%e %e %i %i\n", M->nodes[i].x2, M->nodes[i].y1, M->nodes[i].id, M->nodes[i].P);		
-		fprintf(f,"%e %e %i %i\n\n", M->nodes[i].x2, M->nodes[i].y2, M->nodes[i].id, M->nodes[i].P);
-		fprintf(f,"\n");
+		node *N;
+		for (i=1;i<=selected[0];i++)
+		{			
+			N=SearchNode(*M, selected[i]);			
+			fprintf(f,"%e %e %i %i\n", N->x1, N->y1, N->id, N->P);
+			fprintf(f,"%e %e %i %i\n\n", N->x1, N->y2, N->id, N->P);
+			fprintf(f,"%e %e %i %i\n", N->x2, N->y1, N->id, N->P);		
+			fprintf(f,"%e %e %i %i\n\n", N->x2, N->y2, N->id, N->P);
+			fprintf(f,"\n");
+		}
 	}
 	fclose(f);
 }
 
-void PrintSurfV(char *fn, mesh *M)
+void PrintSurfV(char *fn, mesh *M, int *selected)
 {
 	int i, j, k;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
 	PrintFileHeader(f);
+	if (selected[0]==0)
+		fprintf(f, "# Simulated Potentials per element\n");
+	else
+		fprintf(f, "# Simulated Potentials per selected element\n");
 	fprintf(f, "# Simulated Potentials per element\n");
 	fprintf(f, "# gnuplot surface plot\n");
 	fprintf(f, "# V(i):      Potential in the i-th electrode\n");
 	fprintf(f, "# x [cm]\ty [cm]\tU(i) [V]\tU(i+1) [V]...\n");
-	for (i=0;i<M->Nn;i++)
+	if (selected[0]==0)
+		for (i=0;i<M->Nn;i++)
+		{
+			fprintf(f,"%e %e", M->nodes[i].x1, M->nodes[i].y1);
+			for(j=0;j<M->res.Nva;j++)
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][M->nodes[i].id]);
+			fprintf(f,"\n");	
+						
+			fprintf(f,"%e %e", M->nodes[i].x1, M->nodes[i].y2);
+			for(j=0;j<M->res.Nva;j++)
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][M->nodes[i].id]);
+			fprintf(f,"\n\n");	
+				
+				
+			fprintf(f,"%e %e", M->nodes[i].x2, M->nodes[i].y1);
+			for(j=0;j<M->res.Nva;j++)
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][M->nodes[i].id]);
+			fprintf(f,"\n");	
+				
+						
+			fprintf(f,"%e %e", M->nodes[i].x2, M->nodes[i].y2);
+			for(j=0;j<M->res.Nva;j++)
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][M->nodes[i].id]);
+			fprintf(f,"\n\n");	
+			
+			fprintf(f,"\n");
+		}
+	else
 	{
-		fprintf(f,"%e %e", M->nodes[i].x1, M->nodes[i].y1);
-		for(j=0;j<M->res.Nva;j++)
-			for(k=0;k<M->Nel;k++)
-				fprintf(f," %e", M->res.Vn[j][k][i]);
-		fprintf(f,"\n");	
-					
-		fprintf(f,"%e %e", M->nodes[i].x1, M->nodes[i].y2);
-		for(j=0;j<M->res.Nva;j++)
-			for(k=0;k<M->Nel;k++)
-				fprintf(f," %e", M->res.Vn[j][k][i]);
-		fprintf(f,"\n\n");	
+		node *N;
+		for (i=1;i<=selected[0];i++)
+		{			
+			N=SearchNode(*M, selected[i]);	
+	
+			fprintf(f,"%e %e", N->x1, N->y1);
+			for(j=0;j<M->res.Nva;j++)
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][N->id]);
+			fprintf(f,"\n");	
+						
+			fprintf(f,"%e %e", N->x1, N->y2);
+			for(j=0;j<M->res.Nva;j++)
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][N->id]);
+			fprintf(f,"\n\n");	
+				
+				
+			fprintf(f,"%e %e", N->x2, N->y1);
+			for(j=0;j<M->res.Nva;j++)
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][N->id]);
+			fprintf(f,"\n");	
+				
+						
+			fprintf(f,"%e %e", N->x2, N->y2);
+			for(j=0;j<M->res.Nva;j++)
+				for(k=0;k<M->Nel;k++)
+					fprintf(f," %e", M->res.Vn[j][k][N->id]);
+			fprintf(f,"\n\n");	
 			
-			
-		fprintf(f,"%e %e", M->nodes[i].x2, M->nodes[i].y1);
-		for(j=0;j<M->res.Nva;j++)
-			for(k=0;k<M->Nel;k++)
-				fprintf(f," %e", M->res.Vn[j][k][i]);
-		fprintf(f,"\n");	
-			
-					
-		fprintf(f,"%e %e", M->nodes[i].x2, M->nodes[i].y2);
-		for(j=0;j<M->res.Nva;j++)
-			for(k=0;k<M->Nel;k++)
-				fprintf(f," %e", M->res.Vn[j][k][i]);
-		fprintf(f,"\n\n");	
-		
-		fprintf(f,"\n");
+			fprintf(f,"\n");
+		}
 	}
 	fclose(f);
 }
-void PrintConn(char *fn, mesh *M)
+void PrintConn(char *fn, mesh *M, int *selected)
 {
 	int i, j;
 	double xn, yn;
@@ -408,181 +486,17 @@ void PrintConn(char *fn, mesh *M)
 	if ((f=fopen(fn,"w"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
 	PrintFileHeader(f);
-	fprintf(f, "# Connections within the electrodes\n");
+	if (selected[0]==0)
+		fprintf(f, "# Connections between elements\n");
+	else
+		fprintf(f, "# Connections between selected elements\n");
 	fprintf(f, "# gnuplot vector plot\n");
 	fprintf(f, "# x [cm]\ty [cm]\tdx [cm]\tdy [cm]\telement_id1\t element_id2\n");
-	for (i=0;i<M->Nn;i++)
-	{
-		xn=(M->nodes[i].x1+M->nodes[i].x2)/2;
-		yn=(M->nodes[i].y2+M->nodes[i].y1)/2;
-		for (j=1;j<=M->nodes[i].north[0];j++)
+	if (selected[0]==0)
+		for (i=0;i<M->Nn;i++)
 		{
-			N=SearchNode(*M, M->nodes[i].north[j]);
-			xnn=(N->x1+N->x2)/2;
-			ynn=(N->y2+N->y1)/2;
-			fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, M->nodes[i].north[j],M->nodes[i].id);
-		
-		} 
-		for (j=1;j<=M->nodes[i].south[0];j++)
-		{
-			N=SearchNode(*M, M->nodes[i].south[j]);
-			xnn=(N->x1+N->x2)/2;
-			ynn=(N->y2+N->y1)/2;
-			fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, M->nodes[i].south[j],M->nodes[i].id);
-		
-		}
-		for (j=1;j<=M->nodes[i].east[0];j++)
-		{
-			N=SearchNode(*M, M->nodes[i].east[j]);
-			xnn=(N->x1+N->x2)/2;
-			ynn=(N->y2+N->y1)/2;
-			fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, M->nodes[i].east[j],M->nodes[i].id);
-		
-		}
-		for (j=1;j<=M->nodes[i].west[0];j++)
-		{
-			N=SearchNode(*M, M->nodes[i].west[j]);
-			xnn=(N->x1+N->x2)/2;
-			ynn=(N->y2+N->y1)/2;
-			fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, M->nodes[i].west[j],M->nodes[i].id );
-		
-		} 
-	}
-	fclose(f);
-}
-void PrintMeshSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
-{
-	int i;
-	double xx1,yy1,xx2,yy2;
-	FILE *f;
-	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
-	PrintFileHeader(f);
-	fprintf(f, "# Mesh element borders\n");
-	fprintf(f, "# gnuplot line plot\n");
-	fprintf(f, "# x [cm]\ty [cm]\tElement-id\n");
-	for (i=0;i<M->Nn;i++)
-	{
-		xx1=MAX(M->nodes[i].x1,x1);
-		xx2=MIN(M->nodes[i].x2,x2);
-		yy1=MAX(M->nodes[i].y1,y1);
-		yy2=MIN(M->nodes[i].y2,y2);		
-		if ((M->nodes[i].x2>xx1) && (M->nodes[i].x1<xx2) && (M->nodes[i].y2>yy1) && (M->nodes[i].y1<yy2))
-		{
-			fprintf(f,"%e %e %i\n", xx1, yy1, M->nodes[i].id);
-			fprintf(f,"%e %e %i\n", xx2, yy1, M->nodes[i].id);		
-			fprintf(f,"%e %e %i\n", xx2, yy2, M->nodes[i].id);
-			fprintf(f,"%e %e %i\n", xx1, yy2, M->nodes[i].id);
-			fprintf(f,"%e %e %i\n\n", xx1, yy1, M->nodes[i].id);
-			fprintf(f,"\n");
-		}		
-	}
-	fclose(f);
-}
-void PrintSurfDefSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
-{
-	int i;
-	double xx1,yy1,xx2,yy2;
-	FILE *f;
-	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
-	PrintFileHeader(f);
-	fprintf(f, "# Mesh element area definition\n");
-	fprintf(f, "# gnuplot surface plot\n");
-	fprintf(f, "# x [cm]\ty [cm]\tElement-id\tArea-id\n");
-	for (i=0;i<M->Nn;i++)
-	{
-		xx1=MAX(M->nodes[i].x1,x1);
-		xx2=MIN(M->nodes[i].x2,x2);
-		yy1=MAX(M->nodes[i].y1,y1);
-		yy2=MIN(M->nodes[i].y2,y2);		
-		if ((M->nodes[i].x2>xx1) && (M->nodes[i].x1<xx2) && (M->nodes[i].y2>yy1) && (M->nodes[i].y1<yy2))
-		{
-			fprintf(f,"%e %e %i %i\n", xx1, yy1, M->nodes[i].id, M->nodes[i].P);
-			fprintf(f,"%e %e %i %i\n\n", xx1, yy2, M->nodes[i].id, M->nodes[i].P);
-			fprintf(f,"%e %e %i %i\n", xx2, yy1, M->nodes[i].id, M->nodes[i].P);		
-			fprintf(f,"%e %e %i %i\n\n", xx2, yy2, M->nodes[i].id, M->nodes[i].P);
-			fprintf(f,"\n");
-		}		
-	}
-	fclose(f);
-}
-
-void PrintSurfVSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
-{
-	int i, j, k;
-	double xx1,yy1,xx2,yy2;
-	FILE *f;
-	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
-	PrintFileHeader(f);
-	fprintf(f, "# Simulated Potentials per element\n");
-	fprintf(f, "# gnuplot surface plot\n");
-	fprintf(f, "# V(i):      Potential in the i-th electrode\n");
-	fprintf(f, "# x [cm]\ty [cm]\tU(i) [V]\tU(i+1) [V]...\n");
-	for (i=0;i<M->Nn;i++)
-	{
-		xx1=MAX(M->nodes[i].x1,x1);
-		xx2=MIN(M->nodes[i].x2,x2);
-		yy1=MAX(M->nodes[i].y1,y1);
-		yy2=MIN(M->nodes[i].y2,y2);		
-		if ((M->nodes[i].x2>xx1) && (M->nodes[i].x1<xx2) && (M->nodes[i].y2>yy1) && (M->nodes[i].y1<yy2))
-		{
-			fprintf(f,"%e %e", xx1, yy1);
-			for(j=0;j<M->res.Nva;j++)
-				for(k=0;k<M->Nel;k++)
-					fprintf(f," %e", M->res.Vn[j][k][i]);
-			fprintf(f,"\n");	
-						
-			fprintf(f,"%e %e", xx1, yy2);
-			for(j=0;j<M->res.Nva;j++)
-				for(k=0;k<M->Nel;k++)
-					fprintf(f," %e", M->res.Vn[j][k][i]);
-			fprintf(f,"\n\n");	
-				
-				
-			fprintf(f,"%e %e", xx2, yy1);
-			for(j=0;j<M->res.Nva;j++)
-				for(k=0;k<M->Nel;k++)
-					fprintf(f," %e", M->res.Vn[j][k][i]);
-			fprintf(f,"\n");	
-				
-						
-			fprintf(f,"%e %e", xx2, yy2);
-			for(j=0;j<M->res.Nva;j++)
-				for(k=0;k<M->Nel;k++)
-					fprintf(f," %e", M->res.Vn[j][k][i]);
-			fprintf(f,"\n\n");	
-			
-			fprintf(f,"\n");
-		}
-	}
-	fclose(f);
-}
-void PrintConnSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
-{
-	int i, j;
-	double xx1,yy1,xx2,yy2;
-	double xn, yn;
-	double xnn, ynn;
-	node * N;
-	FILE *f;
-	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
-	PrintFileHeader(f);
-	fprintf(f, "# Connections within the electrodes\n");
-	fprintf(f, "# gnuplot vector plot\n");
-	fprintf(f, "# x [cm]\ty [cm]\tdx [cm]\tdy [cm]\telement_id1\t element_id2\n");
-	for (i=0;i<M->Nn;i++)
-	{
-		xx1=MAX(M->nodes[i].x1,x1);
-		xx2=MIN(M->nodes[i].x2,x2);
-		yy1=MAX(M->nodes[i].y1,y1);
-		yy2=MIN(M->nodes[i].y2,y2);		
-		if ((M->nodes[i].x2>xx1) && (M->nodes[i].x1<xx2) && (M->nodes[i].y2>yy1) && (M->nodes[i].y1<yy2))
-		{
-			xn=(xx1+xx2)/2;
-			yn=(yy2+yy1)/2;
+			xn=(M->nodes[i].x1+M->nodes[i].x2)/2;
+			yn=(M->nodes[i].y2+M->nodes[i].y1)/2;
 			for (j=1;j<=M->nodes[i].north[0];j++)
 			{
 				N=SearchNode(*M, M->nodes[i].north[j]);
@@ -616,7 +530,48 @@ void PrintConnSel(char *fn, mesh *M, double x1, double y1, double x2, double y2)
 			
 			} 
 		}
-	}	
+	else
+	{
+		for (i=1;i<=selected[0];i++)
+		{			
+			N=SearchNode(*M, selected[i]);
+			xn=(N->x1+N->x2)/2;
+			yn=(N->y2+N->y1)/2;
+			for (j=1;j<=N->north[0];j++)
+			{
+				N=SearchNode(*M, N->north[j]);
+				xnn=(N->x1+N->x2)/2;
+				ynn=(N->y2+N->y1)/2;
+				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, N->north[j],N->id);
+			
+			} 
+			for (j=1;j<=N->south[0];j++)
+			{
+				N=SearchNode(*M, N->south[j]);
+				xnn=(N->x1+N->x2)/2;
+				ynn=(N->y2+N->y1)/2;
+				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, N->south[j],N->id);
+			
+			}
+			for (j=1;j<=N->east[0];j++)
+			{
+				N=SearchNode(*M, N->east[j]);
+				xnn=(N->x1+N->x2)/2;
+				ynn=(N->y2+N->y1)/2;
+				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, N->east[j],N->id);
+			
+			}
+			for (j=1;j<=N->west[0];j++)
+			{
+				N=SearchNode(*M, N->west[j]);
+				xnn=(N->x1+N->x2)/2;
+				ynn=(N->y2+N->y1)/2;
+				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, N->west[j],N->id );
+			
+			} 
+		}
+	
+	}
 	fclose(f);
 }
 void PrintPars(char *fn, mesh *M)

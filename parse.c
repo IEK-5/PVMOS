@@ -831,7 +831,7 @@ void Parse (char *file)
 					/********************************* SubSecion mesh data */
 					case PRINTMESH:
 					{
-						mesh *M;						
+						meshvar *MV;						
 						char **args;
 						args=GetArgs (&begin, 2);
 						if (args==NULL)
@@ -839,159 +839,65 @@ void Parse (char *file)
 							
 						Print(NORMAL, "* line %3d: Print elements of mesh %s to file %s",line_nr,args[0],args[1]);
 						
-												
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);	
+						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 								
-						PrintMesh(args[1],M);
+						PrintMesh(args[1],&(MV->M), MV->nodes);
 						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTCONN:
 					{
-						mesh *M;					
+						meshvar *MV;					
 						char **args;
 						args=GetArgs (&begin, 2);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print connections in mesh %s to file %s",line_nr,args[0], args[1]);
-							
-												
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+													
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 															
-						PrintConn(args[1],M);
+						PrintConn(args[1],&(MV->M), MV->nodes);
 						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTSURF:
 					{
-						mesh *M;					
+						meshvar *MV;					
 						char **args;
 						args=GetArgs (&begin, 2);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print area definition per node in mesh %s to file %s",line_nr,args[0], args[1]);
 							
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 							
-						PrintSurfDef(args[1],M);
+						PrintSurfDef(args[1],&(MV->M), MV->nodes);
 						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTPOT:
 					{
-						mesh *M;					
+						meshvar *MV;					
 						char **args;
 						args=GetArgs (&begin, 2);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print node potentials in mesh %s to file %s",line_nr,args[0], args[1]);
 											
-						M=FetchMesh (word,  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 							
-						PrintSurfV(args[1],M);
+						PrintSurfV(args[1],&(MV->M), MV->nodes);
 						FreeArgs (args, 2);	
-						break;
-					}
-					case PRINTMESHSEL:
-					{
-						double x1,y1,x2,y2;
-						mesh *M;					
-						char **args;
-						args=GetArgs (&begin, 6);
-						if (args==NULL)
-							goto premature_end;
-						Print(NORMAL, "* line %3d: Print selected nodes of mesh %s to file %s",line_nr,args[0], args[5]);
-							
-						x1=atof(args[1]);
-						y1=atof(args[2]);
-						x2=atof(args[3]);
-						y2=atof(args[4]);
-												
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-									
-						
-						PrintMeshSel(args[5],M, x1, y1, x2, y2);
-						FreeArgs (args, 6);	
-						break;
-					}
-					case PRINTCONNSEL:
-					{
-						double x1,y1,x2,y2;
-						mesh *M;					
-						char **args;
-						args=GetArgs (&begin, 6);
-						if (args==NULL)
-							goto premature_end;
-						Print(NORMAL, "* line %3d: Print selected connections in mesh %s to file %s",line_nr,args[0], args[5]);
-						
-						x1=atof(args[1]);
-						y1=atof(args[2]);
-						x2=atof(args[3]);
-						y2=atof(args[4]);
-												
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-							
-						
-						PrintConnSel(args[5],M, x1, y1, x2, y2);
-						FreeArgs (args, 6);	
-						break;
-					}
-					case PRINTSURFSEL:
-					{
-						double x1,y1,x2,y2;
-						mesh *M;				
-						char **args;
-						args=GetArgs (&begin, 6);
-						if (args==NULL)
-							goto premature_end;
-						Print(NORMAL, "* line %3d: Print area definition per selected element in mesh %s to file %s",line_nr,args[0], args[5]);
-						
-						x1=atof(args[1]);
-						y1=atof(args[2]);
-						x2=atof(args[3]);
-						y2=atof(args[4]);
-												
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-							
-						PrintSurfDefSel(args[5],M, x1, y1, x2, y2);
-						FreeArgs (args, 6);	
-						break;
-					}
-					case PRINTPOTSEL:
-					{
-						double x1,y1,x2,y2;
-						mesh *M;				
-						char **args;
-						args=GetArgs (&begin, 6);
-						if (args==NULL)
-							goto premature_end;
-						Print(NORMAL, "* line %3d: Print selected node potentials in mesh %s to file %s",line_nr,args[0], args[5]);
-						
-						x1=atof(args[1]);
-						y1=atof(args[2]);
-						x2=atof(args[3]);
-						y2=atof(args[4]);
-												
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-						
-						PrintSurfVSel(args[5],M, x1, y1, x2, y2);
-						FreeArgs (args, 6);	
 						break;
 					}
 					case PRINTIV:
@@ -1672,7 +1578,7 @@ void Parse (char *file)
 					}
 					case ADAPTIVE_SOLVE:
 					{
-						mesh *M;
+						meshvar *MV;
 						double Va, rel_th;
 						int Na;				
 						char **args;
@@ -1681,15 +1587,15 @@ void Parse (char *file)
 							goto premature_end;
 							
 						Print(NORMAL,"* line %3d: Adaptive solving of potentials in mesh %s",line_nr, args[0]);					
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
 						Va=atof(args[1]);
 						rel_th=atof(args[2]);
 						Na=atoi(args[3]);
-						
-						AdaptiveSolveVa(M, Va, rel_th, Na, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						MV->nodes[0]=0;
+						AdaptiveSolveVa(&(MV->M), Va, rel_th, Na, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
 						FreeArgs (args, 4);
 						break;
 					

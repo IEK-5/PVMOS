@@ -93,7 +93,7 @@ The input file is parsed by PVMOS, which sequentially processes the file. PVMOS 
 \hline
 Keyword & Description \\
 \hline\\
-\texttt{newmesh} 	& Create a new, rectangular mesh. The command takes six arguments:
+\texttt{newmesh} 	& Create a new, rectangular mesh. The command takes seven arguments:
 \begin{enumerate}
 \item \texttt{x1}, x-coordinate of the lower left corner
 \item \texttt{y1}, y-coordinate of the lower left corner
@@ -133,7 +133,7 @@ Keyword & Description \\
 \item \texttt{mesh1-name}, Name of the mesh to be duplicated
 \item \texttt{mesh2-name}, Name of the resulting copy
 \end{enumerate}\\
-\texttt{add\_electrode}	& Adds an electrode to a certain mesh. The command takes arguments:
+\texttt{add\_electrode}	& Adds an electrode to a certain mesh. The command takes one argument:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
@@ -150,6 +150,16 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_rect\_contour}	& Select the contour of a rectangle in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the rectangle. If the latter is not desired use deselect first. The command takes six arguments:
+\begin{enumerate}
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{d}, distance from the contour within which elements are selected
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{select\_circ}	& Select a circular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. The command takes four arguments:
 \begin{enumerate}
 \item \texttt{x\_c}, center x-coordinate of the selected circle
@@ -158,12 +168,21 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_circ\_contour}	& Select the contour of a circle in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. The command takes five arguments:
+\begin{enumerate}
+\item \texttt{x\_c}, center x-coordinate of the selected circle
+\item \texttt{y\_c}, center y-coordinate of the selected circle
+\item \texttt{r}, radius of the selected circle
+\item \texttt{d}, distance from the contour within which elements are selected
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load a polygon from file with the \texttt{load\_poly} command. If currently elements are already selected in the mesh, the command selects the subset of selected elements within the polygon. If the latter is not desired use deselect first. The command takes one argument.
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load a polygon from file with the \texttt{load\_poly} command. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. The command takes one argument.
+\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load a polygon from file with the \texttt{load\_poly} command. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. The command takes three arguments.
 \begin{enumerate}
 \item \texttt{distance}, Distance from the polygon
 \item \texttt{loop}, Argument takes either 0 (not looped) or 1 (looped). In looped modus the last point in the polygon is connected to the first point.
@@ -237,7 +256,7 @@ Keyword & Description \\
 \multicolumn{2}{l}{\textsc{Element-wise export of data}} \\*
 \hline
 Keyword & Description \\
-\texttt{printmesh}	& Export the mesh in a manner that is plottable with the gnuplot program (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. The command takes two arguments:
+\texttt{printmesh}	& Export the mesh in a manner that is plottable with the gnuplot program (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
@@ -251,7 +270,7 @@ The output file will contain coordinates in columns. For each element the file c
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printconn}	& Print lateral connections in the electrodes in a format plottable with gnuplot (www.gnuplot.info/). When plotting the file (with vectors) a vector is drawn between the center of each element to the center of the adjacent elements to which it is connected. This routine may be useful when inspecting generated meshes. The command takes two arguments:
+\texttt{printconn}	& Print lateral connections in the electrodes in a format plottable with gnuplot (www.gnuplot.info/). When plotting the file (with vectors) a vector is drawn between the center of each element to the center of the adjacent elements to which it is connected. If a selection of elements is made for the mesh, only the selected nodes are plotted. This routine may be useful when inspecting generated meshes. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
@@ -263,7 +282,7 @@ The output is coordinates in columns. For each element the file contains the fol
 	... \\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printarea}	& Print the geometry of the mesh which identifies each element and the area it belongs to. The fileformat is laid out such that it is plottable with a surface plot in gnuplot (www.gnuplot.info/).  The command takes two arguments:
+\texttt{printarea}	& Print the geometry of the mesh which identifies each element and the area it belongs to. The fileformat is laid out such that it is plottable with a surface plot in gnuplot (www.gnuplot.info/).  If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
@@ -279,7 +298,7 @@ The output file will contain data in columns. The file contains coordinates, the
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printV}		& Print the electrode potentials per element for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. The command takes two arguments:
+\texttt{printV}		& Print the electrode potentials per element for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
@@ -298,46 +317,6 @@ The output file will contain data in columns. The file contains coordinates foll
 \texttt{printpar}	& Print a summary of the parameters per area, including both area-name and area-ID. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
-\end{enumerate}\\
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printmesh\_sel}	& Same as \texttt{printmesh} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arguments:
-\begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh
-\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
-\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
-\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
-\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
-\item \texttt{file-name}, filename to save the data in.
-\end{enumerate}\\
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printconn\_sel}	& Same as \texttt{printconn} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arguments:
-\begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh
-\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
-\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
-\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
-\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
-\item \texttt{file-name}, filename to save the data in.
-\end{enumerate}\\
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printarea\_sel}	& Same as \texttt{printarea} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arguments:
-\begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh
-\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
-\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
-\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
-\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
-\item \texttt{file-name}, filename to save the data in.
-\end{enumerate}\\
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printV\_sel}		& Same as \texttt{printV} except that it only exports a selected area specified by its lower left and upper right corners. The command takes six arguments:
-\begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh
-\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
-\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
-\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
-\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -490,7 +469,7 @@ Keyword & Description \\
 \texttt{out\_quiet}	&  Set verbosity to the minimum (only says something when it crashes). The command takes no arguments.\\
 \texttt{out\_normal}	&  Set verbosity to the normal level. The command takes no arguments.\\
 \texttt{out\_verbose}	&  Output additional data that may be interesting. The command takes no arguments.\\
-\texttt{out\_degug}	&  Output additional data that is only interesting for someone who is chasing bugs in the code. The command takes no arguments.\\
+\texttt{out\_debug}	&  Output additional data that is only interesting for someone who is chasing bugs in the code. The command takes no arguments.\\
 \hline
 \\
 \end{longtable}

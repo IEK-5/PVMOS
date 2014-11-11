@@ -38,14 +38,10 @@
  *                                                               *             
  *****************************************************************/                                                                             
 
-void PrintMesh(char *fn, mesh *M);
-void PrintConn(char *fn, mesh *M);
-void PrintSurfDef(char *fn, mesh *M);
-void PrintSurfV(char *fn, mesh *M);
-void PrintMeshSel(char *fn, mesh *M, double x1, double y1, double x2, double y2);
-void PrintConnSel(char *fn, mesh *M, double x1, double y1, double x2, double y2);
-void PrintSurfDefSel(char *fn, mesh *M, double x1, double y1, double x2, double y2);
-void PrintSurfVSel(char *fn, mesh *M, double x1, double y1, double x2, double y2);
+void PrintMesh(char *fn, mesh *M, int *selected);
+void PrintConn(char *fn, mesh *M, int *selected);
+void PrintSurfDef(char *fn, mesh *M, int *selected);
+void PrintSurfV(char *fn, mesh *M, int *selected);
 void PrintIV(char *fn, mesh *M);
 void PrintPars(char *fn, mesh *M);
 void SurfVPlotNearest(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny);
