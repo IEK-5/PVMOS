@@ -177,12 +177,12 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load a polygon from file with the \texttt{load\_poly} command. If currently elements are already selected in the mesh, the command selects the subset of selected elements within the polygon. If the latter is not desired use deselect first. The command takes one argument.
+\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements within the polygon. If the latter is not desired use deselect first. The command takes one argument.
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load a polygon from file with the \texttt{load\_poly} command. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. The command takes three arguments.
+\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. The command takes three arguments.
 \begin{enumerate}
 \item \texttt{distance}, Distance from the polygon
 \item \texttt{loop}, Argument takes either 0 (not looped) or 1 (looped). In looped modus the last point in the polygon is connected to the first point.
@@ -193,6 +193,19 @@ Keyword & Description \\
 \begin{enumerate}
 \item \texttt{file-name}, Name of the file describing the polygon (one 2D coordinate per line, i.e., two columns, 1: x-coordinate, 2: y-coordinate)
 \end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{define\_poly}	& Define polygon within the input file. See also the \texttt{load\_poly} command for an alternative method. The difference between this command and the \texttt{load\_poly} command is that with this command you can define the polygon within the PVMOS input file. As such it is best suited for simple polygons. The \texttt{define\_poly} command marks the start and the end of a table defining the polygon. Between the two \texttt{define\_poly} commands, one coordinate (x- and y-value) per line is expected, i.e.,\\
+&
+\begin{tabular}{ll}
+	\texttt{define\_poly} \\
+	$x_1$ & $y_1$ \\
+	$x_2$ & $y_2$ \\
+	$x_3$ & $y_3$ \\
+	... & ... \\
+	$x_N$ & $y_N$ \\
+	\texttt{define\_poly} \\
+\end{tabular}\\
+&where $(x_i,y_i)$ is the $i$-th coordinate of the polygon.\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{select\_area}	& Select all nodes assigned to a given area. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes which are assigned to the given area. If the latter is not desired use deselect first. The command takes one argument.
 \begin{enumerate}
@@ -326,7 +339,7 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{surfVplot}		& Export the front and back electrode voltages for a specific solution. Unlike the \texttt{print}-commands like \texttt{printV} the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
+\texttt{surfVplot}		& Export the electrode voltages for a specific solution. Unlike the \texttt{print}-commands like \texttt{printV} the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
@@ -340,6 +353,31 @@ The output file will contain data in columns. The file contains coordinates foll
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{surfPplot}		& Export the local power density for a specific solution. Just like in the \texttt{surfVplot} command the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+\texttt{surfJplot}		& Export the current densities in the electrodes and through the solar cells. Unlike the \texttt{print}-commands like \texttt{printV} the data is mapped on a regular mesh. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surfEplot}		& Export the local electric field in x- and y- direction in the electrodes. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
@@ -498,27 +536,6 @@ This example demonstrates how a PVMOS mesh can be generated from images using GN
 \subsection{Crystalline silicon module}
 The final example is perhaps the most elaborate. In \texttt{Examples/CSiSTD} we do a simulation of a crystalline solar cell with three busbars. The simulation extensively uses the definition of new meshes which are glued together to form bigger and more complicated meshes untill we have a complete cell with busbars and fingers and tabbing wires. It uses al the tricks PVMOS has to generate a complicated geometry from scratch without aid from GNU Octave. The result is a mesh that is comparatively small and therefore allows to do the simulation is a comparatively small memory footprint (less than 0.5 GB) which makes this example even suitable for 32bit machines. There is an optional section in the input file which you can uncomment to simulate the effect of Banksy spray-painting a rat on your solar cell leaving a permanent rat-shaped shadow pattern on the cell. 
 \begin{thebibliography}{10}
-\providecommand{\url}[1]{#1}
-\csname url@samestyle\endcsname
-\providecommand{\newblock}{\relax}
-\providecommand{\bibinfo}[2]{#2}
-\providecommand{\BIBentrySTDinterwordspacing}{\spaceskip=0pt\relax}
-\providecommand{\BIBentryALTinterwordstretchfactor}{4}
-\providecommand{\BIBentryALTinterwordspacing}{\spaceskip=\fontdimen2\font plus
-\BIBentryALTinterwordstretchfactor\fontdimen3\font minus
-  \fontdimen4\font\relax}
-\providecommand{\BIBforeignlanguage}[2]{{%
-\expandafter\ifx\csname l@#1\endcsname\relax
-\typeout{** WARNING: IEEEtran.bst: No hyphenation pattern has been}%
-\typeout{** loaded for the language `#1'. Using the pattern for}%
-\typeout{** the default language instead.}%
-\else
-\language=\csname l@#1\endcsname
-\fi
-#2}}
-\providecommand{\BIBdecl}{\relax}
-\BIBdecl
-
 
 \bibitem{pvmos:2014}
 B.~E. Pieters, ``{PVMOS: A Free and Open Source Simulation Tool for Solar Modules},'' \emph{submitted to: Journal of Photovoltaics}, 2014.
