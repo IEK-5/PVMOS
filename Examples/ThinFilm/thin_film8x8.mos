@@ -134,8 +134,10 @@ set_R		minimodule.shunt 	0 	0.0001
 ###################################################################################################
 # we will make the defect in the center of the third cell
 # First thing to take care of is that the mesh is fine around the defect so we can 
-# properly define it. Currently at the defect location the elements are 
-# 0.02x0.4 cm^2. We select an area with radius 2 cm and refine it a bit
+# properly define it. In addition, the electrical simulation also needs a good resolution. For the
+# electrical simulation it is useful to refine the mesh in several concentric circles, such that
+# the closer you get to the defect the finer the mesh is. Currently at the defect location the 
+# elements are 0.02x0.4 cm^2. We select an area with radius 2 cm and refine it a bit
 ###################################################################################################
 select_circ 2.5 4 2 minimodule
 split_coarse minimodule 0.2
@@ -145,38 +147,49 @@ split_coarse minimodule 0.2
 # we do another run, this time in an area with a 1 cm radius around the defect 
 ###################################################################################################
 select_circ 2.5 4 1 minimodule
-split_coarse minimodule 0.1
+split_coarse minimodule 0.05
 
 ###################################################################################################
 # repeat ...
 ###################################################################################################
 select_circ 2.5 4 0.5 minimodule
-split_coarse minimodule 0.05
-
-select_circ 2.5 4 0.25 minimodule
 split_coarse minimodule 0.025
 
+select_circ 2.5 4 0.25 minimodule
+split_coarse minimodule 0.0125
+
 ###################################################################################################
-# We create a defect with a radius of 1mm, a a rule of thumb I want at leat 10 elemnts along the 
+# We create a defect with a radius of 1mm, a a rule of thumb I want at leat 10 elements along the 
 # radius, so this time I have a circle slightly larger than the defect with a maximum mesh distance 
 # of 0.01.
 ###################################################################################################
-select_circ 2.5 4 0.125 minimodule
-split_coarse minimodule 0.01
+select_circ 2.5 4 0.13 minimodule
+split_coarse minimodule 0.005
+
+###################################################################################################
+# Finally we refine around the contour of the defect, to get a very acurate shape (in 5 µm 
+# resolution)
+###################################################################################################
+select_circ_contour 2.5 4 0.1 0.005 minimodule
+split_coarse minimodule 0.0005
+deselect minimodule
 
 ###################################################################################################
 # Time to create ourselves a defect
 ###################################################################################################
 select_circ 2.5 4 0.1 minimodule
 assign_properties minimodule.shunt
-deselect
+deselect minimodule
 printmesh minimodule mesh0.dat
 adaptive_solve 	minimodule 	5 	0.3 	2
 printmesh minimodule mesh1.dat
 
-# solve IV from 0-35 V in 36 steps (1V steps including both 0 and 35 V)
+# solve IV from 0-8 V in 41 steps (1V steps including both 0 and 35 V)
 solve minimodule 0 8 41\n");
 surfVplot minimodule 0 0 8 8 200 200 4.4 minimodule_44.dat
 surfVplot minimodule 0 0 8 8 200 200 0 minimodule_00.dat
 surfVplot minimodule 0 0 8 8 200 200 6.4 minimodule_64.dat
+surfPplot minimodule 2 3.5 3 4.5 600 600 4.4 minimoduleP_44.dat
+surfPplot minimodule 2 3.5 3 4.5 600 600 0 minimoduleP_00.dat
+surfPplot minimodule 2 3.5 3 4.5 600 600 6.4 minimoduleP_64.dat
 printIV minimodule IV_minimodule.dat
