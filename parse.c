@@ -1006,6 +1006,78 @@ void Parse (char *file)
 						FreeArgs (args, 9);	
 						break;
 					}
+					case SURFJPLOT:					{
+						mesh *M;
+						double x1, y1, x2, y2, Va;
+						int Nx, Ny, Vai;				
+						char **args;
+						args=GetArgs (&begin, 9);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Export current densities from mesh %s to file %s",line_nr,args[0], args[8]);
+							
+								
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
+						
+						Nx=atoi(args[5]);	
+						Ny=atoi(args[6]);	
+						Va=atof(args[7]);
+																	
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
+						Vai=FindVa(Va, M->res.Va, M->res.Nva);
+						if (Vai>=0)
+						{
+							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
+							SurfJPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
+						}
+						else
+							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
+							
+						FreeArgs (args, 9);	
+						break;
+					}
+					case SURFEPLOT:					{
+						mesh *M;
+						double x1, y1, x2, y2, Va;
+						int Nx, Ny, Vai;				
+						char **args;
+						args=GetArgs (&begin, 9);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Export electric fields from mesh %s to file %s",line_nr,args[0], args[8]);
+							
+								
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
+						
+						Nx=atoi(args[5]);	
+						Ny=atoi(args[6]);	
+						Va=atof(args[7]);
+																	
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
+						Vai=FindVa(Va, M->res.Va, M->res.Nva);
+						if (Vai>=0)
+						{
+							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
+							SurfEPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
+						}
+						else
+							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
+							
+						FreeArgs (args, 9);	
+						break;
+					}
 					/********************************* Secion Node Selection */
 					case LOAD_POLY:
 					{		
@@ -1013,7 +1085,69 @@ void Parse (char *file)
 						if(word[0]=='\0')
 							goto premature_end;	
 						Print(NORMAL, "* line %3d: Load polygon from file %s",line_nr,word);
+						if (P.N)
+						{
+							free(P.x);
+							free(P.y);
+						}
 						P=ReadPoly(word);
+						break;
+					}	
+					case DEF_POLY:
+					{			
+						char **args;
+						int Na=50;
+						/* check for end of table */
+						Print(NORMAL, "* line %3d: Define polygon",line_nr);						
+						if (P.N)
+						{
+							free(P.x);
+							free(P.y);
+						}	
+						P.N=0;
+						P.x=malloc(Na*sizeof(double));
+						P.y=malloc(Na*sizeof(double));
+    						fgets(line, MAXSTRLEN-1, f);
+						line_nr++;
+						while(feof(f)==0)
+						{
+							begin=Begin(line);
+							if(begin)
+							{
+								GetWord (begin, word);
+								key=LookupKey (word,  KeyTable);
+								if (key==DEF_POLY)
+									break;
+								args=GetArgs (&begin, 2);
+								P.x[P.N]=atof(args[0]);
+								P.y[P.N]=atof(args[1]);
+								P.N++;
+								if (Na-1==P.N)
+								{
+									Na+=50;
+									P.x=realloc(P.x, Na*sizeof(double));	
+									P.y=realloc(P.y, Na*sizeof(double));					
+								}
+								FreeArgs (args, 2);
+    							}
+							fgets(line, MAXSTRLEN-1, f);
+							line_nr++;							
+						} while	(key!=DEF_POLY);
+						if ((feof(f))||(!begin))
+							goto premature_end;
+												
+						if (P.N)
+						{
+							P.x=realloc(P.x, (P.N+1)*sizeof(double));	
+							P.y=realloc(P.y, (P.N+1)*sizeof(double));
+						}
+						else
+						{
+							free(P.x);
+							free(P.y);
+						}
+						begin=GetWord (begin, word);
+						Print(NORMAL, "* line %3d: polygon with %i points defined",line_nr,P.N);
 						break;
 					}	
 					case SELECT_RECT:

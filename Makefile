@@ -10,10 +10,12 @@ target=pvmos
 CFLAGS=-Og -Wall -g -fPIC
 LFLAGS= -lcholmod -lopenblas -lm
 #LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
-VERSION=0.53
+VERSION=0.55
 
 all: $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)
+install: all
+	cp $(target) /usr/bin/
 utils.o: utils.c mesh2d.h utils.h
 	$(CC) $(CFLAGS)   -c -DVERSION=\"$(VERSION)\" utils.c
 main.o: parse.h main.c main.h

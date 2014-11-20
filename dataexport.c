@@ -310,6 +310,127 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	}
 	free(Ex);
 	free(Ey);
+	free(Jx);
+	free(Jy);
+	fclose(f);
+}
+void SurfJPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
+{
+	int i,j, k, ln_y=0, ln_x=0;
+	double x,y, x_step, y_step;
+	double **Ex, **Ey, **Jx, **Jy, *V;
+	FILE *f;
+	if ((f=fopen(fn,"w"))==NULL)
+		Error("Cannot open %s for writing\n", fn);
+		
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Current Densities mapped to a regular mesh\n");
+	fprintf(f, "# Jx(i) Jy(i): Current densities in x an y direction in the i-th electrode\n");
+	fprintf(f, "# Jz(i+0.5):   Current densities in the connection beteen the i-th and i+1-th electrodes\n");
+	fprintf(f, "# Take note of the units!\n");	
+	fprintf(f, "# x [cm]\ty [cm]\tJx(i) [A/cm]\tJy(i) [A/cm]\tJz(i+0.5) [A/cm^2]...\n");
+	Ex=malloc(M->Nn*sizeof(double *));
+	Ey=malloc(M->Nn*sizeof(double *));
+	Jx=malloc(M->Nn*sizeof(double *));
+	Jy=malloc(M->Nn*sizeof(double *));
+	V=malloc(M->Nel*sizeof(double));
+	for (i=0;i<M->Nel;i++)
+	{
+		Ex[i]=malloc(M->Nn*sizeof(double));
+		Ey[i]=malloc(M->Nn*sizeof(double));
+		Jx[i]=malloc(M->Nn*sizeof(double));
+		Jy[i]=malloc(M->Nn*sizeof(double));
+	}
+	Jfield(M, Vai, Jx, Jy, Ex, Ey);
+	x_step=(x2-x1)/((double)Nx);
+	y_step=(y2-y1)/((double)Ny);
+	x=x1;
+	for (i=0;i<=Nx;i++)
+	{
+		y=y1;
+		for (j=0;j<=Ny;j++)
+		{	
+			node N;
+			double Jz;
+			ln_y=FindPos(*M, ln_y, x, y);
+			N=*SearchNode(*M,ln_y);
+			LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
+			fprintf(f,"%e %e", x, y);
+			for (k=0;k<M->Nel;k++)
+			{
+				if (k>0)
+				{
+					Diode(*M, N, k-1, V[k-1]-V[k], &Jz, NULL);
+					Jz/=((N.x2-N.x1)*(N.y2-N.y1));
+					fprintf(f," %e %e %e", Jz, Jx[k][ln_y], Jy[k][ln_y]);
+				}
+				else
+					fprintf(f," %e %e", Jx[k][ln_y], Jy[k][ln_y]);
+				
+			}
+			fprintf(f,"\n");
+			
+			if (j==0)
+				ln_x=ln_y;
+			y+=y_step;
+			
+		}
+		fprintf(f,"\n");
+		ln_y=ln_x;
+		x+=x_step;
+	}
+	free(Ex);
+	free(Ey);
+	free(Jx);
+	free(Jy);
+	fclose(f);
+}
+void SurfEPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
+{
+	int i,j, k, ln_y=0, ln_x=0;
+	double x,y, x_step, y_step;
+	double **Ex, **Ey;
+	FILE *f;
+	if ((f=fopen(fn,"w"))==NULL)
+		Error("Cannot open %s for writing\n", fn);
+		
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Electric Fields mapped to a regular mesh\n");
+	fprintf(f, "# Ex(i) Ey(i):     Electric field in x an y direction in the i-th electrode\n");
+	fprintf(f, "# x [cm]\ty [cm]\tEx(i) [V/cm]\tEy(i) [V/cm]...\n");
+	Ex=malloc(M->Nn*sizeof(double *));
+	Ey=malloc(M->Nn*sizeof(double *));
+	for (i=0;i<M->Nel;i++)
+	{
+		Ex[i]=malloc(M->Nn*sizeof(double));
+		Ey[i]=malloc(M->Nn*sizeof(double));
+	}
+	Jfield(M, Vai, NULL, NULL, Ex, Ey);
+	x_step=(x2-x1)/((double)Nx);
+	y_step=(y2-y1)/((double)Ny);
+	x=x1;
+	for (i=0;i<=Nx;i++)
+	{
+		y=y1;
+		for (j=0;j<=Ny;j++)
+		{	
+			ln_y=FindPos(*M, ln_y, x, y);
+			fprintf(f,"%e %e", x, y);
+			for (k=0;k<M->Nel;k++)
+				fprintf(f," %e %e", Ex[k][ln_y], Ey[k][ln_y]);
+			fprintf(f,"\n");
+			
+			if (j==0)
+				ln_x=ln_y;
+			y+=y_step;
+			
+		}
+		fprintf(f,"\n");
+		ln_y=ln_x;
+		x+=x_step;
+	}
+	free(Ex);
+	free(Ey);
 	fclose(f);
 }
 

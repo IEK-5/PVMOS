@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#define k_b 8.617e-5
+#define k_b 8.6173323478e-5
 #define T0 300
 #define EPS 1e-6
 #define MAXITER 50
