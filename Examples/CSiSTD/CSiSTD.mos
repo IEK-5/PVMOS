@@ -8,7 +8,6 @@
 #		x1  y1		x2  	y2	Nx	Ny	name
 newmesh 	0.0 0.0 	0.09	0.1980645	2 	4 	l/r_edge
 
-
 ###################################################################################################
 # I want to create the area "cell" in this mesh which is the area name I will use in all meshes 
 # for the active area of the defice. I will not define the area here in detail but rather do the 
@@ -38,7 +37,6 @@ assign_properties 	v_finger.finger
 ###################################################################################################
 #		x1  y1		x2  		y2	Nx	Ny	name
 newmesh 	0.0 0.0 	1.89833333333	0.02	20 	1	h1_finger
-
 #			<mesh>.<area>		electrode index		sheet resistance
 set_Rel			h1_finger.finger	0			0.005
 assign_properties 	h1_finger.finger
@@ -48,7 +46,6 @@ assign_properties 	h1_finger.finger
 ###################################################################################################
 #		x1  y1		x2  	y2	Nx	Ny	name
 newmesh 	0.0 0.0 	1.89833333333	0.1780645	20 	3	h1_cell
-
 #			<mesh>.<area>		electrode index		sheet resistance
 set_Rel			h1_cell.cell		0			0.005
 assign_properties 	h1_cell.cell
@@ -78,7 +75,6 @@ joinmesh_h	0.0	v_finger	l/r_edge	v_finger+r_edge
 joinmesh_h	0.0	l_edge+v_finger	h1_finger+cell	l_edge2bb
 joinmesh_h	0.0	h1_finger+cell	v_finger+r_edge	bb2r_edge
 
-
 ###################################################################################################
 # For now we do not define the busbar yet. We will do that later. To make sure the busbar fits 
 # well we make a 1.5 mm mesh which serves as a spacer. All elemenst will be part of the area cell.
@@ -87,7 +83,6 @@ newmesh 		0.0 0.0 	0.15	0.1980645	3 	4 	bb_spacer
 set_Rel			bb_spacer.cell	0	0.005
 assign_properties 	bb_spacer.cell
 
-
 ###################################################################################################
 # The next two meshes describe the active area between two busbars and the finger between two 
 # busbars
@@ -95,7 +90,6 @@ assign_properties 	bb_spacer.cell
 newmesh 		0.0 0.0 	4.016666667	0.1780645	10 	3 	cell_bb2bb
 set_Rel			cell_bb2bb.cell	0	0.005
 assign_properties 	cell_bb2bb.cell
-
 newmesh 		0.0 0.0 	4.016666667	0.02	10 	1	finger_bb2bb
 set_Rel			finger_bb2bb.finger	0	0.005
 assign_properties 	finger_bb2bb.finger
@@ -123,7 +117,6 @@ joinmesh_h	0.0	l_edge2bb3rd	bb_spacer	l_edge2bb3rd+bb
 # add the right edge
 joinmesh_h	0.0	l_edge2bb3rd+bb	bb2r_edge	cell_h	
 
-
 ###################################################################################################
 # After this we have many meshes we do not need anymore, we remove them to save memory
 # we only keep cell_h.
@@ -146,6 +139,7 @@ rm l_edge2bb2nd
 rm l_edge2bb2nd+bb
 rm l_edge2bb3rd
 rm l_edge2bb3rd+bb
+
 
 ###################################################################################################
 # Step2: Stack the created mesh 62 times and add a single finger on top
@@ -176,7 +170,6 @@ rm 48cell_h
 rm 56cell_h
 rm 60cell_h
 
-
 ###################################################################################################
 # the 63rd finger should be placed above the 62 fingers we have. This last horizontal section, 
 # however, should have no vertical finger and be only 200µm tall.
@@ -185,23 +178,18 @@ rm 60cell_h
 newmesh 	0.0 0.0 	0.09		0.0200010	2 	1	l/r_edge
 set_Rel		l/r_edge.cell	0		0.005
 assign_properties l/r_edge.cell
-
 # finger edge to first busbar
 newmesh 	0.0 0.0 	1.918333333 	0.0200010	20 	1	finger_edge2bb
 set_Rel		finger_edge2bb.finger	0		0.005
 assign_properties finger_edge2bb.finger
-
 # finger at busbar
 newmesh 	0.0 0.0 	0.15	0.0200010	3 	1		finger_bb
 set_Rel		finger_bb.finger	0	0.005
 assign_properties finger_bb.finger
-
 # finger between busbars
 newmesh 	0.0 0.0 	4.016666667	0.0200010	40 	1	finger_bb2bb
 set_Rel		finger_bb2bb.finger	0	0.005
 assign_properties finger_bb2bb.finger
-
-
 
 ###################################################################################################
 # Gluetime!
@@ -224,8 +212,6 @@ joinmesh_h	0.0	l_edge2bb3rd+bb	finger_edge2bb	l_edge2end_f
 joinmesh_h	0.0	l_edge2end_f	l/r_edge	fingerline
 # add on top of 62 fingers
 joinmesh_v 	0.0 	62cell_h	fingerline	63cell_h
-
-
 rm l/r_edge
 rm finger_bb
 rm l_edge2bb
@@ -240,6 +226,7 @@ rm finger_edge2bb
 rm finger_bb2bb
 rm 62cell_h
 
+
 ###################################################################################################
 # Step 3: create the top and bottom edges.
 ###################################################################################################
@@ -247,15 +234,12 @@ rm 62cell_h
 newmesh 	0.0 0.0 	2.008333333    	0.1	60 	3 	l/r_edge2bb
 set_Rel		l/r_edge2bb.cell	0	0.005
 assign_properties l/r_edge2bb.cell
-
 newmesh 	0.0 0.0 	0.15    	0.1	4 	3 	bb_spacer
 set_Rel		bb_spacer.cell	0	0.005
 assign_properties bb_spacer.cell
-
 newmesh 	0.0 0.0 	4.016666667	0.1	120 	3	bb2bb	
 set_Rel		bb2bb.cell	0	0.005
 assign_properties bb2bb.cell
-
 # edge up to bb+bb
 joinmesh_h	0.0	l/r_edge2bb	bb_spacer	l_edge2bb+bb
 # edge up to 2nd bb
@@ -268,7 +252,6 @@ joinmesh_h	0.0	l_edge2bb2nd+bb	bb2bb		l_edge2bb3rd
 joinmesh_h	0.0	l_edge2bb3rd	bb_spacer	l_edge2bb3rd+bb
 # a top or bottom edge
 joinmesh_h	0.0	l_edge2bb3rd+bb	l/r_edge2bb	edge-top/bottom
-
 rm l/r_edge2bb
 rm bb_spacer
 rm bb2bb	
@@ -283,7 +266,6 @@ rm l_edge2bb3rd+bb
 ###################################################################################################
 joinmesh_v 	0.0 	edge-top/bottom		63cell_h	b_edge+63cell
 joinmesh_v 	0.0 	b_edge+63cell		edge-top/bottom	active_area
-
 rm edge-top/bottom
 rm b_edge+63cell
 rm 63cell_h
@@ -293,52 +275,104 @@ rm 63cell_h
 # Step 4: Add the busbars
 ###################################################################################################
 # Now we will add the busbars. The busbars are slightly tapered at the top. The geometry of the 
-# three busbars is described in the files BusBar1-3.dat. The polygons in these files will be used 
-# to select the elements which will be turned into a busbar. The tapered end requires special
-# attention. To get the tapered end in we need a high resolution at the tapered ends.
+# three busbars is described using polygons. The polygons will be used to select the elements 
+# which will be turned into a busbar. So far we have designed the mesh such that the busbar fits
+# nearly perfect in the mesh, that is most of the contours of the busbar coincide with edges of
+# mesh elements). However, the tapered top will never fit perfectly. We have to make sure the 
+# resolution is high enough at the tapered ends.
 ###################################################################################################
-# Improve resolution at the tapered ends
-#		x1	y1	x2	y2	<mesh>
-select_rect	2.0 	12.2 	2.16 	12.41 	active_area
-#		<mesh>		max edge length
-split_coarse 	active_area 0.005
-
-select_rect 	6.17 	12.2 	6.33 	12.41 	active_area
-split_coarse 	active_area 0.005
-
-select_rect 	10.34 	12.2 	10.5 	12.41 	active_area
-split_coarse 	active_area 0.005
-
-# define the area for the busbar+tabbing wire
+# We start by defining the area for the busbar+tabbing wire
 set_Rel		active_area.tab	0	0.005
 
+###################################################################################################
+# Busbar1: Here we define a polygon describing the geometry of the first busbar
+###################################################################################################
+define_poly
+2.00833333	0.0000000
+2.15833333	0.0000000
+2.15833333	12.221613
+2.08333333	12.410000
+2.00833333	12.221613
+2.00833333	0.0000000
+define_poly
 
 ###################################################################################################
-# Load BusBar1.dat to define the first busbar. Note the deselect at the end. This is needed as 
-# selection commands are additive, i.e. a second selection commands selects a sub set of selected 
-# elements. The deselect allows loadine the second polygon and define the second busbar.
+# Now we want to improve resolution around the tapered ends. First we select elements around the
+# tapered end:
 ###################################################################################################
-load_poly 		BusBar1.dat
+#		x1	y1	x2	y2	<mesh>
+select_rect	2.0 	12.2 	2.16 	12.41 	active_area
+## refine a little bit:
+split_coarse 	active_area 0.01
+
+## again, select the same area
+select_rect	2.0 	12.2 	2.16 	12.41 	active_area
+
+## make a narrow sub selection around the busbar contour
+select_poly_contour 0.01 1 active_area
+
+## refine more aggressively (max element size of 10x10 µm^2):
+split_coarse 	active_area 0.001
+
+###################################################################################################
+# Now we set up the busbar:
+# 1: deselect all selected nodes in active_area
+# 2: select the busbar area
+# 3: assign elements to busbar area
+###################################################################################################
+deselect 		active_area
 select_poly		active_area
 assign_properties 	active_area.tab
 deselect 		active_area
 
 ###################################################################################################
-# Load BusBar2.dat to define the second busbar
+# We repeat the procedure for the other busbars: second busbar
 ###################################################################################################
-load_poly 		BusBar2.dat
+define_poly
+6.17500000	0.0000000
+6.32500000	0.0000000
+6.32500000	12.221613
+6.25000000	12.410000
+6.17500000	12.221613
+6.17500000	0.0000000
+define_poly
+
+select_rect 	6.17 	12.2 	6.33 	12.41 	active_area
+split_coarse 	active_area 0.01
+
+select_rect 	6.17 	12.2 	6.33 	12.41 	active_area
+select_poly_contour 0.01 1 active_area
+split_coarse 	active_area 0.001
+
+deselect 		active_area
 select_poly		active_area
 assign_properties 	active_area.tab
 deselect 		active_area
 
+###################################################################################################
+# and the third busbar
+###################################################################################################
+define_poly
+10.34166667	0.0000000
+10.49166667	0.0000000
+10.49166667	12.221613
+10.41666667	12.410000
+10.34166667	12.221613
+10.34166667	0.0000000
 
-###################################################################################################
-# Load BusBar2.dat to define the second busbar
-###################################################################################################
-load_poly 		BusBar3.dat
+define_poly
+select_rect 	10.34 	12.2 	10.5 	12.41 	active_area
+split_coarse 	active_area 0.01
+
+select_rect 	10.34 	12.2 	10.5 	12.41 	active_area
+select_poly_contour 0.01 1 active_area
+split_coarse 	active_area 0.001
+
+deselect 		active_area
 select_poly		active_area
 assign_properties 	active_area.tab
 deselect 		active_area
+
 
 ###################################################################################################
 # Step 5: We need contacts!
@@ -400,11 +434,15 @@ rm tab_top_line
 rm tab_bot_line
 
 ###################################################################################################
+# Optional: Define a shading pattern
+###################################################################################################
 # Uncomment the following if you want to simulate what your solar cell is worth (at least 
 # efficiency wise) after some misfit under the name Banksy decided to spay-paint a rat hanging 
 # from a parachute on the solar cell.
 ###################################################################################################
-## First we load a polygon describing the graffiti
+## We first load a polygon from a file describing the grafitty 
+## Note that it would be possible to define the file right here but with 400 points that makes 
+## a rather unreadable input file.
 #load_poly graffiti.dat
 #
 ## The graffiti will shade the solar cell beneath it so we make an area "shade"
@@ -435,15 +473,6 @@ rm tab_bot_line
 #
 ###################################################################################################
 
-
-
-
-
-###################################################################################################
-# The geometry definition is now complete. We finish the initial mesh off by simplifying the
-# mesh a bit.
-###################################################################################################
-simplify complete_cell
 
 
 ###################################################################################################
@@ -488,28 +517,35 @@ set_SplitX	complete_cell.spacer
 set_SplitY	complete_cell.spacer
 
 
+
 ###################################################################################################
-# Output some data to inspect the meshes
+# Step 7: Finalize the mesh
+###################################################################################################
+# The geometry definition is now complete. We finish the initial mesh off by simplifying the
+# mesh a bit.
+###################################################################################################
+simplify complete_cell
+
+###################################################################################################
+# Having a simplified mesh is a good moment to plot the area definition as it is relatively small 
+# now
 ###################################################################################################
 printarea complete_cell celldefs.dat
 printpars complete_cell cellpars.dat
 
 
 ###################################################################################################
-# Step 7: Mesh refinement
-###################################################################################################
 # After simplifying the mesh became a bit too coarse, we refine it first by specifying a maximal
-# element edge length. We print the initial mesh for inspection
+# element edge length. This length is chosen such that we have at least 3 elements between two 
+# fingers.
 ###################################################################################################
-split_coarse complete_cell 0.07
+split_coarse complete_cell 0.066
 printmesh complete_cell mesh0.dat
  
 ###################################################################################################
 # Best do a few itarations of adapting the mesh to the potential distributions.
 ###################################################################################################
 adaptive_solve 	complete_cell 	0.0 	0.3	3
-printmesh complete_cell mesh1.dat
- 
 
 ###################################################################################################
 # Step 8: Simulate!
@@ -517,7 +553,6 @@ printmesh complete_cell mesh1.dat
 # Run IV sweep, export some potentials and an IV curve
 ###################################################################################################
 solve 		complete_cell 	0 	1 	21 
-printV_sel  	complete_cell 0 0.02 3 3 meshpot.dat
 surfVplot 	complete_cell 0 0.15 12.5 12.65 1000 1000 0.6 Pot_06.dat
 surfVplot 	complete_cell 0 0.15 12.5 12.65 1000 1000 0.0 Pot_00.dat
 printIV 	complete_cell IV.dat
