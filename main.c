@@ -78,6 +78,9 @@ int main(int argc, char **argv)
 #ifdef DEB
 	mtrace();
 #endif 
+#ifdef __MINGW32__ 
+	_putenv( "PRINTF_EXPONENT_DIGITS=2");
+#endif
 	if(argc==2||argc==3)
 	{
 		#ifndef __MINGW32__ 
