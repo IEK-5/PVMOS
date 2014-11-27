@@ -270,8 +270,8 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=RectSelectNodes(x1, y1, x2, y2, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectRectNodes: No nodes selected, try selecting a larger area or refine the mesh first");
-	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+		Error("In SelectRectNodes: No elements selected, try selecting a larger area or refine the mesh first");
+	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, double y1, double x2, double y2, double d)
 {
@@ -283,8 +283,8 @@ void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, d
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=RectContourSelectNodes(x1, y1, x2, y2, d, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectRectContourNodes: No nodes selected, try selecting a larger area or refine the mesh first");
-	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+		Error("In SelectRectContourNodes: No elements selected, try selecting a larger area or refine the mesh first");
+	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 /* select circular area in a mesh variable */
 /* Input: 
@@ -307,8 +307,8 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=CircSelectNodes(x, y, r, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectCircNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
-	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+		Error("In SelectCircNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, double y, double r,double d)
 {
@@ -320,8 +320,8 @@ void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, d
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=CircContourSelectNodes(x, y, r, d, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectCircContourNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
-	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+		Error("In SelectCircContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 /* select area enclosed by a polygon in a mesh variable */
 /* Input: 
@@ -342,8 +342,8 @@ void SelectPolyNodes (char *name,  meshvar * meshes, int Nm, polygon P)
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=PolySelectNodes(P, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectPolyNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
-	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+		Error("In SelectPolyNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, double d, int loop)
 {
@@ -355,8 +355,8 @@ void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, d
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=PolyContourSelectNodes(d, P, loop,MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectPolyContourNodes: No nodes selected, try selecting a larger area or refine the mesh first\n");
-	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+		Error("In SelectPolyContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 
 void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
@@ -379,8 +379,8 @@ void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
 		Print(NORMAL,"            -->  Making sub-selection %s", name+i+1);
 	MV->nodes=SelectArea(MV->M, MV->nodes, name+i+1);
 	if (MV->nodes[0]==0)
-		Error("In SelectAreaNodes: No nodes selected.\n");
-	Print(NORMAL,"            -->  %d nodes selected",MV->nodes[0]);
+		Error("In SelectAreaNodes: No elements selected.\n");
+	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 
 /* looks up an area within a mesh by its name in the meshes array */
@@ -642,18 +642,18 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s in x-direction",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting all elements in %s in x-direction",line_nr, word);
 							fflush(stdout);
 							SplitMeshX(&(MV->M));
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in x-direction",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting selected elements in %s in x-direction",line_nr, word);
 							fflush(stdout);
 							SplitListX(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
 						}	
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);				
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);				
 						break;
 					}
 					case SPLITY:
@@ -669,18 +669,18 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s in y-direction",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting all elements in %s in y-direction",line_nr, word);
 							fflush(stdout);
 							SplitMeshY(&(MV->M));
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in y-direction",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting selected elements in %s in y-direction",line_nr, word);
 							fflush(stdout);
 							SplitListY(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
 						}	
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);					
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);					
 						break;
 					}
 					case SPLITXY:
@@ -696,18 +696,18 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s in x- and y-direction",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting all elements in %s in x- and y-direction",line_nr, word);
 							fflush(stdout);
 							SplitMeshXY(&(MV->M));
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in x- and y-direction",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting selected elements in %s in x- and y-direction",line_nr, word);
 							fflush(stdout);
 							SplitListXY(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
 						}	
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);					
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);					
 						break;
 					}
 					case SPLITLONG:
@@ -723,18 +723,18 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s in the longest direction",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting all elements in %s in the longest direction",line_nr, word);
 							fflush(stdout);
 							SplitMeshLong(&(MV->M));
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s in the longest direction",line_nr, word);
+							Print(NORMAL,"* line %3d: Splitting selected elements in %s in the longest direction",line_nr, word);
 							fflush(stdout);
 							SplitListLong(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
 						}
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);
 						break;
 					}
 					case SPLITCOARSE:
@@ -756,19 +756,94 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all nodes in %s until all edges shorter than %e",line_nr, MV->name, d);
+							Print(NORMAL,"* line %3d: Splitting all elements in %s until all edges shorter than %e",line_nr, MV->name, d);
 							fflush(stdout);
 							SplitMeshWhileCoarse(&(MV->M), d);
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected nodes in %s until all edges shorter than %e",line_nr, MV->name, d);
+							Print(NORMAL,"* line %3d: Splitting selected elements in %s until all edges shorter than %e",line_nr, MV->name, d);
 							fflush(stdout);
 							SplitListWhileCoarse(&(MV->M), MV->nodes, d);
 							MV->nodes[0]=0;
 						}	
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);
 						FreeArgs (args, 2);											
+						break;
+					}
+					case RESOLVPOLY:
+					{
+						meshvar *MV;
+						double d;
+						int loop;
+						char **args;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);		
+							
+						d=atof(args[1]);
+						loop=atoi(args[2]);
+						
+						Print(NORMAL,"* line %3d: Resolving polygon in mesh %s  down to %e",line_nr, MV->name, d);
+						ResolvContour(P, &(MV->M), loop, d);
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);
+						FreeArgs (args, 3);											
+						break;
+					}
+					case RESOLVCIRC:
+					{
+						meshvar *MV;
+						double d,x,y,r;
+						char **args;
+						args=GetArgs (&begin, 5);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);		
+							
+						d=atof(args[1]);
+						x=atof(args[2]);
+						y=atof(args[3]);
+						r=atof(args[4]);
+						
+						Print(NORMAL,"* line %3d: Resolving circle in mesh %s  down to %e",line_nr, MV->name, d);
+						ResolvCircle(x,y,r, &(MV->M), d);
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);
+						FreeArgs (args, 5);											
+						break;
+					}
+					case RESOLVRECT:
+					{
+						meshvar *MV;
+						double d,x1,y1,x2, y2;
+						char **args;
+						args=GetArgs (&begin, 6);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);		
+							
+						d=atof(args[1]);
+						x1=atof(args[2]);
+						y1=atof(args[3]);
+						x2=atof(args[4]);
+						y2=atof(args[5]);
+						
+						Print(NORMAL,"* line %3d: Resolving rectangle in mesh %s  down to %e",line_nr, MV->name, d);
+						ResolvRect(x1,y1,x2, y2, &(MV->M), d);
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);
+						FreeArgs (args, 6);											
 						break;
 					}
 					case SIMPLIFY_MESH:
@@ -780,11 +855,11 @@ void Parse (char *file)
 						MV=LookupMesh (word,  Meshes, Nm);
 						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);							
-						Print(NORMAL,"* line %3d: Simplifying mesh of %d nodes",line_nr, MV->M.Nn);
+						Print(NORMAL,"* line %3d: Simplifying mesh of %d elements",line_nr, MV->M.Nn);
 						fflush(stdout);		
 						Chunkify(&(MV->M));
 						MV->nodes[0]=0;
-						Print(NORMAL,"            ---> Mesh %s consists of %d nodes",MV->name, MV->M.Nn);	
+						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);	
 						break;
 					}
 					case LOADMESH:
@@ -1285,13 +1360,13 @@ void Parse (char *file)
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Assigning all nodes in the mesh to area %s",line_nr, word);
+							Print(NORMAL,"* line %3d: Assigning all elements in the mesh to area %s",line_nr, word);
 							fflush(stdout);
 							AssignPropertiesMesh(&(MV->M), P);
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Assigning selected nodes to area %s",line_nr, word);
+							Print(NORMAL,"* line %3d: Assigning selected elements to area %s",line_nr, word);
 							fflush(stdout);
 							AssignProperties(&(MV->M), MV->nodes, P);
 						}					

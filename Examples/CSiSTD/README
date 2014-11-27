@@ -13,8 +13,7 @@ depends on GNU Octave and the time and memory required to build the mesh
 increases steeply for higher resolution meshes. The method here only uses 
 functions built into PVMOS, i.e. is independent on other software. Furthermore, 
 the here used methods are often faster and require less memory. The downside of 
-this method is that it is harder to make and easier to shoot yourself in the 
-foot.
+this method is that it is probably a bit harder.
 
 -Cell Geometry------------------------------------------------------------------
 --------------------------------------------------------------------------------
@@ -75,7 +74,7 @@ use the strength of a variable mesh to fit all these sizes and positions in the
 mesh without resorting to a high resolution. In this example this is achieved 
 by defining many meshes, all with various element sizes, and glue these meshes 
 together to get new meshes which contain various element sizes and shapes 
-which nicely coincide with the geometric details of the solar cell design. 
+which nicely coincide with the geometric details of the solar cell design.  
 
 This obviously works best for designs with strictly rectangular geometries. 
 Indeed, most geometric details in a standard grid design are very rectangular. 
@@ -87,7 +86,7 @@ include an option to define a complicated shading pattern. This example
 addresses the question of what would happen with a solar cell if Banksy would 
 paint a rat on your cell. It may seem as a silly example but consider this:
 
-With all building integrated PV coming up, where is the grafitty going to go? 
+With all that building integrated PV, where is the grafitty supposed to go? 
 
 
 -Files in this Example----------------------------------------------------------

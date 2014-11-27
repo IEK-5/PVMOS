@@ -54,3 +54,6 @@ int * RectSelectNodes(double x1, double y1, double x2, double y2, mesh M, int *s
 int * RectContourSelectNodes(double x1, double y1, double x2, double y2, double d, mesh M, int *sel_nodes);
 polygon ReadPoly(char *fn);
 int * SelectArea(mesh M, int *sel_nodes, char *name);
+void ResolvContour(polygon P, mesh *M, int loop, double D);
+void ResolvCircle(double x, double y, double r, mesh *M, double D);
+void ResolvRect(double x1, double y1, double x2, double y2, mesh *M, double D);

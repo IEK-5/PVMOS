@@ -170,9 +170,9 @@ split_coarse minimodule 0.005
 # Finally we refine around the contour of the defect, to get a very acurate shape (in 5 µm 
 # resolution)
 ###################################################################################################
-select_circ_contour 2.5 4 0.1 0.005 minimodule
-split_coarse minimodule 0.0005
-deselect minimodule
+# select_circ_contour 2.5 4 0.1 0.005 minimodule
+# split_coarse minimodule 0.0005
+# deselect minimodule
 
 ###################################################################################################
 # Time to create ourselves a defect

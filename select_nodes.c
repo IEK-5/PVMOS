@@ -55,7 +55,6 @@
 #define TWOPI 6.28318530717959
 #define TINY 1e-12
 
-
 node *NextNodeNE(mesh M, node *N, double a, double b)
 {
 	/* we are in node N and follow the line a*x+b, in NE direction */
@@ -185,15 +184,15 @@ int FindPos(mesh M, int id, double x, double y)
 	xx=(N->x1+N->x2)/2;
 	yy=(N->y1+N->y2)/2;
 	b=(x-xx);
-	if (fabs(b)<1e-12)
+	if (fabs(b)<TINY)
 	{
 		if (b<0)
-			b-=1e-12;
+			b=-TINY;
 		else
-			b+=1e-12;
+			b=TINY;
 	}
 	a=(y-yy)/b;
-	b=yy-a*xx;
+	b=y-a*x;
 	
 	/* In the next loop we try to walk in a straight line from the current node to the desired coordinate */
 	
@@ -348,6 +347,166 @@ int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 
 }
 
+int PolygonCrossNode(polygon P, node *N, int loop)
+{
+	int i;
+	double a, b, x0, y0, t1, t2, x, y;
+	for (i=0;i<P.N-1;i++)
+	{
+		/* check endpoints */
+		if ((P.x[i+1]-N->x1>=-TINY)&&(N->x2-P.x[i+1]>=-TINY)&&(P.y[i+1]-N->y1>=-TINY)&&(N->y2-P.y[i+1]>=-TINY))
+			return 1;
+		if ((P.x[i]-N->x1>=-TINY)&&(N->x2-P.x[i]>=-TINY)&&(P.y[i]-N->y1>=-TINY)&&(N->y2-P.y[i]>=-TINY))
+			return 1;
+
+		/* parameterize line */		
+		a=(P.x[i+1]-P.x[i]);
+		b=(P.y[i+1]-P.y[i]);
+		x0=P.x[i];
+		y0=P.y[i];
+		
+		t1=(N->y1-y0)/b;
+		t2=(N->y2-y0)/b;
+		
+		if (isfinite(t1)&&isfinite(t2))
+		{
+			if ((t1>=0)&&(t1<=1.0))
+			{
+				x=a*t1+x0;
+				if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
+					return 1;
+			}
+			if ((t2>=0)&&(t2<=1.0))
+			{
+				x=a*t2+x0;
+				if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
+					return 1;
+			}
+		}
+		t1=(N->x1-x0)/a;
+		t2=(N->x2-x0)/a;
+		
+		if (isfinite(t1)&&isfinite(t2))
+		{
+			if ((t1>=0)&&(t1<=1.0))
+			{
+				y=b*t1+y0;
+				if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+					return 1;
+			}
+			if ((t2>=0)&&(t2<=1.0))
+			{
+				y=b*t2+y0;
+				if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+					return 1;
+			}
+		}
+		
+	}
+	if (loop)
+	{
+		/* check endpoints */
+		if ((P.x[0]-N->x1>=-TINY)&&(N->x2-P.x[0]>=-TINY)&&(P.y[0]-N->y1>=-TINY)&&(N->y2-P.y[0]>=-TINY))
+			return 1;
+		if ((P.x[P.N-1]-N->x1>=-TINY)&&(N->x2-P.x[P.N-1]>=-TINY)&&(P.y[P.N-1]-N->y1>=-TINY)&&(N->y2-P.y[P.N-1]>=-TINY))
+			return 1;
+		/* parameterize line */		
+		a=(P.x[0]-P.x[P.N-1]);
+		b=(P.y[0]-P.y[P.N-1]);
+		x0=P.x[P.N-1];
+		y0=P.y[P.N-1];
+		
+		t1=(N->y1-y0)/b;
+		t2=(N->y2-y0)/b;
+		
+		if (isfinite(t1)&&isfinite(t2))
+		{
+			if ((t1>=0)&&(t1<=1.0))
+			{
+				x=a*t1+x0;
+				if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
+					return 1;
+			}
+			if ((t2>=0)&&(t2<=1.0))
+			{
+				x=a*t2+x0;
+				if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
+					return 1;
+			}
+		}
+		t1=(N->x1-x0)/a;
+		t2=(N->x2-x0)/a;
+		
+		if (isfinite(t1)&&isfinite(t2))
+		{
+			if ((t1>=0)&&(t1<=1.0))
+			{
+				y=b*t1+y0;
+				if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+					return 1;
+			}
+			if ((t2>=0)&&(t2<=1.0))
+			{
+				y=b*t2+y0;
+				if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+					return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+void ResolvContour(polygon P, mesh *M, int loop, double D)
+{
+	int *sel_nodes;
+	int i;
+	node *N;
+	/* make first selection of nodes that are crossed by the polygon */
+	sel_nodes=malloc(LISTBLOCK*sizeof(int));
+	sel_nodes[0]=0;
+	for (i=0;i<M->Nn;i++)
+		if (PolygonCrossNode(P, &(M->nodes[i]), loop))
+			sel_nodes=AddToList(sel_nodes, M->nodes[i].id);
+	while (sel_nodes[0])
+	{
+		int *old_sel;
+		old_sel=DuplicateList(sel_nodes);
+		for (i=1;i<=old_sel[0];i++)
+		{
+			N=SearchNode(*M, old_sel[i]);
+			if ((N->x2-N->x1)>(N->y2-N->y1))
+			{
+				SplitNodeX(old_sel[i], M);
+				N=SearchNode(*M, old_sel[i]);
+				if ((N->x2-N->x1)>D)
+					sel_nodes=AddToList(sel_nodes, M->Nn-1);
+				else
+					sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+			}
+			else
+			{
+				SplitNodeY(old_sel[i], M);
+				N=SearchNode(*M, old_sel[i]);
+				if ((N->y2-N->y1)>D)
+					sel_nodes=AddToList(sel_nodes, M->Nn-1);
+				else
+					sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+			}
+		}
+		free(old_sel);
+		old_sel=DuplicateList(sel_nodes);
+		sel_nodes[0]=0;
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+		{
+			N=SearchNode(*M, old_sel[i]);
+			if (PolygonCrossNode(P, N, loop))
+				sel_nodes=AddToList(sel_nodes, old_sel[i]);	
+		}
+		free(old_sel);
+	}	
+}
+
 int * PolySelectNodes(polygon P, mesh M, int *sel_nodes) 
 /* selects nodes within a polygon */
 {
@@ -452,6 +611,127 @@ int * CircSelectNodes(double x, double y, double r, mesh M, int *sel_nodes)
 	if (sel_nodes[0]==0)
 		Warning("No nodes selected in CircSelectNodes\n");	
 	return sel_nodes;		
+}
+
+int CircThroughNode(node *N, double x, double y, double r2)
+{
+	double t, a, b, c, d;
+	
+	/* check line (x1,y1) to (x2,y1) */
+	a=(N->x2-N->x1);
+	b=N->x1-x;
+	c=N->y1-y;
+	c=c*c;
+	if (r2-c>0)
+	{
+		d=sqrt(r2-c);
+		t=-(d+b)/a;
+		if ((t>=0)&&(t<=1.0))
+			return 1;
+		t=(d-b)/a;
+		if ((t>=0)&&(t<=1.0))
+			return 1;		
+	}
+	/* check line (x1,y2) to (x2,y2) */
+	c=N->y2-y;
+	c=c*c;
+	if (r2-c>0)
+	{
+		d=sqrt(r2-c);
+		t=-(d+b)/a;
+		if ((t>=0)&&(t<=1.0))
+			return 1;
+		t=(d-b)/a;
+		if ((t>=0)&&(t<=1.0))
+			return 1;		
+	}
+	/* check line (x1,y1) to (x1,y2) */
+	a=(N->y2-N->y1);
+	b=N->y1-y;
+	c=N->x1-x;
+	c=c*c;
+	if (r2-c>0)
+	{
+		d=sqrt(r2-c);
+		t=-(d+b)/a;
+		if ((t>=0)&&(t<=1.0))
+			return 1;
+		t=(d-b)/a;
+		if ((t>=0)&&(t<=1.0))
+			return 1;		
+	}
+	/* check line (x2,y1) to (x2,y2) */
+	c=N->x2-x;
+	c=c*c;
+	if (r2-c>0)
+	{
+		d=sqrt(r2-c);
+		t=-(d+b)/a;
+		if ((t>=0)&&(t<=1.0))
+			return 1;
+		t=(d-b)/a;
+		if ((t>=0)&&(t<=1.0))
+			return 1;		
+	}
+	/* check if the circle is contained entirely by the node */
+	r2=x+sqrt(r2);
+	if ((r2-N->x1>=-TINY)&&(N->x2-r2>=-TINY)&&(y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+		return 1;
+	return 0;
+	
+}
+
+void ResolvCircle(double x, double y, double r, mesh *M, double D)
+{
+	int *sel_nodes;
+	int i;
+	node *N;
+	
+	r=r*r;
+	/* make first selection of nodes that are crossed by the polygon */
+	sel_nodes=malloc(LISTBLOCK*sizeof(int));
+	sel_nodes[0]=0;
+	for (i=0;i<M->Nn;i++)
+		if (CircThroughNode(&(M->nodes[i]), x,y,r))
+			sel_nodes=AddToList(sel_nodes, M->nodes[i].id);
+	while (sel_nodes[0])
+	{
+		int *old_sel;
+		old_sel=DuplicateList(sel_nodes);
+		for (i=1;i<=old_sel[0];i++)
+		{
+			N=SearchNode(*M, old_sel[i]);
+			if ((N->x2-N->x1)>(N->y2-N->y1))
+			{
+				SplitNodeX(old_sel[i], M);
+				N=SearchNode(*M, old_sel[i]);
+				if ((N->x2-N->x1)>D)
+					sel_nodes=AddToList(sel_nodes, M->Nn-1);
+				else
+					sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+			}
+			else
+			{
+				SplitNodeY(old_sel[i], M);
+				N=SearchNode(*M, old_sel[i]);
+				if ((N->y2-N->y1)>D)
+					sel_nodes=AddToList(sel_nodes, M->Nn-1);
+				else
+					sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+			}
+		}
+		free(old_sel);
+		old_sel=DuplicateList(sel_nodes);
+		sel_nodes[0]=0;
+		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+		for (i=1;i<=old_sel[0];i++)
+		{
+			N=SearchNode(*M, old_sel[i]);
+			if (CircThroughNode(N, x,y,r))
+				sel_nodes=AddToList(sel_nodes, old_sel[i]);	
+		}
+		free(old_sel);
+	}	
 }
 
 int * CircContourSelectNodes(double x, double y, double r, double d, mesh M, int *sel_nodes)
@@ -596,6 +876,30 @@ int * RectContourSelectNodes(double x1, double y1, double x2, double y2, double 
 		Warning("No nodes selected in RectContourSelectNodes\n");
 	return sel_nodes;		
 }
+
+void ResolvRect(double x1, double y1, double x2, double y2, mesh *M, double D)
+{
+	polygon P;
+	P.N=4;
+	P.x=malloc(5*sizeof(double));
+	P.y=malloc(5*sizeof(double));
+	P.x[0]=x1;
+	P.x[1]=x2;
+	P.x[2]=x2;
+	P.x[3]=x1;
+	P.y[0]=y1;
+	P.y[1]=y1;
+	P.y[2]=y2;
+	P.y[3]=y2;
+	
+	ResolvContour(P, M, 1, D);
+
+	free(P.x);
+	free(P.y);
+
+}
+
+
 
 polygon ReadPoly(char *fn)
 {

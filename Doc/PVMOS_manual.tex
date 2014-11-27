@@ -246,6 +246,31 @@ Keyword & Description \\
 \item \texttt{l}, Maximum edge length
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{resolve\_rect}	& Split elements along the edges of a rectangle untill all element edges are smaller than a given length. This command can be used to ensure a particular rectangle fits accurately in the mesh. The command takes six arguments 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{l}, Maximum edge length
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{resolve\_circ}	& Split elements along the circumference of a circle untill all element edges are smaller than a given length. This command can be used to ensure a particular circle fits accurately in the mesh. The command takes five arguments 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{l}, Maximum edge length
+\item \texttt{x\_c}, center x-coordinate of the selected circle
+\item \texttt{y\_c}, center y-coordinate of the selected circle
+\item \texttt{r}, radius of the selected circle
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{resolve\_poly}	& Split elements along the contour of a polygon untill all element edges are smaller than a given length. This command can be used to ensure a particular polygon fits accurately in the mesh. The command requires a polygon to be defined with either \texttt{define\_poly} or \texttt{load\_poly}. The command takes two arguments 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{l}, Maximum edge length
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{simplify}	&  Attempt to simplify a mesh. If elements are selected they are un-selected as the topology of the mesh changed. The command takes one argument 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
