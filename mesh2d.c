@@ -1262,17 +1262,9 @@ void SortMesh(mesh *M)
 void CleanUpMesh(mesh *M, int *merged)
 {
 	int i, j;
-	j=0;
-	i=0;
-	while (i<M->Nn)
+	for (i=0;i<M->Nn;i++)
 	{
-		if(!IsInList(merged, M->nodes[i].id))
-		{
-			if (j!=i)
-				M->nodes[j]=M->nodes[i];
-			j++;
-		}
-		else
+		if(IsInList(merged, M->nodes[i].id))
 		{
 			node *L;
 			int k;
@@ -1301,6 +1293,17 @@ void CleanUpMesh(mesh *M, int *merged)
 			free(M->nodes[i].south);
 			free(M->nodes[i].east);
 			free(M->nodes[i].west);
+		}
+	}
+	j=0;
+	i=0;
+	while (i<M->Nn)
+	{
+		if(!IsInList(merged, M->nodes[i].id))
+		{
+			if (j!=i)
+				M->nodes[j]=M->nodes[i];
+			j++;
 		}
 		i++;	
 	}
@@ -1737,6 +1740,7 @@ int Chunkify_nodes_(mesh *M, int skip, int offset)
 	}
 	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
 	CleanUpMesh(M, merged);
+	free(merged);
 	return Nold-M->Nn;
 }
 void Chunkify_(mesh *M, int J)
@@ -1831,6 +1835,7 @@ int Chunkify_nodes(mesh *M, int *list, int skip, int offset)
 	}
 	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
 	CleanUpMesh(M, merged);
+	free(merged);
 	return Nold-M->Nn;
 }
 
