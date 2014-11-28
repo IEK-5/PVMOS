@@ -768,10 +768,10 @@ void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 }
 
 
-double AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
 {
 	int i, j;
-	double E=0;
+	double Ev=0, Ei=0;
 	SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
 	
 	/* clean up old data */
@@ -794,12 +794,15 @@ double AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double t
 		Print(NORMAL, "Solving System");
 		fflush(stdout);
 		SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
-		E=0;
+		Ev=0;
 		for (j=0;j<M->Nel*M->Nn;j++)
-			E+=(M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]-M->res.Vn[M->res.Nva-2][j/M->Nn][j%M->Nn])*(M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]-M->res.Vn[M->res.Nva-2][j/M->Nn][j%M->Nn]);
-		E/=(double)(M->Nel*M->Nn);
-		E=sqrt(E);
-		Print(NORMAL, "Adapt Mesh Error: %e\n",E);
+			Ev+=(M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]-M->res.Vn[M->res.Nva-2][j/M->Nn][j%M->Nn])*(M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]-M->res.Vn[M->res.Nva-2][j/M->Nn][j%M->Nn]);
+		Ev/=(double)(M->Nel*M->Nn);
+		Ev=sqrt(Ev);
+		Ei=(M->res.I[M->res.Nva-1]-M->res.I[M->res.Nva-2]);
+		
+		Print(NORMAL, "Adapt Mesh Errors: %e V and %e A",Ev, Ei);
+		
 		for (j=0;j<M->Nel;j++)
 		{
 			free(M->res.Vn[M->res.Nva-2][j]);
@@ -807,7 +810,6 @@ double AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double t
 		}
 		M->res.Nva--;
 	}
-	return E;
 }
 
 /*

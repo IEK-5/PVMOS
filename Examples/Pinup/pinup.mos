@@ -62,7 +62,7 @@ printpars pinup pinuppars.dat
 # iterations
 split_coarse pinup 0.07
 printmesh pinup pinupmesh2.dat
-adaptive_solve 	pinup 	0.0 	0.3	5
+adaptive_solve 	pinup 	0.4 	0.3	5
 printmesh pinup pinupmesh3.dat
 
 ################################################################################################
@@ -75,4 +75,4 @@ solve pinup 0 1.0 1
 #surfPplot pinup 0 0 10 10 200 200 0.5 pinupP_05.dat
 surfVplot pinup 0 0 10 10 200 200 0.0 pinupV_00.dat
 surfPplot pinup 0 0 10 10 200 200 0.0 pinupP_00.dat
-# printIV pinup pinupIV.dat
+printIV pinup pinupIV.dat
