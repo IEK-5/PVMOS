@@ -79,8 +79,9 @@ int main(int argc, char **argv)
 	mtrace();
 #endif 
 #ifdef __MINGW32__ 
-	_putenv( "PRINTF_EXPONENT_DIGITS=2");
+	putenv( "PRINTF_EXPONENT_DIGITS=2");
 #endif
+	putenv("OMP NUM THREADS=1");
 	if(argc==2||argc==3)
 	{
 		#ifndef __MINGW32__ 

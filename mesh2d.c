@@ -1262,39 +1262,37 @@ void SortMesh(mesh *M)
 void CleanUpMesh(mesh *M, int *merged)
 {
 	int i, j;
-	for (i=0;i<M->Nn;i++)
+	for (i=1;i<=merged[0];i++)
 	{
-		if(IsInList(merged, M->nodes[i].id))
+		node *N, *L;
+		N=SearchNode(*M,merged[i]);
+		for (j=1;j<=N->north[0];j++)
 		{
-			node *L;
-			int k;
-			for (k=1;k<=M->nodes[i].north[0];k++)
-			{
-				L=SearchNode(*M,M->nodes[i].north[k]);
-				L->south=RemoveFromList(L->south, M->nodes[i].id);
-			}
-			for (k=1;k<=M->nodes[i].south[0];k++)
-			{
-				L=SearchNode(*M,M->nodes[i].south[k]);
-				L->north=RemoveFromList(L->north, M->nodes[i].id);
-			}
-			for (k=1;k<=M->nodes[i].east[0];k++)
-			{
-				L=SearchNode(*M,M->nodes[i].east[k]);
-				L->west=RemoveFromList(L->west, M->nodes[i].id);
-			} 
-			for (k=1;k<=M->nodes[i].west[0];k++)
-			{
-				L=SearchNode(*M,M->nodes[i].west[k]);
-				L->east=RemoveFromList(L->east, M->nodes[i].id);
-			}
-			
-			free(M->nodes[i].north);
-			free(M->nodes[i].south);
-			free(M->nodes[i].east);
-			free(M->nodes[i].west);
+			L=SearchNode(*M,N->north[j]);
+			L->south=RemoveFromList(L->south, N->id);
 		}
+		for (j=1;j<=N->south[0];j++)
+		{
+			L=SearchNode(*M,N->south[j]);
+			L->north=RemoveFromList(L->north, N->id);
+		}
+		for (j=1;j<=N->east[0];j++)
+		{
+			L=SearchNode(*M,N->east[j]);
+			L->west=RemoveFromList(L->west, N->id);
+		} 
+		for (j=1;j<=N->west[0];j++)
+		{
+			L=SearchNode(*M,N->west[j]);
+			L->east=RemoveFromList(L->east, N->id);
+		}
+		
+		free(N->north);
+		free(N->south);
+		free(N->east);
+		free(N->west);
 	}
+	
 	j=0;
 	i=0;
 	while (i<M->Nn)
@@ -1721,7 +1719,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	}
 	return merged;
 }
-
+/*
 int Chunkify_nodes_(mesh *M, int skip, int offset)
 {
 	int i,Nold;
@@ -1738,7 +1736,6 @@ int Chunkify_nodes_(mesh *M, int skip, int offset)
 		while (IsInList(merged, i)&&(i<M->Nn))
 			i++;
 	}
-	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
 	CleanUpMesh(M, merged);
 	free(merged);
 	return Nold-M->Nn;
@@ -1747,17 +1744,7 @@ void Chunkify_(mesh *M, int J)
 {
 	int Nold, i=0, skip=1, offset=0;
 	Nold=M->Nn+1; 
-		
-	/*
-	while ((M->Nn<Nold)&&(i<100))
-	{
-		Nold=M->Nn;
-		Chunkify_north(M);
-		Chunkify_east(M);
-		Chunkify_south(M);
-		Chunkify_west(M);
-		i++;	
-	}*/
+	
 	while ((J>0)&&(skip<M->Nn))
 	{
 		skip*=2;
@@ -1783,8 +1770,8 @@ void Chunkify_(mesh *M, int J)
 		Print(DEBUG,"Round %i, %i nodes left",i, M->Nn);
 	}
 }
-
-/* this time we add some true random to our mesh simplifier */
+*/
+/* this time we add some true randomness to our mesh simplifier */
 int Random(int rmin, int rmax)
 {
 	return rmin + (int) (1.0*(rmax-rmin+1) * rand()/(RAND_MAX+1.0) );
