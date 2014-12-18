@@ -45,6 +45,9 @@
  *                                                               *            
  *****************************************************************/     
 
+#ifdef __MINGW32__ 
+#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,7 +73,10 @@ double cpu_time_jacobi=0;
 double cpu_time_rhs=0;
 double cpu_time_rest=0;
 int peak_mem;
-
+void printenv(char *name)
+{
+	printf ("getenv (\"%s\") = \"%s\"\n", name, getenv (name) ? getenv (name) : "<null>");
+}
 int main(int argc, char **argv)
 {
 	int f=1;
@@ -79,9 +85,10 @@ int main(int argc, char **argv)
 	mtrace();
 #endif 
 #ifdef __MINGW32__ 
-	putenv( "PRINTF_EXPONENT_DIGITS=2");
+	putenv("PRINTF_EXPONENT_DIGITS=2");
 #endif
 	putenv("OMP_NUM_THREADS=1");
+	putenv("BLAS_NUM_THREADS=1");
 	if(argc==2||argc==3)
 	{
 		#ifndef __MINGW32__ 

@@ -44,6 +44,9 @@
  * output with respect to the set verbosity level                *         
  *                                                               *            
  *****************************************************************/     
+#ifdef __MINGW32__ 
+#define __USE_MINGW_ANSI_STDIO 1
+#endif
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
