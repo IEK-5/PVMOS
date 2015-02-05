@@ -60,21 +60,8 @@ In order to stress the ABSOLUTELY NO WARRANTY bit, here a quote from R. Freund:\
 \texttt{
 For all intent and purpose, any description of what the codes are doing should be construed as being a note of what we thought the codes did on our machine on a particular Tuesday of last year. If you're really lucky, they might do the same for you someday. Then again, do you really feel *that* lucky?\\
 }
-
-\section{Installation Instructions}	
-PVMOS is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \texttt{cholmod}, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to compile the source, for which a Makefile is provided. To install PVMOS you thus need to
-\begin{enumerate}
-\item{} Install PVMOS's dependencies (\texttt{cholmod},\texttt{BLAS})
-\item{} Edit the Makefile
-\item{} Compile the code (type make)
-\item{} test the executable
-\end{enumerate}
-
-The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \texttt{OpenBLAS}, which gives a very good performance (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}). Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the makefiles are set up to use \texttt{OpenBLAS} as it provides a good performance and is freely available.
-
-
 \section{Basic Usage and operating principles}
-The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the filename describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this\footnote{Many BLAS versisons seem to suffer from a bug which makes that \texttt{cholmod} performance deteriorates when multi-threading is enabled \cite{Davis:2007:Online}. If your BLAS library has multi-threading enabled, performance may improve if you set environment variables such that BLAS will use only one thread. In case of \texttt{OpenBLAS} with OpenMP you need to set \texttt{OMP\_NUM\_THREADS=1}, e.g. \texttt{export OMP\_NUM\_THREADS=1} in bash or \texttt{SET OMP\_NUM\_THREADS=1} in DOS}:
+The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the filename describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this%\footnote{Many BLAS versisons seem to suffer from a bug which makes that \texttt{cholmod} performance deteriorates when multi-threading is enabled \cite{Davis:2007:Online}. If your BLAS library has multi-threading enabled, performance may improve if you set environment variables such that BLAS will use only one thread. In case of \texttt{OpenBLAS} with OpenMP you need to set \texttt{OMP\_NUM\_THREADS=1}, e.g. \texttt{export OMP\_NUM\_THREADS=1} in bash or \texttt{SET OMP\_NUM\_THREADS=1} in DOS}:
 \begin{verbatim}
 pvmos [verbose-option] <input-file>
 \end{verbatim}
@@ -85,6 +72,56 @@ In its essence PVMOS is a Poisson solver. The Poisson equation is solved for sev
 In PVMOS we can define more than one mesh at the same time (this is useful as you can build meshes from several meshes, e.g. join two meshes for single cells to one mesh with two series connected cells). In order to reference one particular mesh, each mesh has a name. To reference an area within a mesh you can refer to \texttt{<mesh-name>.<area-name>}, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis. 
 
 The input file is parsed by PVMOS, which sequentially processes the file. PVMOS provides functions to generate and manipulate meshes such that you can generate meshes describing the problem by a sequence of commands. To this end each mesh you define has a name to reference it by. The following section provides a command-reference.
+
+\section{Installation Instructions}	
+PVMOS is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \texttt{cholmod}, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to either compile the source, for which a Makefile is provided, or you need to download precompiled binaries for your system (I only provide pre-compiled versions for windows). 
+
+\subsection{Pre-compiled binaries (Windows)}
+A word of warning: I rarely use windows systems. As such the here provided information about getting PVMOS to work on windows systems is a description of how I got PVMOS to work on one particular system on one particular Wednesday afternoon in December. I make no claims regarding the correctness of the provided information as generally I know very little about what I am doing, certainly if it involes a computer with Microsoft Windows. Please bear that in mind before you accuse me of providing false information of even damaging your system. This text is meant to provide some pointers in the hope it helps, I am in no way responsible for what you do on your system.  
+
+There are two pre-compiled versions, 32 and 64 bit. If your system supports it I strongly suggest to use 64 bit as 32bit applications are rather limited in the maximum allocatable memory space. The Pinup example will most likely not run with the 32bit version due to this memory limitation. The binary distribution consists of an executable with several dll's. The installation procedure for PVMOS is rather manual and no installer is provided. So here is the procedure for a binary install:
+\begin{enumerate}
+\item{} Download the binary 
+\item{} Unpack the files in a directory of your choise
+\item{} Optional: Add the path to your PVMOS executable to the PATH variable
+\end{enumerate}
+
+\subsubsection{Setting the ``PATH'' variable}
+Here I describe how to edit your path variable in Windows 7. First another word of warning. Adding things to the path variable is mostly harmless, however, if you break your path string (e.g. delete a part) you may seriously impair the functioning of programs that need the path variable. Follow these instructions on your own risk!
+\begin{enumerate}
+\item{} Click on the start menu 
+\item{} type ''PATH´´ in the ''search programs and files´´, you should now find options to edit the path variable for the system of for the current user, select to edit it for the current user
+\item{} Select the path variable
+\item{} Click on Edit
+\item{} Scroll to the end of the string and add \texttt{;<installation directory>}, where \texttt{<installation directory>} points to the location of your PVMOS executable
+\item{} Click on OK
+\item{} Click on OK
+\end{enumerate}
+
+If you properly edited your path variable you should be able to call PVMOS from the command prompt, from any directory, just by typing ``pvmos'', i.e. you do not need to include the path to your PVMOS executable.
+
+\subsubsection{Installing mkpvmosmesh}
+The ``mkpvmosmesh'' library is a dynamic library for GNU Octave which allows one to save PVMOS meshes from within Octave. Its use is demonstrated in the ``Pinup'' example. Again you can choose between precompiled binaries or compile it yourself. The precompiled version will not work with all versions of Octave, thus to use the precompiled version you need to install the correct version of Octave. The version of Octave I used is provided by ``octave-forge''. Octave-forge provides several version of Octave. I used the version 3.6.4 of Octave that was compiled with the MinGW compiler suite version gcc4.6.2 (Octave3.6.3\_gcc4.6.2). The provided libryry will not work with the version of Octave that is compiled with Visual Studio. The precompiled library is 32bit as the used version of Octave is too. As of this writing no pre-compiled 64bit version of Octave is available (at least not compiled with the MinGW suite). For this reason there is no 64 bit version of mkpvmosmesh.
+
+Two notes on using GNU Octave under windows. 
+\begin{enumerate}
+\item{} You can add Octave to your path variable, that way you can easily call octave from anywhere on the commandline.
+\item{} you may find that on windows Octave always starts in the same directory, this is to me unexpected and undesired. I got Octave to start there where I call it (so I can execute an octave script by typing \texttt{octave <path to octave script>}. To this end I edited the file \texttt{<Octave-installation-dir>\textbackslash share\textbackslash site\textbackslash m\textbackslash startup\textbackslash octaverc} by commenting out the line 
+\begin{verbatim}
+cd (getenv('USERPROFILE'))
+\end{verbatim}
+\end{enumerate}
+
+
+\subsection{Compiling from source}
+\begin{enumerate}
+\item{} Install PVMOS's dependencies (\texttt{BLAS} and \texttt{CHOLMOD}). These libraries should be readily available in most linux distributions. Take care to install the development files (i.e. headers) for these libraries too 
+\item{} Optionally edit the Makefile, in particular you can change the BLAS library to link to (which may be relevant for performance, see below) or change the install directory
+\item{} type ``make'', and ``make install''
+\item{} Optionally type ``make mkpvmosmesh'' to compile the mkpvmosmesh library for GNU Octave (this requires a GNU Octave install with a working mkoctfile command).
+\end{enumerate}
+
+The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \texttt{OpenBLAS}, which gives a very good performance (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}). Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the makefiles are set up to use \texttt{OpenBLAS} as it provides a good performance and is freely available.
 
 \section{\label{syntax}PVMOS command reference}
 

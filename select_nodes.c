@@ -53,6 +53,7 @@
 #include "utils.h"
 #include "select_nodes.h"
 #define TWOPI 6.28318530717959
+#define FOURPI 12.5663706143592
 #define TINY 1e-12
 
 node *NextNodeNE(mesh M, node *N, double a, double b)
@@ -260,18 +261,26 @@ double dAngle(double x1, double x2, double y1, double y2, double x, double y)
 	return da;
 }
 
-
+/* to support holes in polygons we could do polygons with breaks. The polygon is split at the breaks (i.e. each part looped)
+   and the integration below is summed up over all parts. we then do a modulus 4pi and figure out whether the node is in or out */
 int IsInPolygon(polygon P, double x, double y)
 {
-	int i;
+	int i=0;
+	int j;
+	int F, L;
 	
 	/* if the point is enclosed by the Contour the total change in angle should be 2*pi */
 	double sa=0;
-	
-	for (i=0;i<P.N-1;i++)
-		sa+=dAngle(P.x[i], P.x[i+1],P.y[i], P.y[i+1],x, y);
-	sa+=dAngle(P.x[P.N-1], P.x[0],P.y[P.N-1], P.y[0],x, y);	
-	if (fabs(sa)<TWOPI-1e-6)
+	L=-1;
+	for (j=1;j<=P.BR[0];j++)
+	{
+		F=L+1;
+		L=P.BR[j]-1;
+		for (i=F;i<L;i++)
+			sa+=dAngle(P.x[i], P.x[i+1],P.y[i], P.y[i+1],x, y);
+		sa+=dAngle(P.x[L], P.x[F],P.y[L], P.y[F],x, y);	
+	}
+	if (fmod(fabs(sa)+1e-6,FOURPI)<TWOPI-1e-6)
 		return 0;
 	else
 		return 1;
@@ -280,68 +289,77 @@ int IsInPolygon(polygon P, double x, double y)
 int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 {
 	int i;
+	int j;
+	int F, L;
 	double dx, dy, xx, yy, d;
 	D=D*D;
 	
-	for (i=0;i<P.N-1;i++)
+	L=-1;
+	for (j=1;j<=P.BR[0];j++)
 	{
-		/* check endpoints */
-		d=(x-P.x[i+1])*(x-P.x[i+1])+(y-P.y[i+1])*(y-P.y[i+1]);
-		if (d<D)
-			return 1;
-		d=(x-P.x[i])*(x-P.x[i])+(y-P.y[i])*(y-P.y[i]);
-		if (d<D)
-			return 1;
-			
-		/* compute distance point to line */
-		/* line dx and dy values */
-		dx=P.x[i+1]-P.x[i];
-		dy=P.y[i+1]-P.y[i];
-		/* if the line is actually a point we can ignore it as we already checked the distance to he endpoints */
-		if ((dy*dy+dx*dx)>TINY)
+		F=L+1;
+		L=P.BR[j]-1;
+		for (i=F;i<L;i++)
 		{
-			/* Intersectipon point, perhaps not so readable but trust me, it is correct :) */
-			xx=(dx*dy*y-dx*dy*P.y[i]+dx*dx*x+dy*dy*P.x[i])/(dy*dy+dx*dx);
-			yy=(dy*dy*y+dx*dx*P.y[i]+dx*dy*x-dx*dy*P.x[i])/(dy*dy+dx*dx);
-			
-			/* perhaps not so readable but trust me, it is correct :) */
-			if (((P.x[i]-xx)*(P.x[i+1]-xx)<=0)&&((P.y[i]-yy)*(P.y[i+1]-yy)<=0))
+			/* check endpoints */
+			d=(x-P.x[i+1])*(x-P.x[i+1])+(y-P.y[i+1])*(y-P.y[i+1]);
+			if (d<D)
+				return 1;
+			d=(x-P.x[i])*(x-P.x[i])+(y-P.y[i])*(y-P.y[i]);
+			if (d<D)
+				return 1;
+				
+			/* compute distance point to line */
+			/* line dx and dy values */
+			dx=P.x[i+1]-P.x[i];
+			dy=P.y[i+1]-P.y[i];
+			/* if the line is actually a point we can ignore it as we already checked the distance to he endpoints */
+			if ((dy*dy+dx*dx)>TINY)
 			{
-				d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
-				if (d<D)
-					return 1;
+				/* Intersectipon point, perhaps not so readable but trust me, it is correct :) */
+				xx=(dx*dy*y-dx*dy*P.y[i]+dx*dx*x+dy*dy*P.x[i])/(dy*dy+dx*dx);
+				yy=(dy*dy*y+dx*dx*P.y[i]+dx*dy*x-dx*dy*P.x[i])/(dy*dy+dx*dx);
+				
+				/* perhaps not so readable but trust me, it is correct :) */
+				if (((P.x[i]-xx)*(P.x[i+1]-xx)<=0)&&((P.y[i]-yy)*(P.y[i+1]-yy)<=0))
+				{
+					d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
+					if (d<D)
+						return 1;
+				}
 			}
 		}
-	}
-	if (loop)
-	{
-		/* check endpoints */
-		d=(x-P.x[0])*(x-P.x[0])+(y-P.y[0])*(y-P.y[0]);
-		if (d<D)
-			return 1;
-		d=(x-P.x[P.N-1])*(x-P.x[P.N-1])+(y-P.y[P.N-1])*(y-P.y[P.N-1]);
-		if (d<D)
-			return 1;
-			
-		/* compute distance point to line */
-		/* line dx and dy values */
-		dx=P.x[0]-P.x[P.N-1];
-		dy=P.y[0]-P.y[P.N-1];
-		/* if the line is actually a point we can ignore it as we already checked the distance to he endpoints */
-		if ((dy*dy+dx*dx)>TINY)
+		if (loop)
 		{
-			/* Intersectipon point, perhaps not so readable but trust me, it is correct :) */
-			xx=(dx*dy*y-dx*dy*P.y[P.N-1]+dx*dx*x+dy*dy*P.x[P.N-1])/(dy*dy+dx*dx);
-			yy=(dy*dy*y+dx*dx*P.y[P.N-1]+dx*dy*x-dx*dy*P.x[P.N-1])/(dy*dy+dx*dx);
-			
-			/* perhaps not so readable but trust me, it is correct :) */
-			if (((P.x[P.N-1]-xx)*(P.x[0]-xx)<=0)&&((P.y[P.N-1]-yy)*(P.y[0]-yy)<=0))
+			/* check endpoints */
+			d=(x-P.x[F])*(x-P.x[F])+(y-P.y[F])*(y-P.y[F]);
+			if (d<D)
+				return 1;
+			d=(x-P.x[L])*(x-P.x[L])+(y-P.y[L])*(y-P.y[L]);
+			if (d<D)
+				return 1;
+				
+			/* compute distance point to line */
+			/* line dx and dy values */
+			dx=P.x[F]-P.x[L];
+			dy=P.y[F]-P.y[L];
+			/* if the line is actually a point we can ignore it as we already checked the distance to he endpoints */
+			if ((dy*dy+dx*dx)>TINY)
 			{
-				d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
-				if (d<D)
-					return 1;
+				/* Intersectipon point, perhaps not so readable but trust me, it is correct :) */
+				xx=(dx*dy*y-dx*dy*P.y[L]+dx*dx*x+dy*dy*P.x[L])/(dy*dy+dx*dx);
+				yy=(dy*dy*y+dx*dx*P.y[L]+dx*dy*x-dx*dy*P.x[L])/(dy*dy+dx*dx);
+				
+				/* perhaps not so readable but trust me, it is correct :) */
+				if (((P.x[L]-xx)*(P.x[F]-xx)<=0)&&((P.y[L]-yy)*(P.y[F]-yy)<=0))
+				{
+					d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
+					if (d<D)
+						return 1;
+				}
 			}
 		}
+		
 	}
 	return 0;
 
@@ -350,106 +368,114 @@ int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 int PolygonCrossNode(polygon P, node *N, int loop)
 {
 	int i;
+	int j;
+	int F, L;
 	double a, b, x0, y0, t1, t2, x, y;
-	for (i=0;i<P.N-1;i++)
+	L=-1;
+	for (j=1;j<=P.BR[0];j++)
 	{
-		/* check endpoints */
-		if ((P.x[i+1]-N->x1>=-TINY)&&(N->x2-P.x[i+1]>=-TINY)&&(P.y[i+1]-N->y1>=-TINY)&&(N->y2-P.y[i+1]>=-TINY))
-			return 1;
-		if ((P.x[i]-N->x1>=-TINY)&&(N->x2-P.x[i]>=-TINY)&&(P.y[i]-N->y1>=-TINY)&&(N->y2-P.y[i]>=-TINY))
-			return 1;
-
-		/* parameterize line */		
-		a=(P.x[i+1]-P.x[i]);
-		b=(P.y[i+1]-P.y[i]);
-		x0=P.x[i];
-		y0=P.y[i];
-		
-		t1=(N->y1-y0)/b;
-		t2=(N->y2-y0)/b;
-		
-		if (isfinite(t1)&&isfinite(t2))
+		F=L+1;
+		L=P.BR[j]-1;
+		for (i=F;i<L;i++)
 		{
-			if ((t1>=0)&&(t1<=1.0))
+			/* check endpoints */
+			if ((P.x[i+1]-N->x1>=-TINY)&&(N->x2-P.x[i+1]>=-TINY)&&(P.y[i+1]-N->y1>=-TINY)&&(N->y2-P.y[i+1]>=-TINY))
+				return 1;
+			if ((P.x[i]-N->x1>=-TINY)&&(N->x2-P.x[i]>=-TINY)&&(P.y[i]-N->y1>=-TINY)&&(N->y2-P.y[i]>=-TINY))
+				return 1;
+	
+			/* parameterize line */		
+			a=(P.x[i+1]-P.x[i]);
+			b=(P.y[i+1]-P.y[i]);
+			x0=P.x[i];
+			y0=P.y[i];
+			
+			t1=(N->y1-y0)/b;
+			t2=(N->y2-y0)/b;	
+			
+			if (isfinite(t1)&&isfinite(t2))
 			{
-				x=a*t1+x0;
-				if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
-					return 1;
+				if ((t1>=0)&&(t1<=1.0))
+				{
+					x=a*t1+x0;
+					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
+						return 1;
+				}
+				if ((t2>=0)&&(t2<=1.0))
+				{
+					x=a*t2+x0;
+					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
+						return 1;
+				}
 			}
-			if ((t2>=0)&&(t2<=1.0))
+			t1=(N->x1-x0)/a;
+			t2=(N->x2-x0)/a;
+			
+			if (isfinite(t1)&&isfinite(t2))
 			{
-				x=a*t2+x0;
-				if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
-					return 1;
+				if ((t1>=0)&&(t1<=1.0))
+				{
+					y=b*t1+y0;
+					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+						return 1;
+				}
+				if ((t2>=0)&&(t2<=1.0))
+				{
+					y=b*t2+y0;
+					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+						return 1;
+				}
 			}
+			
 		}
-		t1=(N->x1-x0)/a;
-		t2=(N->x2-x0)/a;
-		
-		if (isfinite(t1)&&isfinite(t2))
+		if (loop)
 		{
-			if ((t1>=0)&&(t1<=1.0))
+			/* check endpoints */
+			if ((P.x[F]-N->x1>=-TINY)&&(N->x2-P.x[F]>=-TINY)&&(P.y[F]-N->y1>=-TINY)&&(N->y2-P.y[F]>=-TINY))
+				return 1;
+			if ((P.x[L]-N->x1>=-TINY)&&(N->x2-P.x[L]>=-TINY)&&(P.y[L]-N->y1>=-TINY)&&(N->y2-P.y[L]>=-TINY))
+				return 1;
+			/* parameterize line */		
+			a=(P.x[F]-P.x[L]);
+			b=(P.y[F]-P.y[L]);
+			x0=P.x[L];
+			y0=P.y[L];
+			
+			t1=(N->y1-y0)/b;
+			t2=(N->y2-y0)/b;
+			
+			if (isfinite(t1)&&isfinite(t2))
 			{
-				y=b*t1+y0;
-				if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-					return 1;
+				if ((t1>=0)&&(t1<=1.0))
+				{
+					x=a*t1+x0;
+					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
+						return 1;
+				}
+				if ((t2>=0)&&(t2<=1.0))
+				{
+					x=a*t2+x0;
+					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
+						return 1;
+				}
 			}
-			if ((t2>=0)&&(t2<=1.0))
+			t1=(N->x1-x0)/a;
+			t2=(N->x2-x0)/a;
+			
+			if (isfinite(t1)&&isfinite(t2))
 			{
-				y=b*t2+y0;
-				if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-					return 1;
-			}
-		}
-		
-	}
-	if (loop)
-	{
-		/* check endpoints */
-		if ((P.x[0]-N->x1>=-TINY)&&(N->x2-P.x[0]>=-TINY)&&(P.y[0]-N->y1>=-TINY)&&(N->y2-P.y[0]>=-TINY))
-			return 1;
-		if ((P.x[P.N-1]-N->x1>=-TINY)&&(N->x2-P.x[P.N-1]>=-TINY)&&(P.y[P.N-1]-N->y1>=-TINY)&&(N->y2-P.y[P.N-1]>=-TINY))
-			return 1;
-		/* parameterize line */		
-		a=(P.x[0]-P.x[P.N-1]);
-		b=(P.y[0]-P.y[P.N-1]);
-		x0=P.x[P.N-1];
-		y0=P.y[P.N-1];
-		
-		t1=(N->y1-y0)/b;
-		t2=(N->y2-y0)/b;
-		
-		if (isfinite(t1)&&isfinite(t2))
-		{
-			if ((t1>=0)&&(t1<=1.0))
-			{
-				x=a*t1+x0;
-				if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
-					return 1;
-			}
-			if ((t2>=0)&&(t2<=1.0))
-			{
-				x=a*t2+x0;
-				if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
-					return 1;
-			}
-		}
-		t1=(N->x1-x0)/a;
-		t2=(N->x2-x0)/a;
-		
-		if (isfinite(t1)&&isfinite(t2))
-		{
-			if ((t1>=0)&&(t1<=1.0))
-			{
-				y=b*t1+y0;
-				if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-					return 1;
-			}
-			if ((t2>=0)&&(t2<=1.0))
-			{
-				y=b*t2+y0;
-				if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-					return 1;
+				if ((t1>=0)&&(t1<=1.0))
+				{
+					y=b*t1+y0;
+					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+						return 1;
+				}
+				if ((t2>=0)&&(t2<=1.0))
+				{
+					y=b*t2+y0;
+					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
+						return 1;
+				}
 			}
 		}
 	}
@@ -900,7 +926,8 @@ void ResolvRect(double x1, double y1, double x2, double y2, mesh *M, double D)
 }
 
 
-
+/* extendable to polygons with holes if we add the possibility to track breaks, i.e. an empty line to indicate no connection between two susequent nodes
+   This would allow clean holes cut out of a polygon shape. See comment at IsInPoly */
 polygon ReadPoly(char *fn)
 {
 	polygon res;
@@ -915,6 +942,7 @@ polygon ReadPoly(char *fn)
 	res.N=0;
 	res.x=malloc(Na*sizeof(double));
 	res.y=malloc(Na*sizeof(double));
+	res.BR=malloc(LISTBLOCK*sizeof(int));
 	while(feof(f)==0)
 	{
 		
@@ -932,13 +960,19 @@ polygon ReadPoly(char *fn)
 					res.y=realloc(res.y, Na*sizeof(double));					
 				}
 			}
+			else
+				res.BR=AddToList(res.BR, res.N);
 			
 		}
+		else
+			if (k==-1)
+				res.BR=AddToList(res.BR, res.N);
     		fgets(line, MAXSTRLEN-1, f);
 	}
 	free(line);
 	res.x=realloc(res.x, (res.N+1)*sizeof(double));	
 	res.y=realloc(res.y, (res.N+1)*sizeof(double));
+	res.BR=AddToList(res.BR, res.N);
 	fclose(f);
 	return res;
 }

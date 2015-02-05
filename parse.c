@@ -1164,6 +1164,7 @@ void Parse (char *file)
 						{
 							free(P.x);
 							free(P.y);
+							free(P.BR);
 						}
 						P=ReadPoly(word);
 						break;
@@ -1514,6 +1515,9 @@ void Parse (char *file)
 						MV->M.P[P].conn[el].J=JV.y;
 						MV->M.P[P].conn[el].N=JV.N;
 						MV->M.P[P].conn[el].model=JVD;	
+						free(JV.x);
+						free(JV.y);
+						free(JV.BR);
 						FreeArgs (args, 3);						
 						break;
 					}

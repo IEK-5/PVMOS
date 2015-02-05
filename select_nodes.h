@@ -42,6 +42,7 @@
 typedef struct polygon {
 	double *x;
 	double *y;
+	int *BR;
 	int N;
 } polygon;
 
