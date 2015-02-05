@@ -1179,10 +1179,12 @@ void Parse (char *file)
 						{
 							free(P.x);
 							free(P.y);
+							free(P.BR);
 						}	
 						P.N=0;
 						P.x=malloc(Na*sizeof(double));
 						P.y=malloc(Na*sizeof(double));
+						P.BR=malloc(LISTBLOCK*sizeof(int));
     						fgets(line, MAXSTRLEN-1, f);
 						line_nr++;
 						while(feof(f)==0)
@@ -1206,9 +1208,14 @@ void Parse (char *file)
 								}
 								FreeArgs (args, 2);
     							}
+							else
+								P.BR=AddToList(P.BR, P.N);
 							fgets(line, MAXSTRLEN-1, f);
 							line_nr++;							
 						} while	(key!=DEF_POLY);
+						
+						P.BR=AddToList(P.BR, P.N);
+						
 						if ((feof(f))||(!begin))
 							goto premature_end;
 												
@@ -1221,6 +1228,7 @@ void Parse (char *file)
 						{
 							free(P.x);
 							free(P.y);
+							free(P.BR);
 						}
 						begin=GetWord (begin, word);
 						Print(NORMAL, "* line %3d: polygon with %i points defined",line_nr,P.N);

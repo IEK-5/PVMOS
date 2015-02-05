@@ -321,7 +321,7 @@ int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 				yy=(dy*dy*y+dx*dx*P.y[i]+dx*dy*x-dx*dy*P.x[i])/(dy*dy+dx*dx);
 				
 				/* perhaps not so readable but trust me, it is correct :) */
-				if (((P.x[i]-xx)*(P.x[i+1]-xx)<=0)&&((P.y[i]-yy)*(P.y[i+1]-yy)<=0))
+				if (((P.x[i]-xx)*(P.x[i+1]-xx)<=TINY)&&((P.y[i]-yy)*(P.y[i+1]-yy)<=TINY))
 				{
 					d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
 					if (d<D)
@@ -351,7 +351,7 @@ int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 				yy=(dy*dy*y+dx*dx*P.y[L]+dx*dy*x-dx*dy*P.x[L])/(dy*dy+dx*dx);
 				
 				/* perhaps not so readable but trust me, it is correct :) */
-				if (((P.x[L]-xx)*(P.x[F]-xx)<=0)&&((P.y[L]-yy)*(P.y[F]-yy)<=0))
+				if (((P.x[L]-xx)*(P.x[F]-xx)<=TINY)&&((P.y[L]-yy)*(P.y[F]-yy)<=TINY))
 				{
 					d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
 					if (d<D)
