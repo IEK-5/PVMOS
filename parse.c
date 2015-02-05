@@ -1185,6 +1185,7 @@ void Parse (char *file)
 						P.x=malloc(Na*sizeof(double));
 						P.y=malloc(Na*sizeof(double));
 						P.BR=malloc(LISTBLOCK*sizeof(int));
+						P.BR[0]=0;
     						fgets(line, MAXSTRLEN-1, f);
 						line_nr++;
 						while(feof(f)==0)
@@ -1214,7 +1215,6 @@ void Parse (char *file)
 							line_nr++;							
 						} while	(key!=DEF_POLY);
 						
-						P.BR=AddToList(P.BR, P.N);
 						
 						if ((feof(f))||(!begin))
 							goto premature_end;
@@ -1223,6 +1223,7 @@ void Parse (char *file)
 						{
 							P.x=realloc(P.x, (P.N+1)*sizeof(double));	
 							P.y=realloc(P.y, (P.N+1)*sizeof(double));
+							P.BR=AddToList(P.BR, P.N);
 						}
 						else
 						{

@@ -214,24 +214,24 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements within the polygon. If the latter is not desired use deselect first. The command takes one argument.
+\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements within the polygon. If the latter is not desired use deselect first. If a polygon circles an element more than once the node is selected if the node is circled an uneven number of times. This allows one to define polygon areas with holes. To make a hole, define one outer part of the polygon and one inner part and have a break between these tho parts, i.e. the two parts should not be connected by a line segment, (see \texttt{load\_poly} and \texttt{loaddefine\_poly}). The command takes one argument.
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. The command takes three arguments.
+\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. If no line segment is present between two seubsequent coordinates in the polygon (i.e. a break in the polygon), no nodes are selected between these coordinates. The command takes three arguments.
 \begin{enumerate}
 \item \texttt{distance}, Distance from the polygon
 \item \texttt{loop}, Argument takes either 0 (not looped) or 1 (looped). In looped modus the last point in the polygon is connected to the first point.
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{load\_poly}	& Load a polygon from file. This command is used in conjunction with the \texttt{select\_poly} and the \texttt{select\_poly\_contour} commands. Once a polygon is loaded you can use it to select until a new \texttt{load\_poly} command is given. The command takes one argument.
+\texttt{load\_poly}	& Load a polygon from file. This command is used in conjunction with the \texttt{select\_poly} and the \texttt{select\_poly\_contour} commands. Once a polygon is loaded you can use it to select until a new \texttt{load\_poly} command is given. Polygons may contain breaks (i.e. absence of a line segment between two coordinates). The command takes one argument.
 \begin{enumerate}
-\item \texttt{file-name}, Name of the file describing the polygon (one 2D coordinate per line, i.e., two columns, 1: x-coordinate, 2: y-coordinate)
+\item \texttt{file-name}, Name of the file describing the polygon (one 2D coordinate per line, i.e., two columns, 1: x-coordinate, 2: y-coordinate, empty lines indicate a break)
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{define\_poly}	& Define polygon within the input file. See also the \texttt{load\_poly} command for an alternative method. The difference between this command and the \texttt{load\_poly} command is that with this command you can define the polygon within the PVMOS input file. As such it is best suited for simple polygons. The \texttt{define\_poly} command marks the start and the end of a table defining the polygon. Between the two \texttt{define\_poly} commands, one coordinate (x- and y-value) per line is expected, i.e.,\\
+\texttt{define\_poly}	& Define polygon within the input file. See also the \texttt{load\_poly} command for an alternative method. The difference between this command and the \texttt{load\_poly} command is that with this command you can define the polygon within the PVMOS input file. As such it is best suited for simple polygons. The \texttt{define\_poly} command marks the start and the end of a table defining the polygon. Between the two \texttt{define\_poly} commands, one coordinate (x- and y-value) per line is expected and an empty line indicates a break, i.e.,\\
 &
 \begin{tabular}{ll}
 	\texttt{define\_poly} \\
@@ -240,9 +240,13 @@ Keyword & Description \\
 	$x_3$ & $y_3$ \\
 	... & ... \\
 	$x_N$ & $y_N$ \\
+	\\
+	$x_{N+1}$ & $y_{N+1}$ \\
+	... & ... \\
+	$x_M$ & $y_M$ \\
 	\texttt{define\_poly} \\
 \end{tabular}\\
-&where $(x_i,y_i)$ is the $i$-th coordinate of the polygon.\\
+&where $(x_i,y_i)$ is the $i$-th coordinate of the polygon and between coordinates $N$ and $N+1$ there is a break.\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{select\_area}	& Select all nodes assigned to a given area. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes which are assigned to the given area. If the latter is not desired use deselect first. The command takes one argument.
 \begin{enumerate}
@@ -302,7 +306,7 @@ Keyword & Description \\
 \item \texttt{r}, radius of the selected circle
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{resolve\_poly}	& Split elements along the contour of a polygon untill all element edges are smaller than a given length. This command can be used to ensure a particular polygon fits accurately in the mesh. The command requires a polygon to be defined with either \texttt{define\_poly} or \texttt{load\_poly}. The command takes two arguments 
+\texttt{resolve\_poly}	& Split elements along the contour of a polygon untill all element edges are smaller than a given length. This command can be used to ensure a particular polygon fits accurately in the mesh. The command requires a polygon to be defined with either \texttt{define\_poly} or \texttt{load\_poly}. Breaks in the polygon are not resolved, i.e. the routine only resolves the line segments within the polygon. The command takes two arguments 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{l}, Maximum edge length
