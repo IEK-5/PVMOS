@@ -963,6 +963,9 @@ void ResolvRect(double x1, double y1, double x2, double y2, mesh *M, double D)
 	P.N=4;
 	P.x=malloc(5*sizeof(double));
 	P.y=malloc(5*sizeof(double));
+	P.BR=malloc(3*sizeof(int));
+	P.BR[0]=1;
+	P.BR[1]=4;
 	P.x[0]=x1;
 	P.x[1]=x2;
 	P.x[2]=x2;
@@ -976,6 +979,7 @@ void ResolvRect(double x1, double y1, double x2, double y2, mesh *M, double D)
 
 	free(P.x);
 	free(P.y);
+	free(P.BR);
 
 }
 
@@ -997,6 +1001,7 @@ polygon ReadPoly(char *fn)
 	res.x=malloc(Na*sizeof(double));
 	res.y=malloc(Na*sizeof(double));
 	res.BR=malloc(LISTBLOCK*sizeof(int));
+	res.BR[0]=0;
 	while(feof(f)==0)
 	{
 		

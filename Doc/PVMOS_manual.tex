@@ -1,0 +1,705 @@
+\documentclass[noshowpacs,preprintnumbers,amsmath,amssymb, letter]{revtex4}
+
+\usepackage{longtable}%
+\usepackage{stmaryrd}%
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+\usepackage{longtable}
+
+
+\usepackage{float}
+\floatstyle{ruled}
+\newfloat{codebox}{tb}{los}
+\floatname{codebox}{input}
+% \renewcommand{\arraystretch}{2}
+% \nofiles
+
+\renewcommand{\bfdefault}{b}
+\newcommand{\Un}[2]{\mbox{$\mathrm{#1}$ $\mathrm{#2}$}}
+\newcommand{\Und}[2]{\mbox{$\mathrm{#1}$-$\mathrm{#2}$}}
+\newcommand{\asa}{\textit{ASA}}
+\newcommand{\gpIII}{\textit{GENPRO3}}
+\newcommand{\ASI}{\lowercase{\emph{a}}-S\lowercase{i}:H}
+\newcommand{\CSI}{\emph{c}-Si}
+\newcommand{\USI}{$\mu$\lowercase{\emph{c}}-S\lowercase{i}:H}
+\newcommand{\Fig}[1]{Fig. \ref{#1}}
+\newcommand{\Tab}[1]{Table \ref{#1}}
+\newcommand{\Eq}[1]{Eq. (\ref{#1})}
+\newcommand{\Sec}[1]{Section \ref{#1}}
+\newcommand{\pin}{\emph{pin}}
+\newcommand{\ea}{\emph{et al.}}
+\newcommand{\vect}[1]{\boldsymbol{#1}}
+
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+
+\begin{document}
+\title{PVMOS manual}
+
+\author{B.E. Pieters}%
+\email{b.pieters@fz-juelich.de}
+\affiliation{Institut f\"ur Energie und Klimaforschung - IEK5 Photovoltaik, Forschungszentrum J\"ulich, 52425 J\"ulich, Germany}
+\date{\today}
+\maketitle
+
+\section{Introduction}
+This is (or rather will be as the current state of this document is far from finished) the manual for the Photo-Voltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{pvmos:2014}. The purpose of this document is to document how PVMOS is operated and installed. In the following sections I discuss in order, the installation, basic usage and operating principles and finally a detailed discussion of all available functions.
+
+Before we continue, here are some legalities:\\\\
+\texttt{
+DISCLAMER:\\
+PVMOS  Copyright (C) 2014  B. E. Pieters\\
+This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to\\
+redistribute under certain conditions. You should have received a copy of the GNU General \\
+Public License along with this program. If not, see <http://www.gnu.org/licenses/>.\\
+}\\
+In order to stress the ABSOLUTELY NO WARRANTY bit, here a quote from R. Freund:\\\\
+\texttt{
+For all intent and purpose, any description of what the codes are doing should be construed as being a note of what we thought the codes did on our machine on a particular Tuesday of last year. If you're really lucky, they might do the same for you someday. Then again, do you really feel *that* lucky?\\
+}
+\section{Basic Usage and operating principles}
+The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the filename describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this%\footnote{Many BLAS versisons seem to suffer from a bug which makes that \texttt{cholmod} performance deteriorates when multi-threading is enabled \cite{Davis:2007:Online}. If your BLAS library has multi-threading enabled, performance may improve if you set environment variables such that BLAS will use only one thread. In case of \texttt{OpenBLAS} with OpenMP you need to set \texttt{OMP\_NUM\_THREADS=1}, e.g. \texttt{export OMP\_NUM\_THREADS=1} in bash or \texttt{SET OMP\_NUM\_THREADS=1} in DOS}:
+\begin{verbatim}
+pvmos [verbose-option] <input-file>
+\end{verbatim}
+where \texttt{[verbose-option]} is an option which how much information PVMOS outputs to stdout, and \texttt{<input-file>} is the plain text input file. We first describe the mesh data structure in more detail in the next section. 
+
+In its essence PVMOS is a Poisson solver. The Poisson equation is solved for several stacked, 2D ``electrodes'', where each electrode is coupled to the electrodes above and below (note that a stack of 2D electrodes makes a 3D structure). The electrodes itself simply conductors and behave linearly (Ohmic). However, the connection between the electrodes can be non-linear (e.g. a diode). Now ther are several limitations of the structures that PVMOS handles. The main limitation is that the meshes are 2D as in PVMOS all electrodes share the same 2D mesh. This means that PVMOS is specifically designed for flat layered structures, a less than optimal performance is to be expected for different that flat layered geometries. PVMOS uses straight forward finite-differences to solve the coupled Poisson equations. As such the 2D meshes in PVMOS divide the 2D surface in rectangular elements. Now every element in the mesh must be associated with certain properties. Storing properties on a per element basis woul put a heavy burdon on the memory resources. For that reason elements are grouped into ``area's'' where each ares constitures a certain combination of properties. A mesh therfore also contains a list of all area's and every element is a member of one of the area's in the mesh (note that an element is always assigned to one area, i.e. you need at least one area for every unique combination of local properties).
+
+In PVMOS we can define more than one mesh at the same time (this is useful as you can build meshes from several meshes, e.g. join two meshes for single cells to one mesh with two series connected cells). In order to reference one particular mesh, each mesh has a name. To reference an area within a mesh you can refer to \texttt{<mesh-name>.<area-name>}, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis. 
+
+The input file is parsed by PVMOS, which sequentially processes the file. PVMOS provides functions to generate and manipulate meshes such that you can generate meshes describing the problem by a sequence of commands. To this end each mesh you define has a name to reference it by. The following section provides a command-reference.
+
+\section{Installation Instructions}	
+PVMOS is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \texttt{cholmod}, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to either compile the source, for which a Makefile is provided, or you need to download precompiled binaries for your system (I only provide pre-compiled versions for windows). 
+
+\subsection{Pre-compiled binaries (Windows)}
+A word of warning: I rarely use windows systems. As such the here provided information about getting PVMOS to work on windows systems is a description of how I got PVMOS to work on one particular system on one particular Wednesday afternoon in December. I make no claims regarding the correctness of the provided information as generally I know very little about what I am doing, certainly if it involes a computer with Microsoft Windows. Please bear that in mind before you accuse me of providing false information of even damaging your system. This text is meant to provide some pointers in the hope it helps, I am in no way responsible for what you do on your system.  
+
+There are two pre-compiled versions, 32 and 64 bit. If your system supports it I strongly suggest to use 64 bit as 32bit applications are rather limited in the maximum allocatable memory space. The Pinup example will most likely not run with the 32bit version due to this memory limitation. The binary distribution consists of an executable with several dll's. The installation procedure for PVMOS is rather manual and no installer is provided. So here is the procedure for a binary install:
+\begin{enumerate}
+\item{} Download the binary 
+\item{} Unpack the files in a directory of your choise
+\item{} Optional: Add the path to your PVMOS executable to the PATH variable
+\end{enumerate}
+
+\subsubsection{Setting the ``PATH'' variable}
+Here I describe how to edit your path variable in Windows 7. First another word of warning. Adding things to the path variable is mostly harmless, however, if you break your path string (e.g. delete a part) you may seriously impair the functioning of programs that need the path variable. Follow these instructions on your own risk!
+\begin{enumerate}
+\item{} Click on the start menu 
+\item{} type ''PATH´´ in the ''search programs and files´´, you should now find options to edit the path variable for the system of for the current user, select to edit it for the current user
+\item{} Select the path variable
+\item{} Click on Edit
+\item{} Scroll to the end of the string and add \texttt{;<installation directory>}, where \texttt{<installation directory>} points to the location of your PVMOS executable
+\item{} Click on OK
+\item{} Click on OK
+\end{enumerate}
+
+If you properly edited your path variable you should be able to call PVMOS from the command prompt, from any directory, just by typing ``pvmos'', i.e. you do not need to include the path to your PVMOS executable.
+
+\subsubsection{Installing mkpvmosmesh}
+The ``mkpvmosmesh'' library is a dynamic library for GNU Octave which allows one to save PVMOS meshes from within Octave. Its use is demonstrated in the ``Pinup'' example. Again you can choose between precompiled binaries or compile it yourself. The precompiled version will not work with all versions of Octave, thus to use the precompiled version you need to install the correct version of Octave. The version of Octave I used is provided by ``octave-forge''. Octave-forge provides several version of Octave. I used the version 3.6.4 of Octave that was compiled with the MinGW compiler suite version gcc4.6.2 (Octave3.6.3\_gcc4.6.2). The provided libryry will not work with the version of Octave that is compiled with Visual Studio. The precompiled library is 32bit as the used version of Octave is too. As of this writing no pre-compiled 64bit version of Octave is available (at least not compiled with the MinGW suite). For this reason there is no 64 bit version of mkpvmosmesh.
+
+Two notes on using GNU Octave under windows. 
+\begin{enumerate}
+\item{} You can add Octave to your path variable, that way you can easily call octave from anywhere on the commandline.
+\item{} you may find that on windows Octave always starts in the same directory, this is to me unexpected and undesired. I got Octave to start there where I call it (so I can execute an octave script by typing \texttt{octave <path to octave script>}. To this end I edited the file \texttt{<Octave-installation-dir>\textbackslash share\textbackslash site\textbackslash m\textbackslash startup\textbackslash octaverc} by commenting out the line 
+\begin{verbatim}
+cd (getenv('USERPROFILE'))
+\end{verbatim}
+\end{enumerate}
+
+
+\subsection{Compiling from source}
+\begin{enumerate}
+\item{} Install PVMOS's dependencies (\texttt{BLAS} and \texttt{CHOLMOD}). These libraries should be readily available in most linux distributions. Take care to install the development files (i.e. headers) for these libraries too 
+\item{} Optionally edit the Makefile, in particular you can change the BLAS library to link to (which may be relevant for performance, see below) or change the install directory
+\item{} type ``make'', and ``make install''
+\item{} Optionally type ``make mkpvmosmesh'' to compile the mkpvmosmesh library for GNU Octave (this requires a GNU Octave install with a working mkoctfile command).
+\end{enumerate}
+
+The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \texttt{OpenBLAS}, which gives a very good performance (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}). Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the makefiles are set up to use \texttt{OpenBLAS} as it provides a good performance and is freely available.
+
+\section{\label{getting started}Getting started}
+In this section we give some pointers to get you started. 
+
+\subsection{Recommended software}
+We recommend the use of several pieces of software as we use those ourselves and as such PVMOS was partly structures to be compatible with specific tools. Most notable of this is Gnuplot. Some of PVMOS output formats are specifically designed to be compatable with Gnuplot. Specifically the format used to make map plots of data on the irregular meshes, I suspect other plotting tools do not work well with this output format (I do not know for sure as I do not use other tools for plotting). The use of Gnuplot is recommended especially for inspecting the mesh definitions to see if the defined geometry is correct (the output of the \texttt{printarea} command, combined with the \texttt{printpar} command).
+
+If you want to define complex geometries there are basically three ways:
+\begin{enumerate}
+\item{} Use the PVMOS scripting language. The advantage of this method is that it can be very accurate and fast, the downside is that it quickly becomes tedious
+\item{} Use a set of bitmap "masks" in combination with GNU octave and the mkpvmosmesh library for GNU octave. This is a powerful way to define complicated geometries. For this you need to set up and install GNU Octave and the mkpvmos library. 
+\item{} Define geometries using polygons. PVMOS has good support for polygons to select and specify various areas in your device. Complicated shapes may be created in a graphics program such as inkscape and exported to PVMOS. For this I have an extension to export data from inkscape for use in PVMOS. In combination with the trace bitmap feature of inkscape you can quickly define appropriate polygons for complicated geometries if you provide a bitmap image, e.g. you can create a polygon for the metalization pattern of a device by tracing a picture. 
+\end{enumerate}   
+Depending on which method(s) you want to use we recommend to install GNU Octave + our mkpvmosmesh library and Inkscape in combination with our tools to extract and manipulate polygons for PVMOS. 
+
+\subsection{Gnuplot}
+
+\subsection{GNU Octave}
+
+\subsection{Inkscape}
+
+\section{\label{syntax}PVMOS command reference}
+
+\begin{longtable}{p{0.2\textwidth}p{0.8\textwidth}}
+\multicolumn{2}{l}{\textsc{Creating Meshes}} \\*
+\hline
+Keyword & Description \\
+\hline\\
+\texttt{newmesh} 	& Create a new, rectangular mesh. The command takes seven arguments:
+\begin{enumerate}
+\item \texttt{x1}, x-coordinate of the lower left corner
+\item \texttt{y1}, y-coordinate of the lower left corner
+\item \texttt{x2}, x-coordinate of the upper right corner
+\item \texttt{y2}, y-coordinate of the upper right corner
+\item \texttt{Nx}, Number of elements in x direction
+\item \texttt{Ny}, Number of elements in y direction
+\item \texttt{mesh-name}, Name of the new mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{joinmesh}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes offset values as input which allow you to "shift" the second mesh to align it to the first. The command takes 5 arguments:
+\begin{enumerate}
+\item \texttt{x\_off}, x-offset in coordinate system of the second mesh
+\item \texttt{y\_off}, y-offset in coordinate system of the second mesh 
+\item \texttt{mesh1-name}, Name of the first mesh
+\item \texttt{mesh2-name}, Name of the second mesh
+\item \texttt{mesh3-name}, Name of the resulting mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{joinmesh\_h}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes a y-offset value as input which allow you to "shift" the second mesh in the y-direction to align it to the first. The x-offset value is the maximal x-value found in the first mesh. The command takes 4 arguments:
+\begin{enumerate}
+\item \texttt{y\_off}, y-offset in coordinate system of the second mesh 
+\item \texttt{mesh1-name}, Name of the first mesh
+\item \texttt{mesh2-name}, Name of the second mesh
+\item \texttt{mesh3-name}, Name of the resulting mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{joinmesh\_v}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes an x-offset value as input which allow you to "shift" the second mesh in the x-direction to align it to the first. The y-offset value is the maximal y-value found in the first mesh. The command takes 4 arguments:
+\begin{enumerate}
+\item \texttt{x\_off}, x-offset in coordinate system of the second mesh 
+\item \texttt{mesh1-name}, Name of the first mesh
+\item \texttt{mesh2-name}, Name of the second mesh
+\item \texttt{mesh3-name}, Name of the resulting mesh
+\end{enumerate}\\
+\texttt{dupmesh}	& Duplicate a mesh. The command takes 2 arguments:
+\begin{enumerate}
+\item \texttt{mesh1-name}, Name of the mesh to be duplicated
+\item \texttt{mesh2-name}, Name of the resulting copy
+\end{enumerate}\\
+\texttt{add\_electrode}	& Adds an electrode to a certain mesh. The command takes one argument:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Selecting Elements}} \\*
+\hline
+Keyword & Description \\
+\texttt{select\_rect}	& Select a rectangular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the rectangle. If the latter is not desired use deselect first. The command takes five arguments:
+\begin{enumerate}
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_rect\_contour}	& Select the contour of a rectangle in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the rectangle. If the latter is not desired use deselect first. The command takes six arguments:
+\begin{enumerate}
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{d}, distance from the contour within which elements are selected
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_circ}	& Select a circular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. The command takes four arguments:
+\begin{enumerate}
+\item \texttt{x\_c}, center x-coordinate of the selected circle
+\item \texttt{y\_c}, center y-coordinate of the selected circle
+\item \texttt{r}, radius of the selected circle
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_circ\_contour}	& Select the contour of a circle in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. The command takes five arguments:
+\begin{enumerate}
+\item \texttt{x\_c}, center x-coordinate of the selected circle
+\item \texttt{y\_c}, center y-coordinate of the selected circle
+\item \texttt{r}, radius of the selected circle
+\item \texttt{d}, distance from the contour within which elements are selected
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements within the polygon. If the latter is not desired use deselect first. If a polygon circles an element more than once the node is selected if the node is circled an uneven number of times. This allows one to define polygon areas with holes. To make a hole, define one outer part of the polygon and one inner part and have a break between these tho parts, i.e. the two parts should not be connected by a line segment, (see \texttt{load\_poly} and \texttt{loaddefine\_poly}). The command takes one argument.
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. If no line segment is present between two seubsequent coordinates in the polygon (i.e. a break in the polygon), no nodes are selected between these coordinates. The command takes three arguments.
+\begin{enumerate}
+\item \texttt{distance}, Distance from the polygon
+\item \texttt{loop}, Argument takes either 0 (not looped) or 1 (looped). In looped modus the last point in the polygon is connected to the first point.
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{load\_poly}	& Load a polygon from file. This command is used in conjunction with the \texttt{select\_poly} and the \texttt{select\_poly\_contour} commands. Once a polygon is loaded you can use it to select until a new \texttt{load\_poly} command is given. Polygons may contain breaks (i.e. absence of a line segment between two coordinates). The command takes one argument.
+\begin{enumerate}
+\item \texttt{file-name}, Name of the file describing the polygon (one 2D coordinate per line, i.e., two columns, 1: x-coordinate, 2: y-coordinate, empty lines indicate a break)
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{define\_poly}	& Define polygon within the input file. See also the \texttt{load\_poly} command for an alternative method. The difference between this command and the \texttt{load\_poly} command is that with this command you can define the polygon within the PVMOS input file. As such it is best suited for simple polygons. The \texttt{define\_poly} command marks the start and the end of a table defining the polygon. Between the two \texttt{define\_poly} commands, one coordinate (x- and y-value) per line is expected and an empty line indicates a break, i.e.,\\
+&
+\begin{tabular}{ll}
+	\texttt{define\_poly} \\
+	$x_1$ & $y_1$ \\
+	$x_2$ & $y_2$ \\
+	$x_3$ & $y_3$ \\
+	... & ... \\
+	$x_N$ & $y_N$ \\
+	\\
+	$x_{N+1}$ & $y_{N+1}$ \\
+	... & ... \\
+	$x_M$ & $y_M$ \\
+	\texttt{define\_poly} \\
+\end{tabular}\\
+&where $(x_i,y_i)$ is the $i$-th coordinate of the polygon and between coordinates $N$ and $N+1$ there is a break.\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{select\_area}	& Select all nodes assigned to a given area. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes which are assigned to the given area. If the latter is not desired use deselect first. The command takes one argument.
+\begin{enumerate}
+\item \texttt{area-name}, Name of the mesh and area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{deselect}	& deselects a selection within a mesh. The command takes one argument.
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Manually changing the mesh topology}} \\*
+\hline
+Keyword & Description \\
+\texttt{split\_x}	& Split selected elements in x-direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{split\_y}	& Split selected elements in y-direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{split\_xy}	& Split selected elements in both x- and y-direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{split\_long}	& Split selected elements in thier longest direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{split\_coarse}	& Split selected elements until the node-edges are all smaller than a given length. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes two arguments 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{l}, Maximum edge length
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{resolve\_rect}	& Split elements along the edges of a rectangle untill all element edges are smaller than a given length. This command can be used to ensure a particular rectangle fits accurately in the mesh. The command takes six arguments 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{l}, Maximum edge length
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{resolve\_circ}	& Split elements along the circumference of a circle untill all element edges are smaller than a given length. This command can be used to ensure a particular circle fits accurately in the mesh. The command takes five arguments 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{l}, Maximum edge length
+\item \texttt{x\_c}, center x-coordinate of the selected circle
+\item \texttt{y\_c}, center y-coordinate of the selected circle
+\item \texttt{r}, radius of the selected circle
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{resolve\_poly}	& Split elements along the contour of a polygon untill all element edges are smaller than a given length. This command can be used to ensure a particular polygon fits accurately in the mesh. The command requires a polygon to be defined with either \texttt{define\_poly} or \texttt{load\_poly}. Breaks in the polygon are not resolved, i.e. the routine only resolves the line segments within the polygon. The command takes two arguments 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{l}, Maximum edge length
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{simplify}	&  Attempt to simplify a mesh. If elements are selected they are un-selected as the topology of the mesh changed. The command takes one argument 
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Saving and loading meshes}} \\*
+\hline
+Keyword & Description \\
+\texttt{savemesh}	& Save a mesh to file in the PVMOS binary format, so it can be loaded again at a later time (see the \texttt{loadmesh} command). The command takes two arguments.
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of themesh to be saved.
+\item \texttt{file-name}, filename to save the mesh to.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{loadmesh}	& Load a mesh saved to file in the PVMOS binary format (see the \texttt{savemesh} command). The command takes two arguments.
+\begin{enumerate}
+\item \texttt{file-name}, filename of the file containing the mesh data.
+\item \texttt{mesh-name}, Name to assign to the loaded mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Element-wise export of data}} \\*
+\hline
+Keyword & Description \\
+\texttt{printmesh}	& Export the mesh in a manner that is plottable with the gnuplot program (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}
+The output file will contain coordinates in columns. For each element the file contains the coordinates of the lower left- and the upper right corners empty line:\newline 
+\begin{tabular}{cc}
+	\texttt{x1} & \texttt{y1} \\
+	\texttt{x2} & \texttt{y1} \\
+	\texttt{x2} & \texttt{y2} \\
+	\texttt{x1} & \texttt{y2} \\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+\end{tabular}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printconn}	& Print lateral connections in the electrodes in a format plottable with gnuplot (www.gnuplot.info/). When plotting the file (with vectors) a vector is drawn between the center of each element to the center of the adjacent elements to which it is connected. If a selection of elements is made for the mesh, only the selected nodes are plotted. This routine may be useful when inspecting generated meshes. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}
+The output is coordinates in columns. For each element the file contains the following data where \texttt{xc}, \texttt{yc} is the center of the current element and \texttt{xca\_i}, \texttt{yca\_i} is the center coordinate of the i-th adjacent element: 
+\begin{tabular}{cccc}
+	\texttt{xc} & \texttt{yc} & \texttt{xca\_1} & \texttt{yca\_1} \\
+	\texttt{xc} & \texttt{yc} & \texttt{xca\_2} & \texttt{yca\_2} \\
+	... \\
+\end{tabular}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printarea}	& Print the geometry of the mesh which identifies each element and the area it belongs to. The fileformat is laid out such that it is plottable with a surface plot in gnuplot (www.gnuplot.info/).  If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}
+The output file will contain data in columns. The file contains coordinates, the element ID and the corresponding area ID. Note that the parameters for each area can be exported with  the \texttt{printpars} command. For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each element in the mesh, which allows you to see the areas in the defined geometry. For each element the folowing data is printed to the file:\newline 
+\begin{tabular}{cccc}
+	\texttt{x1} & \texttt{y1} & element-ID & area-ID\\
+	\texttt{x1} & \texttt{y2} & element-ID & area-ID \\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+	\texttt{x2} & \texttt{y2} & element-ID & area-ID \\
+	\texttt{x2} & \texttt{y1} & element-ID & area-ID \\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+\end{tabular}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printV}		& Print the electrode potentials per element for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}
+The output file will contain data in columns. The file contains coordinates followed by the potential in each electrode for each solution. For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each electrode in each element in the mesh. For each element the folowing data is printed to the file, where the subscripts indicate the electrode index and the superscript the solution index:\newline 
+\begin{tabular}{ccccccccccc}
+	\texttt{x1} & \texttt{y1} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
+	\texttt{x1} & \texttt{y2} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+	\texttt{x2} & \texttt{y2} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
+	\texttt{x2} & \texttt{y1} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+	\multicolumn{2}{l}{\texttt{<empty line>}}\\
+\end{tabular}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printpar}	& Print a summary of the parameters per area, including both area-name and area-ID. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printIV}		& Export the IV characteristics of the device. Exports a file with two columns, the first contains all the simulated applied voltages and the second the corresponding total currents. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surfVplot}		& Export the electrode voltages for a specific solution. Unlike the \texttt{print}-commands like \texttt{printV} the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surfPplot}		& Export the local power density for a specific solution. Just like in the \texttt{surfVplot} command the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+\texttt{surfJplot}		& Export the current densities in the electrodes and through the solar cells. Unlike the \texttt{print}-commands like \texttt{printV} the data is mapped on a regular mesh. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surfEplot}		& Export the local electric field in x- and y- direction in the electrodes. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Manipulating local properties}} \\*
+\hline
+Keyword & Description \\
+\texttt{assign\_properties}	&  Assign nodes to a defined area. If no nodes are selected all nodes in the mesh are assigned to the specified area. The command takes one arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\end{enumerate}\\
+\texttt{set\_Rel}	&  Set an electrode resistance per area. If the specified area does not exist it will be newly created. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Sheet resistance value ($\Omega$)
+\end{enumerate}\\
+\texttt{set\_Rvp}	&  Set the contact resistance between the positive node and an electrode per area. If the specified area does not exist it will be newly created. Together with \texttt{set\_Rvn} this command allows the application of an extranal voltage. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_Rvn}	&  Set the contact resistance between the negative node and an electrode per area. If the specified area does not exist it will be newly created. Together with \texttt{set\_Rvp} this command allows the application of an extranal voltage.The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_JV}	&  Specify a tabular data set to use as a JV characteristics per area. If the specified area does not exist it will be newly created. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{file-name}, Name of a file containing two columns, voltage and current density ($V$, $A \text{cm}^{-2}$)
+\end{enumerate}\\
+\texttt{set\_2DJV}	&  Specify a two-diode model for the JV characteristics per area. If the specified area does not exist it will be newly created. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{J01}, Saturation current density for the first diode (ideality factor one)  ($A \text{cm}^{-2}$)
+\item \texttt{J02}, Saturation current density for the second diode (ideality factor two)  ($A \text{cm}^{-2}$)
+\item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_1DJV}	&  Specify a one-diode model for the JV characteristics per area. If the specified area does not exist it will be newly created. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{J0}, Saturation current density ($A \text{cm}^{-2}$)
+\item \texttt{nid}, Ideality factor
+\item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_R}	&  Specify a resistance for the JV characteristics per area. If the specified area does not exist it will be newly created. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{R}, Resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_T}	&  Specify a local temperature. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{T}, Temperature ($K$)
+\end{enumerate}\\
+\texttt{set\_sel\_Rel}	&  Set an electrode resistance per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Sheet resistance value ($\Omega$)
+\end{enumerate}\\
+\texttt{set\_sel\_Rvp}	&  Set the contact resistance between the positive node and an electrode per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. Together with \texttt{set\_Rvn} this command allows the application of an extranal voltage. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_sel\_Rvn}	&  Set the contact resistance between the negative node and an electrode per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. Together with \texttt{set\_Rvp} this command allows the application of an extranal voltage.The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_sel\_JV}	&  Specify a tabular data set to use as a JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{file-name}, Name of a file containing two columns, voltage and current density ($V$, $A \text{cm}^{-2}$)
+\end{enumerate}\\
+\texttt{set\_sel\_2DJV}	&  Specify a two-diode model for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{J01}, Saturation current density for the first diode (ideality factor one)  ($A \text{cm}^{-2}$)
+\item \texttt{J02}, Saturation current density for the second diode (ideality factor two)  ($A \text{cm}^{-2}$)
+\item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_sel\_1DJV}	&  Specify a one-diode model for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{J0}, Saturation current density ($A \text{cm}^{-2}$)
+\item \texttt{nid}, Ideality factor
+\item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_sel\_R}	&  Specify a resistance for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{R}, Resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_sel\_T}	&  Specify a local temperature per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{T}, Temperature ($K$)
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Numerical Settings}} \\*
+\hline
+Keyword & Description \\
+\texttt{set\_SplitX}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in x-direction for a specified area (per default all nodes can be split in all directions). The command takes one argument:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\end{enumerate}\\
+\texttt{set\_SplitY}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in y-direction for a specified area (per default all nodes can be split in all directions). The command takes one argument:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\end{enumerate}\\
+\texttt{set\_sel\_SplitX}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in x-direction for a selection (per default all nodes can be split in all directions). If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes one argument:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\end{enumerate}\\
+\texttt{set\_sel\_SplitY}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in y-direction for a selection (per default all nodes can be split in all directions). If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes one argument:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\end{enumerate}\\
+\texttt{maxiter}	&  Set the maximum number of iterations for solving the non-linear system. The command takes one argument:
+\begin{enumerate}
+\item \texttt{maxiter}, Maximum number of iterations (default: 25)
+\end{enumerate}\\
+\texttt{tol\_V}	&  Absolute voltage tolerance for the break-off criterion. The command takes one argument:
+\begin{enumerate}
+\item \texttt{tol\_V}, Absolute voltage tolerance $V$ (default: $10^{-5} \text{V}$)
+\end{enumerate}\\
+\texttt{rel\_tol\_V}	&  Relative voltage tolerance for the break-off criterion. The command takes one argument:
+\begin{enumerate}
+\item \texttt{tol\_V}, Relative voltage tolerance $-$ (default: $10^{-5}$)
+\end{enumerate}\\
+\texttt{tol\_kcl}	&  Absolute current tolerance for the break-off criterion (KCL stands for Kirchhoff's Current Law). The command takes one argument:
+\begin{enumerate}
+\item \texttt{tol\_kcl}, KCL tolerance $A$ (default: $10^{-5} \text{A}$)
+\end{enumerate}\\
+\texttt{rel\_tol\_kcl}	&  Relative current tolerance for the break-off criterion (KCL stands for Kirchhoff's Current Law). The command takes one argument:
+\begin{enumerate}
+\item \texttt{tol\_kcl}, Relative KCL tolerance $-$ (default: $10^{-5}$)
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Solving}} \\*
+\hline
+Keyword & Description \\
+\texttt{solve}	&  Solve the system (do a voltage sweep). The command takes four arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{V\_start}, Start voltage
+\item \texttt{V\_end}, End voltage
+\item \texttt{N\_step}, Number of voltage steps
+\end{enumerate}\\
+\texttt{adaptive\_solve}	&  Solve the system and adapt the mesh at one specified voltage. The command takes four arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{V\_a}, Applied voltage
+\item \texttt{threshold}, Ralative threshold for node splitting, a parameter between 0 and 1 that controls how agressive the mesh is adapted, where lower values lead to a more agressive mesh adaption (typical values betwwen 0.3 and 0.5).
+\item \texttt{N\_step}, Number adaptive meshing iterations
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Verbosity levels}} \\*
+\hline
+Keyword & Description \\
+\texttt{out\_quiet}	&  Set verbosity to the minimum (only says something when it crashes). The command takes no arguments.\\
+\texttt{out\_normal}	&  Set verbosity to the normal level. The command takes no arguments.\\
+\texttt{out\_verbose}	&  Output additional data that may be interesting. The command takes no arguments.\\
+\texttt{out\_debug}	&  Output additional data that is only interesting for someone who is chasing bugs in the code. The command takes no arguments.\\
+\multicolumn{2}{l}{\textsc{Misc.}} \\*
+\hline
+Keyword & Description \\
+\texttt{tic}	&  Start the timer.\\
+\texttt{toc}	&  Print seconds since last \texttt{tic} command (or start of execution if no \texttt{tic} command was issued)\\
+\hline
+\\
+\end{longtable}
+
+\section{Examples}
+In this section I discuss several examples which can be found in the example directory.
+\subsection{Monolithically series connected mini-module and a defect}
+In the folder \texttt{Examples/ThinFilm} you can find a PVMOS input file \texttt{thin\_film8x8.mos}. This file creates a thin-film \ASI{} mini-module of \Un{8x8}{cm^2} with 8 cells of \Un{1}{cm} wide. In addition the third cell has a defect. This example demonstrates many basic PVMOS operations such as creating new meshes, joining meshes, selecting elements, locally refine the mesh, create new area's, setting parameters for area's, and assigning elements to an area. 
+\subsection{Monolithically series connected mini-module and many defects}
+This example consists of the files \texttt{thin\_film40x40.mos} and \texttt{Shunts40x40.m}, both located in \texttt{Examples/ThinFilm}. This example depends on GNU Octave. In this example I use the file \texttt{thin\_film40x40.mos} to create a \Un{40x40}{cm^2} module with 40 cells of \Un{1}{cm} wide. The module that is created is defect-free. In the file \texttt{thin\_film40x40.mos} no simulation is run, the script only creates a defect free mesh which is saved to a binary file. The GNU Octave script \texttt{Shunts40x40.m} creates a random distribution of defects and generates PVMOS scripts where these defects are built in. The PVMOS scripts generated by the GNU Octave script start by loading the defect-free mesh and subsequently locally refine the mesh and add shunts. This script demonstrates the simulation of larger systems (and for that reason is best used on a 64 bit operating system and a 64bit PVMOS executable and several GB of memory) and the saving and loading of meshes. 
+\subsection{Metal wrap-through module}
+This example is located in \texttt{Examples/Pinup}. The example entails the files several files:
+\begin{itemize}
+\item{\texttt{mkpvmosmesh.oct}} Dynamic library for GNU Octave to write PVMOS meshes. This needs to be compiled from the PVMOS source tree (``make mkpvmosmesh'') and placed in the example directory.
+\item{\texttt{generate\_mesh.m}} Generates the mesh from the images listed below using GNU octave 
+\item{\texttt{pinup\_frontmetal.png}} Image used by \texttt{generate\_mesh.m} to define the areas where there is metal at the front
+\item{\texttt{pinup\_vias.png}} Image used by \texttt{generate\_mesh.m} to define the areas where the front contact is connected to the contact foil through vias
+\item{\texttt{pinup\_backisolation.png}} Image used by \texttt{generate\_mesh.m} to define the areas where the back contact is isolating (around the vias)
+\item{\texttt{pinup\_back2contactfoil.png}} Image used by \texttt{generate\_mesh.m} to define the areas where the back contact is connected to the contact foil
+\item{\texttt{pinup\_foilisolation.png}} Image used by \texttt{generate\_mesh.m} to define the areas where the contact foil is isolating
+\item{\texttt{pinup\_contactfoil\_vn.png}} Image used by \texttt{generate\_mesh.m} to define the areas the contact foil is connected to ground
+\item{\texttt{pinup\_contactfoil\_vp.png}} Image used by \texttt{generate\_mesh.m} to define the areas where the contact foil is connected to the positive node.
+\item{\texttt{pinup.mos}} The PVMOS input file
+\end{itemize}
+This example demonstrates how a PVMOS mesh can be generated from images using GNU octave where the images are used as selection masks to select elements and change some parameters for these elements. The example simulateds a metal wrap-through solar cell with three electrose, the front electrode (emitter and front metal), the back electrode (metal contact to the base) and a contact foil at the back which contacts the front metal through vias and the back contact. After running the \texttt{generate\_mesh.m} script in GNU Octave a mesh is written to  \texttt{pinup.bin}. This meash is loaded in the PVMOS script \texttt{pinup.mos}. As the mesh is rather large the mesh is first simplified to reduce the number of elements in the mesh without losing resolution in he area definition. After this step the mesh is a tad coarse for simulating the potentials accurately so the mesh is refined again but this time only there where mesh refinement is needed for an accurate simulation of the potentials. After that the device IV characteristics are simulated.
+\subsection{Crystalline silicon module}
+The final example is perhaps the most elaborate. In \texttt{Examples/CSiSTD} we do a simulation of a crystalline solar cell with three busbars. The simulation extensively uses the definition of new meshes which are glued together to form bigger and more complicated meshes untill we have a complete cell with busbars and fingers and tabbing wires. It uses al the tricks PVMOS has to generate a complicated geometry from scratch without aid from GNU Octave. The result is a mesh that is comparatively small and therefore allows to do the simulation is a comparatively small memory footprint (less than 0.5 GB) which makes this example even suitable for 32bit machines. There is an optional section in the input file which you can uncomment to simulate the effect of Banksy spray-painting a rat on your solar cell leaving a permanent rat-shaped shadow pattern on the cell. 
+\begin{thebibliography}{10}
+
+\bibitem{pvmos:2014}
+B.~E. Pieters, ``{PVMOS: A Free and Open Source Simulation Tool for Solar Modules},'' \emph{submitted to: Journal of Photovoltaics}, 2014.
+
+\bibitem{Davis:2007:Online}
+T.~A. Davis. (retrieved 22 May 2014) {BLAS performance bug and its effect on
+  sparse "bench" in MATLAB 7.4}. [Online]. Available:
+  \url{http://www.cise.ufl.edu/research/sparse/cholmod/blasbug.html}
+\end{thebibliography}
+% that's all folks
+\end{document}
