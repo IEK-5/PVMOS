@@ -11,7 +11,7 @@ CFLAGS=-Og -Wall -g -fPIC
 LFLAGS= -lcholmod -lopenblas-r0.2.13 -lm
 # LFLAGS= -lcholmod -L/usr/lib64/libblas.so.3 -lm
 #LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
-VERSION=0.58
+VERSION=0.60
 
 pvmos: $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)

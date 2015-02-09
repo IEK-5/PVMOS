@@ -123,6 +123,26 @@ cd (getenv('USERPROFILE'))
 
 The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \texttt{OpenBLAS}, which gives a very good performance (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}). Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the makefiles are set up to use \texttt{OpenBLAS} as it provides a good performance and is freely available.
 
+\section{\label{getting started}Getting started}
+In this section we give some pointers to get you started. 
+
+\subsection{Recommended software}
+We recommend the use of several pieces of software as we use those ourselves and as such PVMOS was partly structures to be compatible with specific tools. Most notable of this is Gnuplot. Some of PVMOS output formats are specifically designed to be compatable with Gnuplot. Specifically the format used to make map plots of data on the irregular meshes, I suspect other plotting tools do not work well with this output format (I do not know for sure as I do not use other tools for plotting). The use of Gnuplot is recommended especially for inspecting the mesh definitions to see if the defined geometry is correct (the output of the \texttt{printarea} command, combined with the \texttt{printpar} command).
+
+If you want to define complex geometries there are basically three ways:
+\begin{enumerate}
+\item{} Use the PVMOS scripting language. The advantage of this method is that it can be very accurate and fast, the downside is that it quickly becomes tedious
+\item{} Use a set of bitmap "masks" in combination with GNU octave and the mkpvmosmesh library for GNU octave. This is a powerful way to define complicated geometries. For this you need to set up and install GNU Octave and the mkpvmos library. 
+\item{} Define geometries using polygons. PVMOS has good support for polygons to select and specify various areas in your device. Complicated shapes may be created in a graphics program such as inkscape and exported to PVMOS. For this I have an extension to export data from inkscape for use in PVMOS. In combination with the trace bitmap feature of inkscape you can quickly define appropriate polygons for complicated geometries if you provide a bitmap image, e.g. you can create a polygon for the metalization pattern of a device by tracing a picture. 
+\end{enumerate}   
+Depending on which method(s) you want to use we recommend to install GNU Octave + our mkpvmosmesh library and Inkscape in combination with our tools to extract and manipulate polygons for PVMOS. 
+
+\subsection{Gnuplot}
+
+\subsection{GNU Octave}
+
+\subsection{Inkscape}
+
 \section{\label{syntax}PVMOS command reference}
 
 \begin{longtable}{p{0.2\textwidth}p{0.8\textwidth}}
@@ -462,31 +482,31 @@ Keyword & Description \\
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \end{enumerate}\\
-\texttt{set\_Rel}	&  Set an electrode resistance. If the specified area does not exist it will be newly created. The command takes three arguments:
+\texttt{set\_Rel}	&  Set an electrode resistance per area. If the specified area does not exist it will be newly created. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
 \item \texttt{value}, Sheet resistance value ($\Omega$)
 \end{enumerate}\\
-\texttt{set\_Rvp}	&  Set the contact resistance between the positive node and an electrode. Together with \texttt{set\_Rvn} this command allows the application of an extranal voltage. The command takes three arguments:
+\texttt{set\_Rvp}	&  Set the contact resistance between the positive node and an electrode per area. If the specified area does not exist it will be newly created. Together with \texttt{set\_Rvn} this command allows the application of an extranal voltage. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
 \item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
 \end{enumerate}\\
-\texttt{set\_Rvn}	&  Set the contact resistance between the negative node and an electrode. Together with \texttt{set\_Rvp} this command allows the application of an extranal voltage.The command takes three arguments:
+\texttt{set\_Rvn}	&  Set the contact resistance between the negative node and an electrode per area. If the specified area does not exist it will be newly created. Together with \texttt{set\_Rvp} this command allows the application of an extranal voltage.The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
 \item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
 \end{enumerate}\\
-\texttt{set\_JV}	&  Specify a tabular data set to use as a JV characteristics. The command takes three arguments:
+\texttt{set\_JV}	&  Specify a tabular data set to use as a JV characteristics per area. If the specified area does not exist it will be newly created. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
 \item \texttt{file-name}, Name of a file containing two columns, voltage and current density ($V$, $A \text{cm}^{-2}$)
 \end{enumerate}\\
-\texttt{set\_2DJV}	&  Specify a two-diode model for the JV characteristics. The command takes eight arguments:
+\texttt{set\_2DJV}	&  Specify a two-diode model for the JV characteristics per area. If the specified area does not exist it will be newly created. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
@@ -497,7 +517,7 @@ Keyword & Description \\
 \item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
 \item \texttt{Eg}, Band gap ($eV$)
 \end{enumerate}\\
-\texttt{set\_1DJV}	&  Specify a one-diode model for the JV characteristics. The command takes eight arguments:
+\texttt{set\_1DJV}	&  Specify a one-diode model for the JV characteristics per area. If the specified area does not exist it will be newly created. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
@@ -508,7 +528,7 @@ Keyword & Description \\
 \item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
 \item \texttt{Eg}, Band gap ($eV$)
 \end{enumerate}\\
-\texttt{set\_R}	&  Specify a resistance for the JV characteristics. The command takes three arguments:
+\texttt{set\_R}	&  Specify a resistance for the JV characteristics per area. If the specified area does not exist it will be newly created. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
@@ -517,6 +537,63 @@ Keyword & Description \\
 \texttt{set\_T}	&  Specify a local temperature. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{T}, Temperature ($K$)
+\end{enumerate}\\
+\texttt{set\_sel\_Rel}	&  Set an electrode resistance per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Sheet resistance value ($\Omega$)
+\end{enumerate}\\
+\texttt{set\_sel\_Rvp}	&  Set the contact resistance between the positive node and an electrode per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. Together with \texttt{set\_Rvn} this command allows the application of an extranal voltage. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_sel\_Rvn}	&  Set the contact resistance between the negative node and an electrode per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. Together with \texttt{set\_Rvp} this command allows the application of an extranal voltage.The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{electrode-index}, Index of the electrode. The first electrode has index 0
+\item \texttt{value}, Contact resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_sel\_JV}	&  Specify a tabular data set to use as a JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{file-name}, Name of a file containing two columns, voltage and current density ($V$, $A \text{cm}^{-2}$)
+\end{enumerate}\\
+\texttt{set\_sel\_2DJV}	&  Specify a two-diode model for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{J01}, Saturation current density for the first diode (ideality factor one)  ($A \text{cm}^{-2}$)
+\item \texttt{J02}, Saturation current density for the second diode (ideality factor two)  ($A \text{cm}^{-2}$)
+\item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_sel\_1DJV}	&  Specify a one-diode model for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes eight arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{J0}, Saturation current density ($A \text{cm}^{-2}$)
+\item \texttt{nid}, Ideality factor
+\item \texttt{Jph}, Photo current density ($A \text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_sel\_R}	&  Specify a resistance for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{R}, Resistance ($\Omega \text{cm}^2$)
+\end{enumerate}\\
+\texttt{set\_sel\_T}	&  Specify a local temperature per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
 \item \texttt{T}, Temperature ($K$)
 \end{enumerate}\\
 \multicolumn{2}{l}{\textsc{Numerical Settings}} \\*
@@ -529,6 +606,14 @@ Keyword & Description \\
 \texttt{set\_SplitY}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in y-direction for a specified area (per default all nodes can be split in all directions). The command takes one argument:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\end{enumerate}\\
+\texttt{set\_sel\_SplitX}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in x-direction for a selection (per default all nodes can be split in all directions). If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes one argument:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\end{enumerate}\\
+\texttt{set\_sel\_SplitY}	&  It is sometimes useful to prevent the adaptive meshing algorithms from splitting certain nodes in x- or y-direction. This commands toggles the splitting of nodes in y-direction for a selection (per default all nodes can be split in all directions). If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes one argument:
+\begin{enumerate}
+\item \texttt{area-name}, Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
 \end{enumerate}\\
 \texttt{maxiter}	&  Set the maximum number of iterations for solving the non-linear system. The command takes one argument:
 \begin{enumerate}
@@ -574,6 +659,11 @@ Keyword & Description \\
 \texttt{out\_normal}	&  Set verbosity to the normal level. The command takes no arguments.\\
 \texttt{out\_verbose}	&  Output additional data that may be interesting. The command takes no arguments.\\
 \texttt{out\_debug}	&  Output additional data that is only interesting for someone who is chasing bugs in the code. The command takes no arguments.\\
+\multicolumn{2}{l}{\textsc{Misc.}} \\*
+\hline
+Keyword & Description \\
+\texttt{tic}	&  Start the timer.\\
+\texttt{toc}	&  Print seconds since last \texttt{tic} command (or start of execution if no \texttt{tic} command was issued)\\
 \hline
 \\
 \end{longtable}

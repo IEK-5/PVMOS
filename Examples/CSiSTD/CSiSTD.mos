@@ -8,7 +8,7 @@
 #		x1  y1		x2  	y2	Nx	Ny	name
 newmesh 	0.0 0.0 	12.26	0.02	10 	1	h_finger
 
-
+tic
 ###################################################################################################
 # our mesh will consist of veraious areas, one such are is "finger", wher the finger properties 
 # are defined (e.g. sheet resistance, zero photocurrent, etc.
@@ -116,7 +116,7 @@ rm rside
 rm lcell
 rm lcellr
 rm bcell
-
+toc
 ###################################################################################################
 # Create an ares of the busbars
 ###################################################################################################

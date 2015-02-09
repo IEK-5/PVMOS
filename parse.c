@@ -48,6 +48,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <ctype.h>
 #include <math.h>
 #include "main.h"
@@ -423,6 +424,7 @@ void Parse (char *file)
 	int line_nr=1;
 	int MaxIter=25;
 	double TolV=1e-5, RelTolV=1e-5, TolKcl=1e-5, RelTolKcl=1e-5;
+	clock_t tic, toc;
 	PRSDEF key;
 	polygon P;
 	P.N=0;
@@ -438,6 +440,7 @@ void Parse (char *file)
 	
     	fgets(line, MAXSTRLEN-1, f);
 	
+	tic = clock();
 	while(feof(f)==0)
 	{
 	
@@ -1417,6 +1420,93 @@ void Parse (char *file)
 						FreeArgs (args, 3);	
 						break;
 					}
+					case SET_SEL_REL:
+					{
+						
+						meshvar *MV;
+						int el;
+						double R;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 3);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);					
+						R=atof(args[2]);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting R for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[a].name, args[2]);
+								MV->M.P[a].Rel[el]=R;
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting R for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[AreaList[a]].name, args[2]);
+								MV->M.P[AreaList[a]].Rel[el]=R;
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 3);					
+						break;
+					}
 					case SET_RVP:
 					{
 						meshvar *MV;
@@ -1447,6 +1537,93 @@ void Parse (char *file)
 						R=atof(args[2]);
 						MV->M.P[P].Rvp[el]=R;
 						FreeArgs (args, 3);	
+						break;
+					}
+					case SET_SEL_RVP:
+					{
+						
+						meshvar *MV;
+						int el;
+						double R;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 3);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);					
+						R=atof(args[2]);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting Rvp for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[a].name, args[2]);
+								MV->M.P[a].Rvp[el]=R;
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting Rvp for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[AreaList[a]].name, args[2]);
+								MV->M.P[AreaList[a]].Rvp[el]=R;
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 3);					
 						break;
 					}
 					case SET_RVN:
@@ -1482,6 +1659,93 @@ void Parse (char *file)
 						R=atof(args[2]);
 						MV->M.P[P].Rvn[el]=R;
 						FreeArgs (args, 3);	
+						break;
+					}
+					case SET_SEL_RVN:
+					{
+						
+						meshvar *MV;
+						int el;
+						double R;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 3);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);					
+						R=atof(args[2]);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting Rvn for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[a].name, args[2]);
+								MV->M.P[a].Rvn[el]=R;
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting Rvn for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[AreaList[a]].name, args[2]);
+								MV->M.P[AreaList[a]].Rvn[el]=R;
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 3);					
 						break;
 					}
 					case SET_JV:
@@ -1524,10 +1788,124 @@ void Parse (char *file)
 						MV->M.P[P].conn[el].J=JV.y;
 						MV->M.P[P].conn[el].N=JV.N;
 						MV->M.P[P].conn[el].model=JVD;	
-						free(JV.x);
-						free(JV.y);
 						free(JV.BR);
 						FreeArgs (args, 3);						
+						break;
+					}
+					case SET_SEL_JV:
+					{
+						
+						meshvar *MV;
+						int el;
+						polygon JV;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 3);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
+							
+						JV=ReadPoly(args[2]);
+						if (JV.N<2)
+							Error("JV characteristic from file %s is too short\nAt least two voltage current pairs are requires\n", word);
+						/* ensure monotoneous increasing voltages */
+						BubbleSortJV(JV.N, JV.x, JV.y);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								int ii;	
+								Print(NORMAL,"* line %3d: Setting tabular JV between electrodes %d and %d in %s.%s to data from file %s",line_nr, el, el+1, MV->name, MV->M.P[a].name, args[2]);
+								free(MV->M.P[a].conn[el].V);
+								free(MV->M.P[a].conn[el].J);
+								
+								MV->M.P[a].conn[el].V=malloc((JV.N+1)*sizeof(double));
+								MV->M.P[a].conn[el].J=malloc((JV.N+1)*sizeof(double));
+								for (ii=0;ii<JV.N;ii++)
+								{
+									MV->M.P[a].conn[el].V[ii]=JV.x[ii];
+									MV->M.P[a].conn[el].J[ii]=JV.y[ii];
+								}
+								MV->M.P[a].conn[el].N=JV.N;
+								MV->M.P[a].conn[el].model=JVD;	
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{		
+								int ii;					
+								Print(NORMAL,"* line %3d: Setting tabular JV between electrodes %d and %d in %s.%s to data from file %s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name, args[2]);
+								free(MV->M.P[AreaList[a]].conn[el].V);
+								free(MV->M.P[AreaList[a]].conn[el].J);
+								MV->M.P[AreaList[a]].conn[el].V=malloc((JV.N+1)*sizeof(double));
+								MV->M.P[AreaList[a]].conn[el].J=malloc((JV.N+1)*sizeof(double));
+								for (ii=0;ii<JV.N;ii++)
+								{
+									MV->M.P[AreaList[a]].conn[el].V[ii]=JV.x[ii];
+									MV->M.P[AreaList[a]].conn[el].J[ii]=JV.y[ii];
+								}
+								MV->M.P[AreaList[a]].conn[el].N=JV.N;
+								MV->M.P[AreaList[a]].conn[el].model=JVD;	
+							}							
+							free(newarea);
+							free(AreaList);
+						}
+						free(JV.BR);	
+						FreeArgs (args, 3);					
 						break;
 					}
 					case SET_2DJV:
@@ -1570,6 +1948,113 @@ void Parse (char *file)
 						FreeArgs (args, 8);		
 						break;
 					}
+					case SET_SEL_2DJV:
+					{
+						meshvar *MV;
+						int el;
+						char *area;		
+						char **args;
+						double J01,J02,Jph,Rs,Rsh,Eg;
+						args=GetArgs (&begin, 8);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);
+						J01=atof(args[2]);
+						J02=atof(args[3]);
+						Jph=atof(args[4]);
+						Rs=atof(args[5]);
+						Rsh=atof(args[6]);
+						Eg=atof(args[7]);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[a].name);
+								MV->M.P[a].conn[el].J01=J01;
+								MV->M.P[a].conn[el].J02=J02;
+								MV->M.P[a].conn[el].Jph=Jph;
+								MV->M.P[a].conn[el].Rs=Rs;
+								MV->M.P[a].conn[el].Rsh=Rsh;
+								MV->M.P[a].conn[el].Eg=Eg;
+								MV->M.P[a].conn[el].nid1=1.0;
+								MV->M.P[a].conn[el].nid2=2.0;							
+								MV->M.P[a].conn[el].model=TWOD;	
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name);
+								MV->M.P[AreaList[a]].conn[el].J01=J01;
+								MV->M.P[AreaList[a]].conn[el].J02=J02;
+								MV->M.P[AreaList[a]].conn[el].Jph=Jph;
+								MV->M.P[AreaList[a]].conn[el].Rs=Rs;
+								MV->M.P[AreaList[a]].conn[el].Rsh=Rsh;
+								MV->M.P[AreaList[a]].conn[el].Eg=Eg;
+								MV->M.P[AreaList[a]].conn[el].nid1=1.0;
+								MV->M.P[AreaList[a]].conn[el].nid2=2.0;							
+								MV->M.P[AreaList[a]].conn[el].model=TWOD;	
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 8);					
+						break;
+					}
 					case SET_1DJV:
 					{
 						meshvar *MV;
@@ -1605,6 +2090,109 @@ void Parse (char *file)
 						MV->M.P[P].conn[el].Eg=atof(args[7]);					
 						MV->M.P[P].conn[el].model=ONED;	
 						FreeArgs (args, 8);								
+						break;
+					}
+					case SET_SEL_1DJV:
+					{
+						meshvar *MV;
+						int el;
+						char *area;		
+						char **args;
+						double J01,nid1,Jph,Rs,Rsh,Eg;
+						args=GetArgs (&begin, 8);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);	
+						J01=atof(args[2]);
+						nid1=atof(args[3]);
+						Jph=atof(args[4]);
+						Rs=atof(args[5]);
+						Rsh=atof(args[6]);
+						Eg=atof(args[7]);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[a].name);
+								MV->M.P[a].conn[el].J01=J01;
+								MV->M.P[a].conn[el].Jph=Jph;
+								MV->M.P[a].conn[el].Rs=Rs;
+								MV->M.P[a].conn[el].Rsh=Rsh;
+								MV->M.P[a].conn[el].Eg=Eg;
+								MV->M.P[a].conn[el].nid1=nid1;						
+								MV->M.P[a].conn[el].model=ONED;	
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name);
+								MV->M.P[AreaList[a]].conn[el].J01=J01;
+								MV->M.P[AreaList[a]].conn[el].Jph=Jph;
+								MV->M.P[AreaList[a]].conn[el].Rs=Rs;
+								MV->M.P[AreaList[a]].conn[el].Rsh=Rsh;
+								MV->M.P[AreaList[a]].conn[el].Eg=Eg;
+								MV->M.P[AreaList[a]].conn[el].nid1=nid1;						
+								MV->M.P[AreaList[a]].conn[el].model=ONED;	
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 8);					
 						break;
 					}
 					case SET_R:
@@ -1650,6 +2238,116 @@ void Parse (char *file)
 						FreeArgs (args, 3);		
 						break;
 					}
+					case SET_SEL_R:
+					{
+						
+						meshvar *MV;
+						int el;
+						double R;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 3);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
+										
+						R=atof(args[2]);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting R between electrodes %d and %d in %s.%s to %s",line_nr, el, el+1, MV->name, MV->M.P[a].name, args[2]);
+								if (MV->M.P[a].conn[el].V)
+									free(MV->M.P[a].conn[el].V);
+								if (MV->M.P[a].conn[el].J)
+									free(MV->M.P[a].conn[el].J);
+								MV->M.P[a].conn[el].V=malloc(3*sizeof(double));
+								MV->M.P[a].conn[el].J=malloc(3*sizeof(double));
+								MV->M.P[a].conn[el].N=2;	
+								MV->M.P[a].conn[el].V[0]=-1.0;
+								MV->M.P[a].conn[el].J[0]=-1.0/R;
+								MV->M.P[a].conn[el].V[1]=1.0;
+								MV->M.P[a].conn[el].J[1]=1.0/R;
+								MV->M.P[a].conn[el].model=JVD;	
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting R between electrodes %d and %d in %s.%s to %s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name, args[2]);
+								if (MV->M.P[AreaList[a]].conn[el].V)
+									free(MV->M.P[AreaList[a]].conn[el].V);
+								if (MV->M.P[AreaList[a]].conn[el].J)
+									free(MV->M.P[AreaList[a]].conn[el].J);
+								MV->M.P[AreaList[a]].conn[el].V=malloc(3*sizeof(double));
+								MV->M.P[AreaList[a]].conn[el].J=malloc(3*sizeof(double));
+								MV->M.P[AreaList[a]].conn[el].N=2;	
+								MV->M.P[AreaList[a]].conn[el].V[0]=-1.0;
+								MV->M.P[AreaList[a]].conn[el].J[0]=-1.0/R;
+								MV->M.P[AreaList[a]].conn[el].V[1]=1.0;
+								MV->M.P[AreaList[a]].conn[el].J[1]=1.0/R;
+								MV->M.P[AreaList[a]].conn[el].model=JVD;	
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 3);					
+						break;
+					}
 					case SET_T:
 					{
 						meshvar *MV;
@@ -1680,6 +2378,89 @@ void Parse (char *file)
 						FreeArgs (args, 2);		
 						break;
 					}
+					case SET_SEL_T:
+					{
+						
+						meshvar *MV;
+						double T;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 2);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+											
+						T=atof(args[1]);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting initial temperature in %s.%s to %s",line_nr, MV->name, MV->M.P[a].name, args[1]);
+								MV->M.P[a].T=T;
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting initial temperature in %s.%s to %s",line_nr, MV->name, MV->M.P[AreaList[a]].name, args[1]);
+								MV->M.P[AreaList[a]].T=T;
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 2);					
+						break;
+					}
 					case SET_SPLITY:
 					{
 						meshvar *MV;
@@ -1708,6 +2489,90 @@ void Parse (char *file)
 							MV->M.P[P].SplitY=1;
 						break;
 						FreeArgs (args, 1);
+					}
+					case SET_SEL_SPLITY:
+					{
+						
+						meshvar *MV;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 1);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+													
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Toggle split-y parameter of %s.%s",line_nr, MV->name, MV->M.P[a].name);
+								if (MV->M.P[a].SplitY)
+									MV->M.P[a].SplitY=0;
+								else
+									MV->M.P[a].SplitY=1;								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Toggle split-y parameter of %s.%s",line_nr,MV->name, MV->M.P[AreaList[a]].name);
+								if (MV->M.P[AreaList[a]].SplitY)
+									MV->M.P[AreaList[a]].SplitY=0;
+								else
+									MV->M.P[AreaList[a]].SplitY=1;	
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 1);					
+						break;
 					}					
 					case SET_SPLITX:
 					{
@@ -1738,6 +2603,90 @@ void Parse (char *file)
 						FreeArgs (args, 1);
 						break;
 					}
+					case SET_SEL_SPLITX:
+					{
+						
+						meshvar *MV;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 1);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+													
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Toggle split-y parameter of %s.%s",line_nr, MV->name, MV->M.P[a].name);
+								if (MV->M.P[a].SplitX)
+									MV->M.P[a].SplitX=0;
+								else
+									MV->M.P[a].SplitX=1;								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								/* create new area string */
+								l1=strlen(MV->M.P[a].name);
+								l2=strlen(area);
+								if (l1+l2>MAXSTRLEN)
+									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+									
+								strncpy(newarea, MV->M.P[a].name,l1);
+								strncpy(newarea+l1, area,l2+1);								
+								a=FindProperties(MV->M, newarea);
+								if (a<0)
+								{
+									/* create new area */
+									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+									a=MV->M.Na;
+									MV->M.Na++;
+									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+								}
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Toggle split-y parameter of %s.%s",line_nr, MV->name, MV->M.P[AreaList[a]].name);
+								if (MV->M.P[AreaList[a]].SplitX)
+									MV->M.P[AreaList[a]].SplitX=0;
+								else
+									MV->M.P[AreaList[a]].SplitX=1;	
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 1);					
+						break;
+					}				
 					/********************************* Solving*/		
 					case MAXITER:
 						begin=GetWord (begin, word);
@@ -1822,6 +2771,16 @@ void Parse (char *file)
 						break;
 					
 					}
+					case TIC:
+						Print(NORMAL,"* line %3d: Starting timer",line_nr);	
+						Print(NORMAL, "________________________________________________________________");
+						tic = clock();
+						break;
+					case TOC:
+						toc = clock();
+						Print(NORMAL,"* line %3d: %e seconds since last tic",line_nr, ((double) (toc - tic)) / CLOCKS_PER_SEC);
+						Print(NORMAL, "----------------------------------------------------------------");
+						break;
 					/********************************* Secion verbosity settings*/
 					case _QUIET:
 						if(!fixverb)
