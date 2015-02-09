@@ -1208,7 +1208,8 @@ void Parse (char *file)
 								{
 									Na+=50;
 									P.x=realloc(P.x, Na*sizeof(double));	
-									P.y=realloc(P.y, Na*sizeof(double));					
+									P.y=realloc(P.y, Na*sizeof(double));
+									P.BR=AddToList(P.BR, P.N);					
 								}
 								FreeArgs (args, 2);
     							}
@@ -1218,6 +1219,7 @@ void Parse (char *file)
 							line_nr++;							
 						} while	(key!=DEF_POLY);
 						
+						P.BR=AddToList(P.BR, P.N);
 						
 						if ((feof(f))||(!begin))
 							goto premature_end;
@@ -1226,7 +1228,6 @@ void Parse (char *file)
 						{
 							P.x=realloc(P.x, (P.N+1)*sizeof(double));	
 							P.y=realloc(P.y, (P.N+1)*sizeof(double));
-							P.BR=AddToList(P.BR, P.N);
 						}
 						else
 						{
@@ -1788,7 +1789,7 @@ void Parse (char *file)
 						MV->M.P[P].conn[el].J=JV.y;
 						MV->M.P[P].conn[el].N=JV.N;
 						MV->M.P[P].conn[el].model=JVD;	
-						free(JV.BR);
+						free(JV.BR); /* note that the allocated x and y arrays are now in use and should not be freed*/
 						FreeArgs (args, 3);						
 						break;
 					}
