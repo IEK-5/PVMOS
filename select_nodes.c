@@ -264,6 +264,8 @@ double dAngle(double x1, double x2, double y1, double y2, double x, double y)
 /* to support holes in polygons we could do polygons with breaks. The polygon is split at the breaks (i.e. each part looped)
    and the integration below is summed up over all parts. we then do a modulus 4pi and figure out whether the node is in or out */
 /* my first naive attempt, easy to understand but damn slow */
+/* pergaps it whould suffice to check crossing along three axi instead of doing the atan, which is probably the most expensice operation in this routine  */
+/* another solution is to use Jordan's curve theorem (see below)  */
 int IsInPolygon_(polygon P, double x, double y)
 {
 	int i=0;
@@ -288,7 +290,7 @@ int IsInPolygon_(polygon P, double x, double y)
 }
 
 
-/* less naive, use Jordan curve theorem with a horizobal line through the poin of interest*/
+/* less naive, use Jordan curve theorem with a horizobal line through the point of interest*/
 int IsInPolygon(polygon P, double x, double y)
 {
 	int i=0, c=0;
@@ -387,6 +389,30 @@ int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 
 }
 
+#define MIN(a,b) ((a)<(b) ? (a):(b))
+#define MAX(a,b) ((a)<(b) ? (b):(a))
+
+
+
+int Overlap(double a1, double b1, double a2, double b2)
+{
+	double d;
+	if (a2<a1)
+	{
+		d=a1;
+		a1=a2;
+		a2=d;
+	}
+	if (b2<b1)
+	{
+		d=b1;
+		b1=b2;
+		b2=d;
+	}
+	return ((MIN(a2,b2)-MAX(a1,b1))>0);
+}
+
+
 int PolygonCrossNode(polygon P, node *N, int loop)
 {
 	int i;
@@ -400,47 +426,45 @@ int PolygonCrossNode(polygon P, node *N, int loop)
 		L=P.BR[j]-1;
 		for (i=F;i<L;i++)
 		{
-			/* check endpoints */
-			if ((P.x[i+1]-N->x1>=-TINY)&&(N->x2-P.x[i+1]>=-TINY)&&(P.y[i+1]-N->y1>=-TINY)&&(N->y2-P.y[i+1]>=-TINY))
-				return 1;
-			if ((P.x[i]-N->x1>=-TINY)&&(N->x2-P.x[i]>=-TINY)&&(P.y[i]-N->y1>=-TINY)&&(N->y2-P.y[i]>=-TINY))
-				return 1;
-	
-			/* parameterize line */		
-			a=(P.x[i+1]-P.x[i]);
-			b=(P.y[i+1]-P.y[i]);
-			x0=P.x[i];
-			y0=P.y[i];
-			
-			t1=(N->y1-y0)/b;
-			t2=(N->y2-y0)/b;	
-			
-			if (isfinite(t1)&&isfinite(t2))
+			if (Overlap(P.x[i], N->x1, P.x[i+1], N->x2)||Overlap(P.y[i], N->y1,  P.y[i+1], N->y2))
 			{
+				/* check endpoints */
+				if ((P.x[i+1]-N->x1>=-TINY)&&(N->x2-P.x[i+1]>=-TINY)&&(P.y[i+1]-N->y1>=-TINY)&&(N->y2-P.y[i+1]>=-TINY))
+					return 1;
+				if ((P.x[i]-N->x1>=-TINY)&&(N->x2-P.x[i]>=-TINY)&&(P.y[i]-N->y1>=-TINY)&&(N->y2-P.y[i]>=-TINY))
+					return 1;
+				
+				
+				/* parameterize line */		
+				a=(P.x[i+1]-P.x[i]);
+				b=(P.y[i+1]-P.y[i]);
+				x0=P.x[i];
+				y0=P.y[i];
+				
+				t1=(N->y1-y0)/b;
 				if ((t1>=0)&&(t1<=1.0))
 				{
 					x=a*t1+x0;
 					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
 						return 1;
 				}
+				t2=(N->y2-y0)/b;
 				if ((t2>=0)&&(t2<=1.0))
 				{
 					x=a*t2+x0;
 					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
 						return 1;
-				}
-			}
-			t1=(N->x1-x0)/a;
-			t2=(N->x2-x0)/a;
-			
-			if (isfinite(t1)&&isfinite(t2))
-			{
+				}	
+				
+				t1=(N->x1-x0)/a;
 				if ((t1>=0)&&(t1<=1.0))
 				{
 					y=b*t1+y0;
 					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
 						return 1;
 				}
+				t2=(N->x2-x0)/a;
+			
 				if ((t2>=0)&&(t2<=1.0))
 				{
 					y=b*t2+y0;
@@ -452,46 +476,42 @@ int PolygonCrossNode(polygon P, node *N, int loop)
 		}
 		if (loop)
 		{
-			/* check endpoints */
-			if ((P.x[F]-N->x1>=-TINY)&&(N->x2-P.x[F]>=-TINY)&&(P.y[F]-N->y1>=-TINY)&&(N->y2-P.y[F]>=-TINY))
-				return 1;
-			if ((P.x[L]-N->x1>=-TINY)&&(N->x2-P.x[L]>=-TINY)&&(P.y[L]-N->y1>=-TINY)&&(N->y2-P.y[L]>=-TINY))
-				return 1;
-			/* parameterize line */		
-			a=(P.x[F]-P.x[L]);
-			b=(P.y[F]-P.y[L]);
-			x0=P.x[L];
-			y0=P.y[L];
-			
-			t1=(N->y1-y0)/b;
-			t2=(N->y2-y0)/b;
-			
-			if (isfinite(t1)&&isfinite(t2))
+			if (Overlap(P.x[F], N->x1, P.x[L],N->x2)||Overlap(P.y[F], N->y1, P.y[L], N->y2))
 			{
+				/* check endpoints */
+				if ((P.x[F]-N->x1>=-TINY)&&(N->x2-P.x[F]>=-TINY)&&(P.y[F]-N->y1>=-TINY)&&(N->y2-P.y[F]>=-TINY))
+					return 1;
+				if ((P.x[L]-N->x1>=-TINY)&&(N->x2-P.x[L]>=-TINY)&&(P.y[L]-N->y1>=-TINY)&&(N->y2-P.y[L]>=-TINY))
+					return 1;
+				/* parameterize line */		
+				a=(P.x[F]-P.x[L]);
+				b=(P.y[F]-P.y[L]);
+				x0=P.x[L];
+				y0=P.y[L];
+				
+				t1=(N->y1-y0)/b;
 				if ((t1>=0)&&(t1<=1.0))
 				{
 					x=a*t1+x0;
 					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
 						return 1;
 				}
+				t2=(N->y2-y0)/b;
 				if ((t2>=0)&&(t2<=1.0))
 				{
 					x=a*t2+x0;
 					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
 						return 1;
 				}
-			}
-			t1=(N->x1-x0)/a;
-			t2=(N->x2-x0)/a;
-			
-			if (isfinite(t1)&&isfinite(t2))
-			{
+	
+				t1=(N->x1-x0)/a;
 				if ((t1>=0)&&(t1<=1.0))
 				{
 					y=b*t1+y0;
 					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
 						return 1;
 				}
+				t2=(N->x2-x0)/a;
 				if ((t2>=0)&&(t2<=1.0))
 				{
 					y=b*t2+y0;
@@ -508,62 +528,78 @@ void ResolvContour(polygon P, mesh *M, int loop, double D)
 {
 	int *sel_nodes;
 	int i, k, NN;
+	double Pxmax, Pymax, Pxmin, Pymin;
 	node *N;
 	/* make first selection of nodes that are crossed by the polygon */
 	/* resolving to high res becomes very slow, I suppose that is due to the large number of sel_nodes along a highly resolved contour */
 	/* dividing the problem is probably better, pergaps we van splot the contour in its line segments, beware of polygon breaks */
+	if (!P.N)
+		return;
 		
 	sel_nodes=malloc(LISTBLOCK*sizeof(int));
 	sel_nodes[0]=0;
 	NN=M->Nn;
+	
+	Pxmax=P.x[0];
+	Pxmin=P.x[0];
+	Pymax=P.y[0];
+	Pymin=P.y[0];
+	for (k=1;k<P.N;k++)
+	{
+		Pxmax=MAX(Pxmax,P.x[k]);
+		Pymax=MAX(Pymax,P.y[k]);
+		Pxmin=MIN(Pxmin,P.x[k]);
+		Pymin=MIN(Pymin,P.y[k]);
+	}
 	for (k=0;k<NN;k++)
 	{
 		sel_nodes[0]=0; 
 		/* for higher resolutions we do notwant excessively long lists of selected nodes as this would slow down the routine */
 		/* For this reason we split up the task per node */
 		
-		if (PolygonCrossNode(P, &(M->nodes[k]), loop))
-		{
-			sel_nodes=AddToList(sel_nodes, M->nodes[k].id);
-			while (sel_nodes[0])
+		if (Overlap(Pxmin, M->nodes[k].x1, Pxmax, M->nodes[k].x2)||Overlap(Pymin, M->nodes[k].y1, Pymax, M->nodes[k].y2))
+			if (PolygonCrossNode(P, &(M->nodes[k]), loop))
 			{
-				int *old_sel;
-				old_sel=DuplicateList(sel_nodes);
-				for (i=1;i<=old_sel[0];i++)
+				sel_nodes=AddToList(sel_nodes, M->nodes[k].id);
+				while (sel_nodes[0])
 				{
-					N=SearchNode(*M, old_sel[i]);
-					if ((N->x2-N->x1)>(N->y2-N->y1))
+					int *old_sel;
+					old_sel=DuplicateList(sel_nodes);
+					for (i=1;i<=old_sel[0];i++)
 					{
-						SplitNodeX(old_sel[i], M);
 						N=SearchNode(*M, old_sel[i]);
-						if ((N->x2-N->x1)>D)
-							sel_nodes=AddToList(sel_nodes, M->Nn-1);
+						if ((N->x2-N->x1)>(N->y2-N->y1))
+						{
+							SplitNodeX(old_sel[i], M);
+							N=SearchNode(*M, old_sel[i]);
+							if ((N->x2-N->x1)>D)
+								sel_nodes=AddToList(sel_nodes, M->Nn-1);
+							else
+								sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+						}
 						else
-							sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+						{
+							SplitNodeY(old_sel[i], M);
+							N=SearchNode(*M, old_sel[i]);
+							if ((N->y2-N->y1)>D)
+								sel_nodes=AddToList(sel_nodes, M->Nn-1);
+							else
+								sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+						}
 					}
-					else
+					free(old_sel);
+					old_sel=DuplicateList(sel_nodes);
+					sel_nodes[0]=0;
+					sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+					for (i=1;i<=old_sel[0];i++)
 					{
-						SplitNodeY(old_sel[i], M);
 						N=SearchNode(*M, old_sel[i]);
-						if ((N->y2-N->y1)>D)
-							sel_nodes=AddToList(sel_nodes, M->Nn-1);
-						else
-							sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+						if (PolygonCrossNode(P, N, loop))
+							sel_nodes=AddToList(sel_nodes, old_sel[i]);	
 					}
-				}
-				free(old_sel);
-				old_sel=DuplicateList(sel_nodes);
-				sel_nodes[0]=0;
-				sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
-				for (i=1;i<=old_sel[0];i++)
-				{
-					N=SearchNode(*M, old_sel[i]);
-					if (PolygonCrossNode(P, N, loop))
-						sel_nodes=AddToList(sel_nodes, old_sel[i]);	
-				}
-				free(old_sel);
-			}	
-		}
+					free(old_sel);
+				}	
+			}
 	}
 	free(sel_nodes);
 	
