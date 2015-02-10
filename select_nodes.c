@@ -263,7 +263,8 @@ double dAngle(double x1, double x2, double y1, double y2, double x, double y)
 
 /* to support holes in polygons we could do polygons with breaks. The polygon is split at the breaks (i.e. each part looped)
    and the integration below is summed up over all parts. we then do a modulus 4pi and figure out whether the node is in or out */
-int IsInPolygon(polygon P, double x, double y)
+/* my first naive attempt, easy to understand but damn slow */
+int IsInPolygon_(polygon P, double x, double y)
 {
 	int i=0;
 	int j;
@@ -284,6 +285,27 @@ int IsInPolygon(polygon P, double x, double y)
 		return 0;
 	else
 		return 1;
+}
+
+
+/* less naive, use Jordan curve theorem with a horizobal line through the poin of interest*/
+int IsInPolygon(polygon P, double x, double y)
+{
+	int i=0, c=0;
+	int j;
+	int F, L;
+	L=-1;
+	for (j=1;j<=P.BR[0];j++)
+	{
+		F=L+1;
+		L=P.BR[j]-1;
+		for (i=F;i<L;i++)
+    			if ( ((P.y[i+1]>y) != (P.y[i]>y)) && (x < (P.x[i]-P.x[i+1]) * (y-P.y[i+1]) / (P.y[i]-P.y[i+1]) + P.x[i+1]) )
+       				c = !c;
+    		if ( ((P.y[F]>y) != (P.y[L]>y)) && (x < (P.x[L]-P.x[F]) * (y-P.y[F]) / (P.y[L]-P.y[F]) + P.x[F]) )
+       			c = !c;
+	}
+	return c;
 }
 
 int IsNearPolygon(polygon P, double x, double y, double D, int loop)

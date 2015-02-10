@@ -128,21 +128,21 @@ int main(int argc, char **argv)
 		#ifndef __MINGW32__ 
 		getrusage( RUSAGE_SELF, &rusage );
 		#endif 
-     		Print(NORMAL, "________________________________________________________________\n");
+     		Print(NORMAL, "________________________________________________________________");
      		Print(NORMAL, "Resource usage:\n");
-     		Print(NORMAL, "----------------------------------------------------------------\n");
+     		Print(NORMAL, "----------------------------------------------------------------");
 		#ifndef __MINGW32__ 
-     		Print(NORMAL, "Maximum resident set size:                         %10.0f MB\n",(double)rusage.ru_maxrss/1000.0);
+     		Print(NORMAL, "Maximum resident set size:                         %10.0f MB",(double)rusage.ru_maxrss/1000.0);
 		#endif 
-		Print(NORMAL, "Total CPU time                                     %10.2f  s\n",cpu_time);	
-     		Print(NORMAL, "CPU time summary                            time (s)    time (%%)\n");
-     		Print(NORMAL, "----------------------------------------------------------------\n");
-     		Print(NORMAL, "cholmod_solve                               %-10.2f       %3.0f\n",cpu_time_cholmod, 100.0*cpu_time_cholmod/cpu_time);
-     		Print(NORMAL, "build system                                %-10.2f       %3.0f\n",cpu_time_system, 100.0*cpu_time_system/cpu_time);
-     		Print(NORMAL, "build Jacobi                                %-10.2f       %3.0f\n",cpu_time_jacobi, 100.0*cpu_time_jacobi/cpu_time);
-     		Print(NORMAL, "build RHS                                   %-10.2f       %3.0f\n",cpu_time_rhs, 100.0*cpu_time_rhs/cpu_time);	
-     		Print(NORMAL, "rest (mesh operations, parsing, etc.)       %-10.2f       %3.0f\n",cpu_time_rest, 100.0*cpu_time_rest/cpu_time);	
-     		Print(NORMAL, "----------------------------------------------------------------\n");
+		Print(NORMAL, "Total CPU time                                     %10.2f  s",cpu_time);	
+     		Print(NORMAL, "CPU time summary                            time (s)    time (%%)");
+     		Print(NORMAL, "----------------------------------------------------------------");
+     		Print(NORMAL, "cholmod_solve                               %-10.2f       %3.0f",cpu_time_cholmod, 100.0*cpu_time_cholmod/cpu_time);
+     		Print(NORMAL, "build system                                %-10.2f       %3.0f",cpu_time_system, 100.0*cpu_time_system/cpu_time);
+     		Print(NORMAL, "build Jacobi                                %-10.2f       %3.0f",cpu_time_jacobi, 100.0*cpu_time_jacobi/cpu_time);
+     		Print(NORMAL, "build RHS                                   %-10.2f       %3.0f",cpu_time_rhs, 100.0*cpu_time_rhs/cpu_time);	
+     		Print(NORMAL, "rest (mesh operations, parsing, etc.)       %-10.2f       %3.0f",cpu_time_rest, 100.0*cpu_time_rest/cpu_time);	
+     		Print(NORMAL, "----------------------------------------------------------------");
 	}
 	else
 	{

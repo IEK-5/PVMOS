@@ -131,17 +131,19 @@ We recommend the use of several pieces of software as we use those ourselves and
 
 If you want to define complex geometries there are basically three ways:
 \begin{enumerate}
-\item{} Use the PVMOS scripting language. The advantage of this method is that it can be very accurate and fast, the downside is that it quickly becomes tedious
-\item{} Use a set of bitmap "masks" in combination with GNU octave and the mkpvmosmesh library for GNU octave. This is a powerful way to define complicated geometries. For this you need to set up and install GNU Octave and the mkpvmos library. 
-\item{} Define geometries using polygons. PVMOS has good support for polygons to select and specify various areas in your device. Complicated shapes may be created in a graphics program such as inkscape and exported to PVMOS. For this I have an extension to export data from inkscape for use in PVMOS. In combination with the trace bitmap feature of inkscape you can quickly define appropriate polygons for complicated geometries if you provide a bitmap image, e.g. you can create a polygon for the metalization pattern of a device by tracing a picture. 
+\item{} Use the PVMOS scripting language. The advantages of this method is that it can be very accurate and fast and is independent of any other software, the downside is that it quickly becomes tedious
+\item{} Use a set of bitmap "masks" in combination with GNU octave and the mkpvmosmesh library for GNU octave. This is a powerful way to define complicated geometries. For this you need to set up and install GNU Octave and the mkpvmos library. For high resolutions memory usage and performance may become an issue.
+\item{} Define geometries using polygons. PVMOS has good support for polygons to select and specify various areas in your device. Complicated shapes may be created in a graphics program such as inkscape and exported to PVMOS. For this I have an extension to export data from inkscape for use in PVMOS. In combination with the trace bitmap feature of inkscape you can quickly define appropriate polygons for complicated geometries if you provide a bitmap image, e.g. you can create a polygon for the metalization pattern of a device by tracing a picture. This method potentially has a lower memory footprint compared to the GNU Octave option. 
 \end{enumerate}   
-Depending on which method(s) you want to use we recommend to install GNU Octave + our mkpvmosmesh library and Inkscape in combination with our tools to extract and manipulate polygons for PVMOS. 
 
 \subsection{Gnuplot}
+The data-format that PVMOS uses for element-wise data export is laid out such that Gnuplot can make sense out of the data. Other plotting tools may not support this format. The element-wise data export allows you to export data from the mesh on a per-element basis and is particularly useful for inspecting meshes to ensure a correct mesh definition. For this reason I recommend the use of Gnuplot. Other data formats thet PVMOS should not be a problem for other plotting tools.
 
 \subsection{GNU Octave}
+This is only relevant if you want to define meshes using bitmap masks. 
 
 \subsection{Inkscape}
+Inkscape is a powerfull vector graphics tool. One of the graphics objects Inkscape supports are ``paths''. In its simplest form a path is simply a polygon. As PVMOS can use polygons when defining a mesh it makes sense to use a tool such as Inkscape to create the polygons as Inkscape provides a powerfull, graphical, means to do so. In order to get the polygon data out of inkscape I created a simple extension which extracts the data out of a polygon. To use this extention select a path with polygon data and select the ExportXY extension, a popup window will come up with coordinates you can select and paste in a polygon data file. Note however that Inkscape paths may also be bezier curves, which PVMOS does not support. To use the extension is is thus required that the path data is forced to be a polygon. For this you can use the flatten Bezier extention in Inkscape. I have not fully dug into Inkscape's internal units. This can be tricky as Inkscape may use all sorts of transforms on objects. This means that the polygon data may need to be scaled, rotated, mirrored and shifted to get the data in the correct unit. For this I provide a small CLI program ``transformpolygon''. 
 
 \section{\label{syntax}PVMOS command reference}
 

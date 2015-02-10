@@ -2788,13 +2788,13 @@ void Parse (char *file)
 					}
 					case TIC:
 						Print(NORMAL,"* line %3d: Starting timer",line_nr);	
-						Print(NORMAL, "________________________________________________________________");
+						Print(NORMAL, "------------------------timer start-----------------------------");
 						tic = clock();
 						break;
 					case TOC:
 						toc = clock();
+						Print(NORMAL, "-----------------------timer readout----------------------------");
 						Print(NORMAL,"* line %3d: %e seconds since last tic",line_nr, ((double) (toc - tic)) / CLOCKS_PER_SEC);
-						Print(NORMAL, "----------------------------------------------------------------");
 						break;
 					/********************************* Secion verbosity settings*/
 					case _QUIET:

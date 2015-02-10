@@ -69,7 +69,7 @@ void Print(VERB_LEVEL v_level, const char *format_str, ...)
 		char * s;
 		s=malloc((LINE_WIDTH+1)*sizeof(char));
 		numc=vsnprintf(s, LINE_WIDTH*sizeof(char), format_str, ap);
-		if (numc>LINE_WIDTH)
+		if (numc>=LINE_WIDTH)
 		{
 			int br, i;
 			char *newline, c;
@@ -77,7 +77,7 @@ void Print(VERB_LEVEL v_level, const char *format_str, ...)
 			s=realloc(s,(numc+1)*sizeof(char));
 			numc=vsnprintf(s, (numc+1)*sizeof(char), format_str, ap);
 			newline=s;
-			while (strlen(newline)>LINE_WIDTH)
+			while (strlen(newline)>=LINE_WIDTH)
 			{
 				br=LINE_WIDTH;
 				while ((!isblank(newline[br]))&&(br>0))
