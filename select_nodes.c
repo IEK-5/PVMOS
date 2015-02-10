@@ -365,7 +365,7 @@ int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 
 }
 
-int PolygonCrossNode(polygon P, node *N, int loop, int *index)
+int PolygonCrossNode(polygon P, node *N, int loop)
 {
 	int i;
 	int j;
@@ -380,17 +380,9 @@ int PolygonCrossNode(polygon P, node *N, int loop, int *index)
 		{
 			/* check endpoints */
 			if ((P.x[i+1]-N->x1>=-TINY)&&(N->x2-P.x[i+1]>=-TINY)&&(P.y[i+1]-N->y1>=-TINY)&&(N->y2-P.y[i+1]>=-TINY))
-			{
-				if (index)
-					(*index)=i+1;
 				return 1;
-			}
 			if ((P.x[i]-N->x1>=-TINY)&&(N->x2-P.x[i]>=-TINY)&&(P.y[i]-N->y1>=-TINY)&&(N->y2-P.y[i]>=-TINY))
-			{
-				if (index)
-					(*index)=i;
 				return 1;
-			}
 	
 			/* parameterize line */		
 			a=(P.x[i+1]-P.x[i]);
@@ -407,21 +399,13 @@ int PolygonCrossNode(polygon P, node *N, int loop, int *index)
 				{
 					x=a*t1+x0;
 					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
-					{
-						if (index)
-							(*index)=i;
 						return 1;
-					}
 				}
 				if ((t2>=0)&&(t2<=1.0))
 				{
 					x=a*t2+x0;
 					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
-					{
-						if (index)
-							(*index)=i;
 						return 1;
-					}
 				}
 			}
 			t1=(N->x1-x0)/a;
@@ -433,21 +417,13 @@ int PolygonCrossNode(polygon P, node *N, int loop, int *index)
 				{
 					y=b*t1+y0;
 					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-					{
-						if (index)
-							(*index)=i;
 						return 1;
-					}
 				}
 				if ((t2>=0)&&(t2<=1.0))
 				{
 					y=b*t2+y0;
 					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-					{
-						if (index)
-							(*index)=i;
 						return 1;
-					}
 				}
 			}
 			
@@ -474,21 +450,13 @@ int PolygonCrossNode(polygon P, node *N, int loop, int *index)
 				{
 					x=a*t1+x0;
 					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
-					{
-						if (index)
-							(*index)=L;
 						return 1;
-					}
 				}
 				if ((t2>=0)&&(t2<=1.0))
 				{
 					x=a*t2+x0;
 					if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY))
-					{
-						if (index)
-							(*index)=L;
 						return 1;
-					}
 				}
 			}
 			t1=(N->x1-x0)/a;
@@ -500,21 +468,13 @@ int PolygonCrossNode(polygon P, node *N, int loop, int *index)
 				{
 					y=b*t1+y0;
 					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-					{
-						if (index)
-							(*index)=L;
 						return 1;
-					}
 				}
 				if ((t2>=0)&&(t2<=1.0))
 				{
 					y=b*t2+y0;
 					if ((y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
-					{
-						if (index)
-							(*index)=L;
 						return 1;
-					}
 				}
 			}
 		}
@@ -525,7 +485,7 @@ int PolygonCrossNode(polygon P, node *N, int loop, int *index)
 void ResolvContour(polygon P, mesh *M, int loop, double D)
 {
 	int *sel_nodes;
-	int i, j, k, NN;
+	int i, k, NN;
 	node *N;
 	/* make first selection of nodes that are crossed by the polygon */
 	/* resolving to high res becomes very slow, I suppose that is due to the large number of sel_nodes along a highly resolved contour */
@@ -540,7 +500,7 @@ void ResolvContour(polygon P, mesh *M, int loop, double D)
 		/* for higher resolutions we do notwant excessively long lists of selected nodes as this would slow down the routine */
 		/* For this reason we split up the task per node */
 		
-		if (PolygonCrossNode(P, &(M->nodes[k]), loop, &j))
+		if (PolygonCrossNode(P, &(M->nodes[k]), loop))
 		{
 			sel_nodes=AddToList(sel_nodes, M->nodes[k].id);
 			while (sel_nodes[0])
@@ -576,7 +536,7 @@ void ResolvContour(polygon P, mesh *M, int loop, double D)
 				for (i=1;i<=old_sel[0];i++)
 				{
 					N=SearchNode(*M, old_sel[i]);
-					if (PolygonCrossNode(P, N, loop, NULL))
+					if (PolygonCrossNode(P, N, loop))
 						sel_nodes=AddToList(sel_nodes, old_sel[i]);	
 				}
 				free(old_sel);
@@ -764,54 +724,64 @@ int CircThroughNode(node *N, double x, double y, double r2)
 void ResolvCircle(double x, double y, double r, mesh *M, double D)
 {
 	int *sel_nodes;
-	int i;
+	int i, NN, k;
 	node *N;
 	
 	r=r*r;
 	/* make first selection of nodes that are crossed by the polygon */
 	sel_nodes=malloc(LISTBLOCK*sizeof(int));
 	sel_nodes[0]=0;
-	for (i=0;i<M->Nn;i++)
-		if (CircThroughNode(&(M->nodes[i]), x,y,r))
-			sel_nodes=AddToList(sel_nodes, M->nodes[i].id);
-	while (sel_nodes[0])
+		
+	NN=M->Nn;
+	for (k=0;k<NN;k++)
 	{
-		int *old_sel;
-		old_sel=DuplicateList(sel_nodes);
-		for (i=1;i<=old_sel[0];i++)
+		sel_nodes[0]=0; 
+		/* for higher resolutions we do not want excessively long lists of selected nodes as this would slow down the routine */
+		/* For this reason we split up the task per node */
+		
+		if (CircThroughNode(&(M->nodes[k]), x,y,r))
 		{
-			N=SearchNode(*M, old_sel[i]);
-			if ((N->x2-N->x1)>(N->y2-N->y1))
+			sel_nodes=AddToList(sel_nodes, M->nodes[k].id);
+			while (sel_nodes[0])	
 			{
-				SplitNodeX(old_sel[i], M);
-				N=SearchNode(*M, old_sel[i]);
-				if ((N->x2-N->x1)>D)
-					sel_nodes=AddToList(sel_nodes, M->Nn-1);
-				else
-					sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
-			}
-			else
-			{
-				SplitNodeY(old_sel[i], M);
-				N=SearchNode(*M, old_sel[i]);
-				if ((N->y2-N->y1)>D)
-					sel_nodes=AddToList(sel_nodes, M->Nn-1);
-				else
-					sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
-			}
+				int *old_sel;
+				old_sel=DuplicateList(sel_nodes);
+				for (i=1;i<=old_sel[0];i++)
+				{
+					N=SearchNode(*M, old_sel[i]);
+					if ((N->x2-N->x1)>(N->y2-N->y1))
+					{
+						SplitNodeX(old_sel[i], M);
+						N=SearchNode(*M, old_sel[i]);
+						if ((N->x2-N->x1)>D)
+							sel_nodes=AddToList(sel_nodes, M->Nn-1);
+						else
+							sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+					}
+					else
+					{
+						SplitNodeY(old_sel[i], M);
+						N=SearchNode(*M, old_sel[i]);
+						if ((N->y2-N->y1)>D)
+							sel_nodes=AddToList(sel_nodes, M->Nn-1);
+						else
+							sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
+					}
+				}
+				free(old_sel);
+				old_sel=DuplicateList(sel_nodes);
+				sel_nodes[0]=0;
+				sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
+				for (i=1;i<=old_sel[0];i++)
+				{
+					N=SearchNode(*M, old_sel[i]);
+					if (CircThroughNode(N, x,y,r))
+						sel_nodes=AddToList(sel_nodes, old_sel[i]);	
+				}
+				free(old_sel);
+			}	
 		}
-		free(old_sel);
-		old_sel=DuplicateList(sel_nodes);
-		sel_nodes[0]=0;
-		sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
-		for (i=1;i<=old_sel[0];i++)
-		{
-			N=SearchNode(*M, old_sel[i]);
-			if (CircThroughNode(N, x,y,r))
-				sel_nodes=AddToList(sel_nodes, old_sel[i]);	
-		}
-		free(old_sel);
-	}	
+	}
 }
 
 int * CircContourSelectNodes(double x, double y, double r, double d, mesh M, int *sel_nodes)

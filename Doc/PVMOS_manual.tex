@@ -419,7 +419,13 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printIV}		& Export the IV characteristics of the device. Exports a file with two columns, the first contains all the simulated applied voltages and the second the corresponding total currents. The command takes two arguments:
+\texttt{printIV}		& Export the IV characteristics of the device. Exports a file with two columns, the first contains the applied voltage and the second the corresponding simulated total current. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printInIp}		& Integrate external currents over selected elements. Exports a file with four columns, the applied voltage, the integrated current injected from the positive node, the integrated current emitted to the negative node, and the total current over the whole device. This may be used for sanity checking or, if your device has mre than one connection to the applied bias, to distingush between the connections (e.g. extract the current injected through the middle busbar). The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.

@@ -980,17 +980,31 @@ void Parse (char *file)
 					}
 					case PRINTIV:
 					{
-						mesh *M;				
+						meshvar *MV;			
 						char **args;
 						args=GetArgs (&begin, 2);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print simulated I-V pairs of mesh %s to file %s",line_nr,args[0], args[1]);
-											
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-						PrintIV(args[1],M);
+						PrintIV(args[1],&(MV->M));
+						FreeArgs (args, 2);	
+						break;
+					}
+					case PRINTINIPIV:
+					{
+						meshvar *MV;			
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print simulated I-V pairs of mesh %s to file %s",line_nr,args[0], args[1]);
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						PrintInIp(args[1],&(MV->M), MV->nodes);
 						FreeArgs (args, 2);	
 						break;
 					}
@@ -1194,7 +1208,7 @@ void Parse (char *file)
 						while(feof(f)==0)
 						{
 							begin=Begin(line);
-							if(begin)
+							if((begin)&&((*begin)!='#'))
 							{
 								GetWord (begin, word);
 								key=LookupKey (word,  KeyTable);

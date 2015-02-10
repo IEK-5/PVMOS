@@ -769,3 +769,104 @@ void PrintIV(char *fn, mesh *M)
 	fclose(f);
 }
 
+void BubbleSortIIIV(int n, double *V, double *I1, double *I2, double *I3)
+{
+	int a, b, s;
+	double c;
+	for(a=0;a<(n-1);a++)
+	{
+		s=1;
+		for(b=0;b<n-a-1;b++)
+		{
+			if (V[b]>V[b+1])
+			{
+				c=V[b];
+				V[b]=V[b+1];
+				V[b+1]=c;
+				
+				c=I1[b];
+				I1[b]=I1[b+1];
+				I1[b+1]=c;
+				
+				c=I2[b];
+				I2[b]=I2[b+1];
+				I2[b+1]=c;
+				
+				c=I3[b];
+				I3[b]=I3[b+1];
+				I3[b+1]=c;
+				s=0;
+			}
+		}
+		if (s)
+			break;
+	}
+}
+
+#define Area (N->x2-N->x1)*(N->y2-N->y1)
+void PrintInIp(char *fn, mesh *M, int *selected)
+{
+	int i, j, k;
+	FILE *f;
+	node *N;
+	double *V, *I, *In, *Ip;
+	if ((f=fopen(fn,"w"))==NULL)
+		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Total contact currents for selected elements\n");
+	fprintf(f, "# U [V]\tIp [A]\tIn [A]\tI [A]\n");
+	V=malloc((M->res.Nva+1)*sizeof(double));
+	I=malloc((M->res.Nva+1)*sizeof(double));
+	Ip=malloc((M->res.Nva+1)*sizeof(double));
+	In=malloc((M->res.Nva+1)*sizeof(double));
+	for (i=0;i<M->res.Nva;i++)
+	{
+		V[i]=M->res.Va[i];
+		I[i]=M->res.I[i];
+		Ip[i]=0;
+		In[i]=0;
+	}
+	if (selected[0]==0)
+		for (j=0;j<M->Nn;j++)
+		{			
+			N=M->nodes+j;
+			
+			for(i=0;i<M->res.Nva;i++)
+			{
+				for(k=0;k<M->Nel;k++)
+				{
+					if (M->P[N->P].Rvp[k]>0)
+						Ip[i]+=Area*(V[i]-M->res.Vn[i][k][N->id])/M->P[N->P].Rvp[k];
+					if (M->P[N->P].Rvn[k]>0)
+						In[i]+=Area*M->res.Vn[i][k][N->id]/M->P[N->P].Rvn[k];
+				
+				}
+			}
+		}
+	else
+		for (j=1;j<=selected[0];j++)
+		{			
+			N=SearchNode(*M, selected[j]);
+			
+			for(i=0;i<M->res.Nva;i++)
+			{
+				for(k=0;k<M->Nel;k++)
+				{
+					if (M->P[N->P].Rvp[k]>0)
+						Ip[i]+=Area*(V[i]-M->res.Vn[i][k][N->id])/M->P[N->P].Rvp[k];
+					if (M->P[N->P].Rvn[k]>0)
+						In[i]+=Area*M->res.Vn[i][k][N->id]/M->P[N->P].Rvn[k];
+				
+				}
+			}
+		}
+	BubbleSortIIIV(M->res.Nva, V, In , Ip, I);
+	
+	for (i=0;i<M->res.Nva;i++)
+		fprintf(f,"%e %e %e %e\n", V[i], Ip[i], In[i], I[i]);
+	fclose(f);
+	free(V);
+	free(I);
+	free(Ip);
+	free(In);
+}

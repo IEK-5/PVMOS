@@ -1,0 +1,44 @@
+inkscape_extractpath:
+An extension for inkscape to export coordinates of a path, naturally in a 
+format that PVMOS can undersand. To this end the path must be a polygon, 
+i.e. only straight line segments between nodes, no bezier curves. 
+Inkscape often applies all sorts of transformation on a path. This script,
+however, is rather dumb so it does not correct the coordinates  for these
+transformations and just spits out the data it finds in the path data 
+structure. This means the script outputs coordinates in what are 
+effectively arbitrary units. This is where the next utility comes in 
+handy.
+
+
+polytransform:
+utility to transform the polygon data from the inkscape extension to the 
+units you want. 
+Synopsys:
+polytransform <polygon> [[operation1] [args 1] [operation 2] [args2]...]
+
+Operation
+   move:	Shits all coordinates over an x- and y-offset. Thus it
+		takes two arguments, xoff and yoff
+   rot:		Rotate coordinates around a center coordinate. Takes
+		three arguments, the center coordinates, xc and yc, 
+		and the rotation in degreed 
+   flipx:	Reverse sign of the x-coordinates. Needs no arguments
+   flipy:	Reverse sign of the y coordinates. Needs no arguments
+   scale:	Scale coordiates by factor. Takes the factor as an 
+		argument
+   scalex:	Scale x coordiates by factor. Takes the factor as an 
+		argument
+   scaley:	Scale y coordiates by factor. Takes the factor as an 
+		argument
+   bb:		Specify the boundingbox. As arguments you provide the 
+		coordinates of the lower left corner and the upper right 
+		corner. polytransform will then scale and shift the y- 
+		and y- coordinates such that the path has the specified 
+		bounding box. Thus it takes 4 arguments x1,y1,x2,y2.
+   bb_fixR:	Same as above but preserving the aspect ratio of the 
+   		polygon.
+
+The bb and bb_fixR commands output the move and scale operations performed
+to stderr (coordinates are printedto stdout). This allows you to have 
+several paths in inkscape and once you fit one to its required scape you 
+can shape all theothers acoordingly 
