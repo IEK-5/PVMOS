@@ -396,15 +396,16 @@ int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 
 int Overlap(double a1, double a2, double b1, double b2)
 {
-	double d;
 	if (a2<a1)
 	{
+		double d;
 		d=a1;
 		a1=a2;
 		a2=d;
-	}
+	} 
 	if (b2<b1)
 	{
+		double d;
 		d=b1;
 		b1=b2;
 		b2=d;
@@ -524,20 +525,41 @@ int PolygonCrossNode(polygon P, node *N, int loop)
 	return 0;
 }
 
+void ResolvSplit(polygon P, mesh *M, int id, int loop, double Pxmax, double Pymax, double Pxmin, double Pymin, double D)
+{
+	node *N;
+	/* we try to avoid running the PolygonCrossNode routine as it is expensive */
+	N=SearchNode(*M, id);
+	/* resolution criterion fulfilled */
+	if ((N->x2-N->x1<D)&&(N->y2-N->y1<D))
+		return;
+	/* possibility of crossing, overlap with entire polygon?  */
+	if (Overlap(Pxmin, Pxmax, N->x1, N->x2)&&Overlap(Pymin, Pymax, N->y1, N->y2))
+		if (PolygonCrossNode(P, N, loop))
+		{
+			/* recurse  */
+			if ((N->x2-N->x1)>(N->y2-N->y1))
+			{
+				SplitNodeX(id, M);
+				ResolvSplit(P, M, M->Nn-1, loop, Pxmax, Pymax, Pxmin, Pymin, D);
+				ResolvSplit(P, M, id, loop, Pxmax, Pymax, Pxmin, Pymin, D);
+			} 
+			else
+			{
+				SplitNodeY(id, M);
+				ResolvSplit(P, M, M->Nn-1, loop, Pxmax, Pymax, Pxmin, Pymin, D);
+				ResolvSplit(P, M, id, loop, Pxmax, Pymax, Pxmin, Pymin, D);
+			}
+		}
+}
+
 void ResolvContour(polygon P, mesh *M, int loop, double D)
 {
-	int *sel_nodes;
-	int i, k, NN;
+	int k, NN;
 	double Pxmax, Pymax, Pxmin, Pymin;
-	node *N;
-	/* make first selection of nodes that are crossed by the polygon */
-	/* resolving to high res becomes very slow, I suppose that is due to the large number of sel_nodes along a highly resolved contour */
-	/* dividing the problem is probably better, pergaps we van splot the contour in its line segments, beware of polygon breaks */
 	if (!P.N)
 		return;
 		
-	sel_nodes=malloc(LISTBLOCK*sizeof(int));
-	sel_nodes[0]=0;
 	NN=M->Nn;
 	
 	Pxmax=P.x[0];
@@ -552,58 +574,10 @@ void ResolvContour(polygon P, mesh *M, int loop, double D)
 		Pymin=MIN(Pymin,P.y[k]);
 	}
 	for (k=0;k<NN;k++)
-	{
-		sel_nodes[0]=0; 
-		/* for higher resolutions we do notwant excessively long lists of selected nodes as this would slow down the routine */
-		/* For this reason we split up the task per node */
-		
-		if (Overlap(Pxmin, Pxmax, M->nodes[k].x1, M->nodes[k].x2)&&Overlap(Pymin, Pymax, M->nodes[k].y1, M->nodes[k].y2))
-			if (PolygonCrossNode(P, &(M->nodes[k]), loop))
-			{
-				sel_nodes=AddToList(sel_nodes, M->nodes[k].id);
-				while (sel_nodes[0])
-				{
-					int *old_sel;
-					old_sel=DuplicateList(sel_nodes);
-					for (i=1;i<=old_sel[0];i++)
-					{
-						N=SearchNode(*M, old_sel[i]);
-						if ((N->x2-N->x1)>(N->y2-N->y1))
-						{
-							SplitNodeX(old_sel[i], M);
-							N=SearchNode(*M, old_sel[i]);
-							if ((N->x2-N->x1)>D)
-								sel_nodes=AddToList(sel_nodes, M->Nn-1);
-							else
-								sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
-						}
-						else
-						{
-							SplitNodeY(old_sel[i], M);
-							N=SearchNode(*M, old_sel[i]);
-							if ((N->y2-N->y1)>D)
-								sel_nodes=AddToList(sel_nodes, M->Nn-1);
-							else
-								sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
-						}
-					}
-					free(old_sel);
-					old_sel=DuplicateList(sel_nodes);
-					sel_nodes[0]=0;
-					sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
-					for (i=1;i<=old_sel[0];i++)
-					{
-						N=SearchNode(*M, old_sel[i]);
-						if (PolygonCrossNode(P, N, loop))
-							sel_nodes=AddToList(sel_nodes, old_sel[i]);	
-					}
-					free(old_sel);
-				}	
-			}
-	}
-	free(sel_nodes);
+		ResolvSplit(P, M, M->nodes[k].id, loop, Pxmax, Pymax, Pxmin, Pymin, D);
 	
 }
+
 
 int * PolySelectNodes(polygon P, mesh M, int *sel_nodes) 
 /* selects nodes within a polygon */

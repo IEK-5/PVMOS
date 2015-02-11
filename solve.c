@@ -783,6 +783,8 @@ void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol
 		free(M->res.Vn[i]);
 	}
 	M->res.Vn[0]=M->res.Vn[M->res.Nva-1];
+	M->res.I[0]=M->res.I[M->res.Nva-1];
+	M->res.Va[0]=Va;
 	
 	M->res.Nva=1;
 	
@@ -808,6 +810,7 @@ void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol
 			free(M->res.Vn[M->res.Nva-2][j]);
 			M->res.Vn[M->res.Nva-2][j]=M->res.Vn[M->res.Nva-1][j];
 		}
+		M->res.I[M->res.Nva-2]=M->res.I[M->res.Nva-1];
 		M->res.Nva--;
 	}
 }

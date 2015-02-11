@@ -207,6 +207,7 @@ void AddMeshVar (mesh M, char **name,  meshvar ** meshes, int *Nm)
 	(*meshes)[*Nm].name=*name;
 	(*meshes)[*Nm].nodes=malloc(LISTBLOCK*sizeof(int));
 	(*meshes)[*Nm].nodes[0]=0;
+	(*meshes)[*Nm].setsel=0;
 	(*Nm)++;
 	(*meshes)=realloc((*meshes),((*Nm)+1)*sizeof(meshvar));	
 }
@@ -272,6 +273,7 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 	MV->nodes=RectSelectNodes(x1, y1, x2, y2, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectRectNodes: No elements selected, try selecting a larger area or refine the mesh first");
+	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, double y1, double x2, double y2, double d)
@@ -285,6 +287,7 @@ void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, d
 	MV->nodes=RectContourSelectNodes(x1, y1, x2, y2, d, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectRectContourNodes: No elements selected, try selecting a larger area or refine the mesh first");
+	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 /* select circular area in a mesh variable */
@@ -309,6 +312,7 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 	MV->nodes=CircSelectNodes(x, y, r, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectCircNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, double y, double r,double d)
@@ -322,6 +326,7 @@ void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, d
 	MV->nodes=CircContourSelectNodes(x, y, r, d, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectCircContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 /* select area enclosed by a polygon in a mesh variable */
@@ -344,6 +349,7 @@ void SelectPolyNodes (char *name,  meshvar * meshes, int Nm, polygon P)
 	MV->nodes=PolySelectNodes(P, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectPolyNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, double d, int loop)
@@ -357,6 +363,7 @@ void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, d
 	MV->nodes=PolyContourSelectNodes(d, P, loop,MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
 		Error("In SelectPolyContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 
@@ -381,6 +388,7 @@ void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
 	MV->nodes=SelectArea(MV->M, MV->nodes, name+i+1);
 	if (MV->nodes[0]==0)
 		Error("In SelectAreaNodes: No elements selected.\n");
+	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
 
@@ -1367,6 +1375,7 @@ void Parse (char *file)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);	
 						Print(NORMAL,"* line %3d: Deselecting selection in mesh %s", line_nr, MV->name);	
 						MV->nodes[0]=0;
+						MV->setsel=0;
 						break;
 					}
 					
@@ -1486,31 +1495,36 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
+								
 								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
-								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting R for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[AreaList[a]].name, args[2]);
@@ -1605,31 +1619,35 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
-								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
-								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting Rvp for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[AreaList[a]].name, args[2]);
@@ -1727,31 +1745,35 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
-								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
-								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting Rvn for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[AreaList[a]].name, args[2]);
@@ -1875,31 +1897,38 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
+								AreaList=AddToList(AreaList, a);
 								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
 								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{		
 								int ii;					
@@ -2026,31 +2055,38 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
 									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
+								AreaList=AddToList(AreaList, a);
 								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
 								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name);
@@ -2168,31 +2204,38 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
+								AreaList=AddToList(AreaList, a);
 								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
 								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name);
@@ -2316,31 +2359,38 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
+								AreaList=AddToList(AreaList, a);
 								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
 								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting R between electrodes %d and %d in %s.%s to %s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name, args[2]);
@@ -2440,31 +2490,38 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
+								AreaList=AddToList(AreaList, a);
 								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
 								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting initial temperature in %s.%s to %s",line_nr, MV->name, MV->M.P[AreaList[a]].name, args[1]);
@@ -2550,31 +2607,38 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
+								AreaList=AddToList(AreaList, a);
 								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
 								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Toggle split-y parameter of %s.%s",line_nr,MV->name, MV->M.P[AreaList[a]].name);
@@ -2663,31 +2727,35 @@ void Parse (char *file)
 							for (E=1;E<=MV->nodes[0];E++)
 							{
 								a=MV->M.nodes[MV->nodes[E]].P;
-								/* create new area string */
-								l1=strlen(MV->M.P[a].name);
-								l2=strlen(area);
-								if (l1+l2>MAXSTRLEN)
-									Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
-									
-								strncpy(newarea, MV->M.P[a].name,l1);
-								strncpy(newarea+l1, area,l2+1);								
-								a=FindProperties(MV->M, newarea);
-								if (a<0)
+								if (!MV->setsel)
 								{
-									/* create new area */
-									Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
-									a=MV->M.Na;
-									MV->M.Na++;
-									MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
-									DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
-									MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
-									strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
 								}
-								/* assign element to area */
 								AreaList=AddToList(AreaList, a);
-								MV->M.nodes[MV->nodes[E]].P=a;
 								
 							}
+							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Toggle split-y parameter of %s.%s",line_nr, MV->name, MV->M.P[AreaList[a]].name);

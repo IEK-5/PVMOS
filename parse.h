@@ -41,6 +41,7 @@ typedef struct meshvar {
 	mesh M;
 	char *name;
 	int *nodes;
+	int setsel;
 } meshvar;
 
 void Parse (char *file);
