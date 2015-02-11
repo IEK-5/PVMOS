@@ -394,7 +394,7 @@ int IsNearPolygon(polygon P, double x, double y, double D, int loop)
 
 
 
-int Overlap(double a1, double b1, double a2, double b2)
+int Overlap(double a1, double a2, double b1, double b2)
 {
 	double d;
 	if (a2<a1)
@@ -409,7 +409,7 @@ int Overlap(double a1, double b1, double a2, double b2)
 		b1=b2;
 		b2=d;
 	}
-	return ((MIN(a2,b2)-MAX(a1,b1))>0);
+	return ((MIN(a2,b2)-MAX(a1,b1))>-TINY);
 }
 
 
@@ -426,7 +426,7 @@ int PolygonCrossNode(polygon P, node *N, int loop)
 		L=P.BR[j]-1;
 		for (i=F;i<L;i++)
 		{
-			if (Overlap(P.x[i], N->x1, P.x[i+1], N->x2)||Overlap(P.y[i], N->y1,  P.y[i+1], N->y2))
+			if (Overlap(P.x[i], P.x[i+1], N->x1, N->x2)&&Overlap(P.y[i], P.y[i+1],N->y1, N->y2))
 			{
 				/* check endpoints */
 				if ((P.x[i+1]-N->x1>=-TINY)&&(N->x2-P.x[i+1]>=-TINY)&&(P.y[i+1]-N->y1>=-TINY)&&(N->y2-P.y[i+1]>=-TINY))
@@ -476,7 +476,7 @@ int PolygonCrossNode(polygon P, node *N, int loop)
 		}
 		if (loop)
 		{
-			if (Overlap(P.x[F], N->x1, P.x[L],N->x2)||Overlap(P.y[F], N->y1, P.y[L], N->y2))
+			if (Overlap(P.x[F], P.x[L],N->x1, N->x2)&&Overlap(P.y[F], P.y[L], N->y1, N->y2))
 			{
 				/* check endpoints */
 				if ((P.x[F]-N->x1>=-TINY)&&(N->x2-P.x[F]>=-TINY)&&(P.y[F]-N->y1>=-TINY)&&(N->y2-P.y[F]>=-TINY))
@@ -557,7 +557,7 @@ void ResolvContour(polygon P, mesh *M, int loop, double D)
 		/* for higher resolutions we do notwant excessively long lists of selected nodes as this would slow down the routine */
 		/* For this reason we split up the task per node */
 		
-		if (Overlap(Pxmin, M->nodes[k].x1, Pxmax, M->nodes[k].x2)||Overlap(Pymin, M->nodes[k].y1, Pymax, M->nodes[k].y2))
+		if (Overlap(Pxmin, Pxmax, M->nodes[k].x1, M->nodes[k].x2)&&Overlap(Pymin, Pymax, M->nodes[k].y1, M->nodes[k].y2))
 			if (PolygonCrossNode(P, &(M->nodes[k]), loop))
 			{
 				sel_nodes=AddToList(sel_nodes, M->nodes[k].id);
