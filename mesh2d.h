@@ -89,7 +89,9 @@ typedef struct mesh {
 	results res;			/* struct with calculated data for the mesh */
 } mesh;
 
+local_prop InitProperties (char *name, int Nel);
 mesh InitMesh(char *name, double x1, double x2, double y1, double y2, int Nx, int Ny);
+void FreeProperties(local_prop *P, int Nel);
 void FreeMesh(mesh *M);
 void DuplicateProperties(mesh *M, local_prop *dest, local_prop *source);
 mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff);

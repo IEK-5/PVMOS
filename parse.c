@@ -435,6 +435,7 @@ void Parse (char *file)
 	clock_t tic, toc;
 	PRSDEF key;
 	polygon P;
+	
 	P.N=0;
 	
 	if ((f=fopen(file,"r"))==NULL)

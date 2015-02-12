@@ -65,6 +65,60 @@
 #define MAXNAMELEN 255
 #define T0 300
 
+local_prop InitProperties (char *name, int Nel)
+{
+	local_prop P;
+	int i;
+	/* local properties struct */
+	P.name=malloc(MAXNAMELEN*sizeof(char));
+	if (strlen(name)+1<MAXNAMELEN)
+		strncpy(P.name, name,strlen(name)+1);
+	else
+	{
+		strncpy(P.name, name,MAXNAMELEN-1);
+		P.name[MAXNAMELEN]='\0';
+	}
+	
+	P.Rel=malloc((Nel+1)*sizeof(double));
+	P.Rvp=malloc((Nel+1)*sizeof(double));
+	P.Rvn=malloc((Nel+1)*sizeof(double));	
+	P.conn=malloc((Nel)*sizeof(ElConn));
+	
+	for (i=0;i<Nel-1;i++)
+	{
+		P.Rel[i]=1;
+		P.Rvp[i]=-1.0;
+		P.Rvn[i]=-1.0;
+		
+		P.conn[i].model=JVD;
+		P.conn[i].J01=1e-12;
+		P.conn[i].J02=1e-8;
+		P.conn[i].Jph=0;
+		P.conn[i].nid1=1;
+		P.conn[i].nid2=2;
+		P.conn[i].Eg=1.12;
+		P.conn[i].Rs=1e-5;
+		P.conn[i].Rsh=1e4;
+		
+		P.conn[i].V=malloc(2*sizeof(double));
+		P.conn[i].J=malloc(2*sizeof(double));
+		P.conn[i].V[0]=-1;
+		P.conn[i].J[0]=-1;
+		P.conn[i].V[1]=1;
+		P.conn[i].J[1]=1;
+		P.conn[i].N=2;		
+	}
+	
+	P.Rel[i]=1;
+	P.Rvp[i]=-1.0;
+	P.Rvn[i]=-1.0;	
+	
+	P.T=300;
+	P.SplitX=1;
+	P.SplitY=1;
+	return P;
+}
+
 mesh InitMesh(char *name, double x1, double x2, double y1, double y2, int Nx, int Ny)
 /* returns a regularly spaced mesh with Nx columns and Ny rows*/
 /* The coordinates x1,y1 represents the south-west corner (lower left) of the mesh and the coordinates x2,y2 the north-east corner (upper right)*/
@@ -83,45 +137,7 @@ mesh InitMesh(char *name, double x1, double x2, double y1, double y2, int Nx, in
 	/* local properties struct */
 	M.P=malloc((2)*sizeof(local_prop));
 	M.Na=1;	
-	M.P[0].name=malloc(MAXNAMELEN*sizeof(char));
-	if (strlen(name)+1<MAXNAMELEN)
-		strncpy(M.P[0].name, name,strlen(name)+1);
-	else
-	{
-		strncpy(M.P[0].name, name,MAXNAMELEN-1);
-		M.P[0].name[MAXNAMELEN]='\0';
-	}
-	M.P[0].Rel=malloc(2*sizeof(double));
-	M.P[0].Rvp=malloc(2*sizeof(double));
-	M.P[0].Rvn=malloc(2*sizeof(double));
-	M.P[0].Rel[0]=1;
-	M.P[0].Rel[1]=1;
-	M.P[0].Rvn[0]=-1.0;
-	M.P[0].Rvn[1]=-1.0;
-	M.P[0].Rvp[0]=-1.0;
-	M.P[0].Rvp[1]=-1.0;
-	M.P[0].conn=malloc(2*sizeof(ElConn));
-	
-	M.P[0].conn[0].model=JVD;
-	M.P[0].conn[0].J01=1e-12;
-	M.P[0].conn[0].J02=1e-8;
-	M.P[0].conn[0].Jph=0;
-	M.P[0].conn[0].nid1=1;
-	M.P[0].conn[0].nid2=2;
-	M.P[0].conn[0].Eg=1.12;
-	M.P[0].conn[0].Rs=1e-5;
-	M.P[0].conn[0].Rsh=1e4;
-	M.P[0].conn[0].V=malloc(2*sizeof(double));
-	M.P[0].conn[0].J=malloc(2*sizeof(double));
-	M.P[0].conn[0].V[0]=-1;
-	M.P[0].conn[0].J[0]=-1;
-	M.P[0].conn[0].V[1]=1;
-	M.P[0].conn[0].J[1]=1;
-	M.P[0].conn[0].N=2;
-	
-	M.P[0].T=T0;
-	M.P[0].SplitX=1;
-	M.P[0].SplitY=1;
+	M.P[0]=InitProperties (name,2);
 	
 	/* nodes */
 	Nn=Nx*Ny;
@@ -193,7 +209,20 @@ mesh InitMesh(char *name, double x1, double x2, double y1, double y2, int Nx, in
 	}
 	return M;
 }
-
+void FreeProperties(local_prop *P, int Nel)
+{
+	int j;
+	free(P->name);
+	free(P->Rel);
+	free(P->Rvp);
+	free(P->Rvn);
+	for (j=0;j<Nel-1;j++)
+	{
+		free(P->conn[j].V);
+		free(P->conn[j].J);
+	}
+	free(P->conn);
+}
 void FreeMesh(mesh *M)
 {
 	int i,j;
@@ -206,18 +235,7 @@ void FreeMesh(mesh *M)
 	}
 	free(M->nodes);
 	for (i=0;i<M->Na;i++)
-	{
-		free(M->P[i].name);
-		free(M->P[i].Rel);
-		free(M->P[i].Rvp);
-		free(M->P[i].Rvn);
-		for (j=0;j<M->Nel-1;j++)
-		{
-			free(M->P[i].conn[j].V);
-			free(M->P[i].conn[j].J);
-		}
-		free(M->P[i].conn);
-	}
+		FreeProperties(M->P+i, M->Nel);
 	free(M->P);
 	for (i=0;i<M->res.Nva;i++)
 	{
@@ -497,49 +515,9 @@ mesh DuplicateMesh(mesh M)
 
 void NewProperties(mesh *M, char *name)
 {
-	int i;
 	M->P=realloc(M->P, (M->Na+1)*sizeof(local_prop));
 	M->Na++;
-	M->P[M->Na-1].name=malloc(MAXNAMELEN*sizeof(char));
-	strncpy(M->P[M->Na-1].name, name,strlen(name)+1);
-	
-	M->P[M->Na-1].Rel=malloc((M->Nel+1)*sizeof(double));
-	M->P[M->Na-1].Rvp=malloc((M->Nel+1)*sizeof(double));
-	M->P[M->Na-1].Rvn=malloc((M->Nel+1)*sizeof(double));	
-	M->P[M->Na-1].conn=malloc((M->Nel)*sizeof(ElConn));
-	
-	for (i=0;i<M->Nel-1;i++)
-	{
-		M->P[M->Na-1].Rel[i]=1;
-		M->P[M->Na-1].Rvp[i]=-1.0;
-		M->P[M->Na-1].Rvn[i]=-1.0;
-		
-		M->P[M->Na-1].conn[i].model=JVD;
-		M->P[M->Na-1].conn[i].J01=1e-12;
-		M->P[M->Na-1].conn[i].J02=1e-8;
-		M->P[M->Na-1].conn[i].Jph=0;
-		M->P[M->Na-1].conn[i].nid1=1;
-		M->P[M->Na-1].conn[i].nid2=2;
-		M->P[M->Na-1].conn[i].Eg=1.12;
-		M->P[M->Na-1].conn[i].Rs=1e-5;
-		M->P[M->Na-1].conn[i].Rsh=1e4;
-		
-		M->P[M->Na-1].conn[i].V=malloc(2*sizeof(double));
-		M->P[M->Na-1].conn[i].J=malloc(2*sizeof(double));
-		M->P[M->Na-1].conn[i].V[0]=-1;
-		M->P[M->Na-1].conn[i].J[0]=-1;
-		M->P[M->Na-1].conn[i].V[1]=1;
-		M->P[M->Na-1].conn[i].J[1]=1;
-		M->P[M->Na-1].conn[i].N=2;		
-	}
-	
-	M->P[M->Na-1].Rel[i]=1;
-	M->P[M->Na-1].Rvp[i]=-1.0;
-	M->P[M->Na-1].Rvn[i]=-1.0;	
-	
-	M->P[M->Na-1].T=300;
-	M->P[M->Na-1].SplitX=1;
-	M->P[M->Na-1].SplitY=1;
+	M->P[M->Na-1]=InitProperties (name, M->Nel);
 }
 
 
