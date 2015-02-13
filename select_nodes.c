@@ -753,7 +753,46 @@ int CircThroughNode(node *N, double x, double y, double r2)
 	
 }
 
+
+void ResolvCircSplit(double x, double y, double r, mesh *M, int id, double D)
+{
+	node *N;
+	/* we try to avoid running the PolygonCrossNode routine as it is expensive */
+	N=SearchNode(*M, id);
+	/* resolution criterion fulfilled */
+	if ((N->x2-N->x1<D)&&(N->y2-N->y1<D))
+		return;
+	/* possibility of crossing, overlap with entire polygon?  */
+	if (Overlap(x-r, x+r, N->x1, N->x2)&&Overlap(y-r, y+r, N->y1, N->y2))
+		if (CircThroughNode(N, x, y, r*r))
+		{
+			/* recurse  */
+			if ((N->x2-N->x1)>(N->y2-N->y1))
+			{
+				SplitNodeX(id, M);
+				ResolvCircSplit(x, y, r, M, M->Nn-1, D);
+				ResolvCircSplit(x, y, r, M, id, D);
+			} 
+			else
+			{
+				SplitNodeY(id, M);
+				ResolvCircSplit(x, y, r, M, M->Nn-1, D);
+				ResolvCircSplit(x, y, r, M, id, D);
+			}
+		}
+}
+
 void ResolvCircle(double x, double y, double r, mesh *M, double D)
+{
+	int k, NN;		
+	NN=M->Nn;
+	for (k=0;k<NN;k++)
+		ResolvCircSplit(x,y,r, M, M->nodes[k].id, D);
+	
+}
+
+
+void ResolvCircle_(double x, double y, double r, mesh *M, double D)
 {
 	int *sel_nodes;
 	int i, NN, k;
