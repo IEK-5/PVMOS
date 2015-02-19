@@ -1193,6 +1193,8 @@ void Parse (char *file)
 							free(P.BR);
 						}
 						P=ReadPoly(word);
+						Print(NORMAL, "            -->  Polygon with %d segments loaded",P.N);
+						
 						break;
 					}	
 					case DEF_POLY:
@@ -1259,7 +1261,7 @@ void Parse (char *file)
 							free(P.BR);
 						}
 						begin=GetWord (begin, word);
-						Print(NORMAL, "* line %3d: polygon with %i points defined",line_nr,P.N);
+						Print(NORMAL, "            -->  Polygon with %d segments defined",P.N);
 						break;
 					}	
 					case SELECT_RECT:

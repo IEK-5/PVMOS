@@ -7,11 +7,11 @@ CC=gcc
 target=pvmos
 
 # CFLAGS=-O3
-CFLAGS=-Ofast -Wall -fPIC
-LFLAGS= -lcholmod -lopenblas-r0.2.13 -lm
+CFLAGS=-Ofast -flto -Wall -fPIC
+LFLAGS= -flto -lcholmod -lopenblas-r0.2.13 -lm
 # LFLAGS= -lcholmod -L/usr/lib64/libblas.so.3 -lm
 #LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
-VERSION=0.60
+VERSION=0.61
 
 pvmos: $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)

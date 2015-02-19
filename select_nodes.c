@@ -792,69 +792,6 @@ void ResolvCircle(double x, double y, double r, mesh *M, double D)
 }
 
 
-void ResolvCircle_(double x, double y, double r, mesh *M, double D)
-{
-	int *sel_nodes;
-	int i, NN, k;
-	node *N;
-	
-	r=r*r;
-	/* make first selection of nodes that are crossed by the polygon */
-	sel_nodes=malloc(LISTBLOCK*sizeof(int));
-	sel_nodes[0]=0;
-		
-	NN=M->Nn;
-	for (k=0;k<NN;k++)
-	{
-		sel_nodes[0]=0; 
-		/* for higher resolutions we do not want excessively long lists of selected nodes as this would slow down the routine */
-		/* For this reason we split up the task per node */
-		
-		if (CircThroughNode(&(M->nodes[k]), x,y,r))
-		{
-			sel_nodes=AddToList(sel_nodes, M->nodes[k].id);
-			while (sel_nodes[0])	
-			{
-				int *old_sel;
-				old_sel=DuplicateList(sel_nodes);
-				for (i=1;i<=old_sel[0];i++)
-				{
-					N=SearchNode(*M, old_sel[i]);
-					if ((N->x2-N->x1)>(N->y2-N->y1))
-					{
-						SplitNodeX(old_sel[i], M);
-						N=SearchNode(*M, old_sel[i]);
-						if ((N->x2-N->x1)>D)
-							sel_nodes=AddToList(sel_nodes, M->Nn-1);
-						else
-							sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
-					}
-					else
-					{
-						SplitNodeY(old_sel[i], M);
-						N=SearchNode(*M, old_sel[i]);
-						if ((N->y2-N->y1)>D)
-							sel_nodes=AddToList(sel_nodes, M->Nn-1);
-						else
-							sel_nodes=RemoveFromList(sel_nodes, old_sel[i]);
-					}
-				}
-				free(old_sel);
-				old_sel=DuplicateList(sel_nodes);
-				sel_nodes[0]=0;
-				sel_nodes=realloc(sel_nodes,LISTBLOCK*sizeof(int));
-				for (i=1;i<=old_sel[0];i++)
-				{
-					N=SearchNode(*M, old_sel[i]);
-					if (CircThroughNode(N, x,y,r))
-						sel_nodes=AddToList(sel_nodes, old_sel[i]);	
-				}
-				free(old_sel);
-			}	
-		}
-	}
-}
-
 int * CircContourSelectNodes(double x, double y, double r, double d, mesh M, int *sel_nodes)
 {
 	int i, *old_sel;

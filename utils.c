@@ -69,6 +69,11 @@ void Print(VERB_LEVEL v_level, const char *format_str, ...)
 		char * s;
 		s=malloc((LINE_WIDTH+1)*sizeof(char));
 		numc=vsnprintf(s, LINE_WIDTH*sizeof(char), format_str, ap);
+      		/* on one particular system ap changed upon execustion of vsnprintf! 
+		   I do not know whether it is a bug or that I was wrong to assume
+		   it does not change. Anyway, my fix is multiple calls to va_start 
+		*/
+      		va_start (ap, format_str); 
 		if (numc>=LINE_WIDTH)
 		{
 			int br, i;
@@ -76,6 +81,7 @@ void Print(VERB_LEVEL v_level, const char *format_str, ...)
 			/* allocate more space and break result at last whitespace */
 			s=realloc(s,(numc+1)*sizeof(char));
 			numc=vsnprintf(s, (numc+1)*sizeof(char), format_str, ap);
+      			va_start (ap, format_str);
 			newline=s;
 			while (strlen(newline)>=LINE_WIDTH)
 			{
