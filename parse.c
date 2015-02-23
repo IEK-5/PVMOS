@@ -783,6 +783,175 @@ void Parse (char *file)
 						FreeArgs (args, 2);											
 						break;
 					}
+					case MOVEMESH:
+					{	
+						meshvar *MV;
+						char **args;
+						double x,y;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							
+						x=atof(args[1]);
+						y=atof(args[2]);
+						Print(NORMAL,"* line %3d: Moving mesh %s %e in x and %e in y direction",line_nr, MV->name, x,y);
+						MoveMesh(&(MV->M), x, y);
+						FreeArgs (args, 3);										
+						break;
+					}
+					case ROTATEMESH:
+					{	
+						meshvar *MV;
+						char **args;
+						double x,y;
+						int d;
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							
+						x=atof(args[1]);
+						y=atof(args[2]);
+						d=atoi(args[3]);
+						if (d%90)
+							Error("* line %3d: requested rotation over %d degrees is not a multiple of 90",line_nr,d);	
+							
+						Print(NORMAL,"* line %3d: Rotating mesh %s over %d degrees around point (%e, %e)",line_nr, MV->name, d, x,y);
+						RotateMesh(&(MV->M), x, y, d);
+						FreeArgs (args, 4);												
+						break;
+					}
+					case FLIPX:
+					{		
+						meshvar *MV;
+						char **args;
+						args=GetArgs (&begin, 1);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							
+						Print(NORMAL,"* line %3d: Inverting x-coordinates for mesh %s",line_nr, MV->name);
+						ScaleMeshX(&(MV->M), -1.0);
+						FreeArgs (args, 1);																				
+						break;
+					}
+					case FLIPY:
+					{		
+						meshvar *MV;
+						char **args;
+						args=GetArgs (&begin, 1);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							
+						Print(NORMAL,"* line %3d: Inverting y-coordinates for mesh %s",line_nr, MV->name);
+						ScaleMeshY(&(MV->M), -1.0);
+						FreeArgs (args, 1);												
+						break;
+					}
+					case SCALE:
+					{	
+						meshvar *MV;
+						char **args;
+						double f;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+						f=atof(args[1]);	
+						Print(NORMAL,"* line %3d: Scaling coordinates in mesh %s by factor %e",line_nr, MV->name, f);
+						ScaleMesh(&(MV->M), f);
+						FreeArgs (args, 2);										
+						break;
+					}
+					case SCALEX:
+					{	
+						meshvar *MV;
+						char **args;
+						double f;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+						f=atof(args[1]);	
+						Print(NORMAL,"* line %3d: Scaling x-coordinates in mesh %s by factor %e",line_nr, MV->name, f);
+						ScaleMeshX(&(MV->M), f);
+						FreeArgs (args, 2);										
+						break;	
+					}
+					case SCALEY:
+					{		
+						meshvar *MV;
+						char **args;
+						double f;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+						f=atof(args[1]);	
+						Print(NORMAL,"* line %3d: Scaling y-coordinates in mesh %s by factor %e",line_nr, MV->name, f);
+						ScaleMeshY(&(MV->M), f);
+						FreeArgs (args, 2);										
+						break;	
+					}
+					case SETBB:
+					{	
+						meshvar *MV;
+						char **args;
+						double x1,x2,y1,y2;
+						int FixR;
+						args=GetArgs (&begin, 6);
+						if (args==NULL)
+							goto premature_end;
+						
+													
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+						x1=atof(args[1]);			
+						y1=atof(args[2]);		
+						x2=atof(args[3]);		
+						y2=atof(args[4]);
+						Print(NORMAL,"* line %3d: Fitting mesh %s to bounding box (%e,%e) (%e,%e)",line_nr, MV->name, x1,y1,x2,y2);
+						FixR=atoi(args[5]);
+						if (FixR)	
+							Print(NORMAL,"*           Preserving ascpect ratio");
+						else
+							Print(NORMAL,"*           Not preserving ascpect ratio");
+						
+						SetMeshBB(&(MV->M), x1, y1, x2, y2, FixR);
+						FreeArgs (args, 6);												
+						break;
+					}
 					case RESOLVPOLY:
 					{
 						meshvar *MV;

@@ -197,6 +197,64 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\multicolumn{2}{l}{\textsc{Transforming Meshes}} \\*
+\hline
+Keyword & Description \\
+\hline\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{move} 	& Move a mesh in x- and y-directions. The command takes three arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{delta x}, move distance in x-direction
+\item \texttt{delta y}, move distance in y-direction
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{rotate} 	& Rotate mesh around a center coordinate. Rotation can only be performed over multiples of 90 degrees. The command takes four arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x}, x-coordinate of rotation center
+\item \texttt{y},y-coordinate of rotation center
+\item \texttt{d}, degrees to rotate over (must be a multiple of 90)
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{flipx} 	& Mirror a mesh in the y-axis. The command takes one argument:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{flipy} & Mirror a mesh in the x-axis. The command takes one argument:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{scale} 	& Scale all coordinates in a mesh. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{f}, scaling factor
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{scalex} 	& Scale all x-coordinates in a mesh. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{f}, scaling factor
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{scaley} 	& Scale all y-coordinates in a mesh. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{f}, scaling factor
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{set\_bb} 	& Change the mesh bounding box. This argument scales and moves a mesh such that it fits in a specified rectangle (the bounding box). The mesh is either scaled preserving the aspect ratio or without preserving it. The command takes six arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the bounding box
+\item \texttt{y1}, y-coordinate of the lower left corner of the bounding box
+\item \texttt{x2}, x-coordinate of the upper right corner of the bounding box
+\item \texttt{y2}, y-coordinate of the upper right corner of the bounding box
+\item \texttt{R}, Argument can be either 0, do not preserve mesh aspect ratio, or 1, preserve mesh aspect ratio. 
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \multicolumn{2}{l}{\textsc{Selecting Elements}} \\*
 \hline
 Keyword & Description \\

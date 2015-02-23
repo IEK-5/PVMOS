@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.1.30)  9 FEB 2015 15:26
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.1.30)  23 FEB 2015 16:40
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -390,67 +390,71 @@ LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
 (Font)              for symbol `textbackslash' on input line 109.
 
 [3]
-Overfull \hbox (8.0pt too wide) in alignment at lines 148--269
+Overfull \hbox (8.0pt too wide) in alignment at lines 150--258
  [] [] 
  []
 
-LaTeX Font Info:    Try loading font information for OML+cmr on input line 273.
+LaTeX Font Info:    Try loading font information for OML+cmr on input line 333.
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/omlcmr.fd
 File: omlcmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <9> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 273.
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 333.
 
-Overfull \hbox (8.0pt too wide) in alignment at lines 269--358
+Overfull \hbox (8.0pt too wide) in alignment at lines 258--364
  [] [] 
  []
 
-[4] [5] [6]
-Overfull \hbox (8.0pt too wide) in alignment at lines 358--537
+[4] [5]
+Overfull \hbox (8.0pt too wide) in alignment at lines 364--519
  [] [] 
  []
 
-[7]
-Overfull \hbox (8.0pt too wide) in alignment at lines 537--638
+[6] [7]
+Overfull \hbox (8.0pt too wide) in alignment at lines 519--660
  [] [] 
  []
 
-[8] [9] [10] [11]
-Overfull \hbox (8.0pt too wide) in alignment at lines 638--669
+[8] [9] [10]
+Overfull \hbox (8.0pt too wide) in alignment at lines 660--726
  [] [] 
  []
 
-[12] [13] [14]
+[11] [12] [13] [14]
+Overfull \hbox (8.0pt too wide) in alignment at lines 726--735
+ [] [] 
+ []
+
+[15] [16]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table I on input line 669.
+(longtable)                in table I on input line 735.
 
-[15]
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 680.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 746.
 
- (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
+(/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 680.
- [16]
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 746.
+ [17]
 
 Package longtable Warning: Table widths have changed. Rerun LaTeX.
 
-[17] (./PVMOS_manual.aux)
+[18] (./PVMOS_manual.aux)
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
  ) 
 Here is how much of TeX's memory you used:
- 4430 strings out of 493312
- 56665 string characters out of 6140261
- 198680 words of memory out of 5000000
- 7785 multiletter control sequences out of 15000+600000
+ 4429 strings out of 493312
+ 56657 string characters out of 6140261
+ 200663 words of memory out of 5000000
+ 7784 multiletter control sequences out of 15000+600000
  19148 words of font info for 73 fonts, out of 8000000 for 9000
  956 hyphenation exceptions out of 8191
- 37i,12n,28p,1443b,298s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 37i,12n,28p,1443b,300s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmb10.pfb></usr
 /share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb></usr/shar
 e/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb></usr/share/texli
@@ -468,10 +472,10 @@ ve/texmf-dist/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/share/texlive/texm
 f-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb></usr/share/texlive/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmtt8.pfb></usr/share/texlive/texmf-dist/fonts/
 type1/public/amsfonts/cm/cmtt9.pfb>
-Output written on PVMOS_manual.pdf (17 pages, 251678 bytes).
+Output written on PVMOS_manual.pdf (18 pages, 254463 bytes).
 PDF statistics:
- 131 PDF objects out of 1000 (max. 8388607)
- 93 compressed objects within 1 object stream
+ 134 PDF objects out of 1000 (max. 8388607)
+ 95 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -354,66 +354,16 @@ void NodeConnector(node *N1, node *N2)
 }
 
 int * MeshOutline(mesh M)
-/* create a list of nodes which lie along the outline of the mesh */
+/* create a list of nodes which lie along the edges of the mesh */
 {
 	int *list;
-	node *N;
-	int loop=0;
-	
+	int i;
 	list=malloc(LISTBLOCK*sizeof(int));
 	list[0]=0;	
-	/* first we walk north untill we cannot continue */
-	N=SearchNode(M, 0);
-			
-	while(N->north[0]>0)
-		N=SearchNode(M, N->north[1]);
-	/* go north-east */
-	list=AddToList(list, N->id);
-	while(N->east[0]>0)
-	{
-		/* add to path */		
-		N=SearchNode(M, N->east[1]);
-		while(N->north[0]>0)
-			N=SearchNode(M, N->north[1]);
-		list=AddToList(list, N->id);
-	}
-	/* go south-east */
-	while(N->south[0]>0)
-	{
-		/* add to path */
-		N=SearchNode(M, N->south[1]);
-		while(N->east[0]>0)
-			N=SearchNode(M, N->east[1]);
-		list=AddToList(list, N->id);
-	}
-	/* go south-west */
-	while(N->west[0]>0)
-	{
-		/* add to path */
-		N=SearchNode(M, N->west[1]);
-		while(N->south[0]>0)
-			N=SearchNode(M, N->south[1]);
-		list=AddToList(list, N->id);
-	}
-	/* go north-west */
-	while(N->north[0]>0)
-	{
-		/* add to path */
-		N=SearchNode(M, N->north[1]);
-		while(N->west[0]>0)
-			N=SearchNode(M, N->west[1]);
-		list=AddToList(list, N->id);
-	}
-	/* go north-east */
-	while((N->east[0]>0)&&(loop==0))
-	{
-		/* add to path */
-		N=SearchNode(M, N->east[1]);
-		while(N->north[0]>0)
-			N=SearchNode(M, N->north[1]);
-		loop=IsInList(list, N->id);
-		list=AddToList(list, N->id);
-	}
+	
+	for (i=0;i<M.Nn;i++)
+		if ((M.nodes[i].north[0]==0) || (M.nodes[i].south[0]==0) || (M.nodes[i].east[0]==0) || (M.nodes[i].west[0]==0))
+			list=AddToList(list, M.nodes[i].id);
 	return list;
 }
 
@@ -1189,6 +1139,194 @@ void SplitListWhileCoarse(mesh *M, int *list, double d)
 	} while (list_c[0]);
 	free(list_c);
 	free(newlist);
+}
+
+/* apply basic geometrical transforms on meshes */
+void ScaleMeshX(mesh *M, double f)
+{
+	int i;
+	for (i=0;i<M->Nn;i++)
+	{
+		M->nodes[i].x1*=f;
+		M->nodes[i].x2*=f;
+		if (f<0) /* swap east and west */
+		{
+		
+		}
+	}
+}
+void ScaleMeshY(mesh *M, double f)
+{
+	int i;
+	for (i=0;i<M->Nn;i++)
+	{
+		M->nodes[i].y1*=f;
+		M->nodes[i].y2*=f;
+		if (f<0) /* swap north and south */
+		{
+		
+		}
+	}
+}
+void ScaleMesh(mesh *M, double f)
+{
+	int i;
+	for (i=0;i<M->Nn;i++)
+	{
+		M->nodes[i].x1*=f;
+		M->nodes[i].x2*=f;
+		M->nodes[i].y1*=f;
+		M->nodes[i].y2*=f;
+		if (f<0) /* swap east and west, and north and south */
+		{
+		
+		}
+	}
+}
+void MoveMesh(mesh *M, double x, double y)
+{
+	int i;
+	for (i=0;i<M->Nn;i++)
+	{
+		M->nodes[i].x1+=x;
+		M->nodes[i].x2+=x;
+		M->nodes[i].y1+=y;
+		M->nodes[i].y2+=y;
+	}
+}
+
+void RotateMesh(mesh *M, double x, double y, int d)
+{
+	int i;
+	double c, s, xx, yy;
+	int *dummy;
+	
+	/* rotate in multiples of 90 degrees */
+	d/=90;
+	while (d<0)
+		d+=4;
+	d%=4;
+	switch (d)
+	{
+		case 1: /* rotate 90 degrees: cos(d)=0, sin(d)=1 */
+			c=0.0;
+			s=1.0;
+			break;
+		case 2: /* rotate 180 degrees: cos(d)=-1, sin(d)=0 */
+			c=-1.0;
+			s=0.0;
+			break;
+		case 3: /* rotate 270 degrees: cos(d)=0, sin(d)=-1 */
+			c=0.0;
+			s=-1.0;
+			break;
+		default: /* no rotation (d=0) */
+			return;
+	}
+		
+	for (i=0;i<M->Nn;i++)
+	{
+		xx=(M->nodes[i].x1-x);
+		yy=(M->nodes[i].y1-y);
+		M->nodes[i].x1=x + xx*c - yy*s;
+		M->nodes[i].y1=y + yy*c + xx*s;
+		
+		xx=(M->nodes[i].x2-x);
+		yy=(M->nodes[i].y2-y);
+		M->nodes[i].x2=x + xx*c - yy*s;
+		M->nodes[i].y2=y + yy*c + xx*s;
+		switch (d)
+		{
+			case 1: /* E->N, S->E, W->S, N->W */
+				dummy=M->nodes[i].north;
+				M->nodes[i].north=M->nodes[i].east;
+				M->nodes[i].east=M->nodes[i].south;
+				M->nodes[i].south=M->nodes[i].west;
+				M->nodes[i].west=dummy;
+				xx=M->nodes[i].x1;
+				M->nodes[i].x1=M->nodes[i].x2;
+				M->nodes[i].x2=xx;				
+				break;
+			case 2: /* E->W, S->N, W->E, N->S */
+				dummy=M->nodes[i].north;
+				M->nodes[i].north=M->nodes[i].south;
+				M->nodes[i].south=dummy;				
+				dummy=M->nodes[i].east;
+				M->nodes[i].east=M->nodes[i].west;
+				M->nodes[i].west=dummy;
+				xx=M->nodes[i].x1;
+				M->nodes[i].x1=M->nodes[i].x2;
+				M->nodes[i].x2=xx;	
+				yy=M->nodes[i].y1;
+				M->nodes[i].y1=M->nodes[i].y2;
+				M->nodes[i].y2=xx;	
+				break;
+			case 3:  /* E->S, S->W, W->N, N->E */
+				dummy=M->nodes[i].south;
+				M->nodes[i].south=M->nodes[i].east;
+				M->nodes[i].east=M->nodes[i].north;
+				M->nodes[i].north=M->nodes[i].west;
+				M->nodes[i].west=dummy;	
+				yy=M->nodes[i].y1;
+				M->nodes[i].y1=M->nodes[i].y2;
+				M->nodes[i].y2=xx;	
+				break;
+		}
+		
+	}
+}
+
+
+void GetMeshBB(mesh *M, double *x1, double *y1, double *x2, double *y2)
+{
+	int i;
+	
+	(*x1)=M->nodes[0].x1;
+	(*y1)=M->nodes[0].y1;
+	(*x2)=M->nodes[0].x2;
+	(*y2)=M->nodes[0].y2;
+	for (i=1;i<M->Nn;i++)
+	{
+		if (M->nodes[i].x1<(*x1))
+			(*x1)=M->nodes[i].x1;
+		if (M->nodes[i].y1<(*y1))
+			(*y1)=M->nodes[i].y1;
+		if (M->nodes[i].x2>(*x2))
+			(*x2)=M->nodes[i].x2;
+		if (M->nodes[i].y2>(*y2))
+			(*y2)=M->nodes[i].y2;
+	}
+}
+
+void SetMeshBB(mesh *M, double x1, double y1, double x2, double y2, int FixR)
+{
+	double xx1, xx2, yy1, yy2;
+	double fx,fy;
+	GetMeshBB(M, &xx1, &yy1, &xx2, &yy2);
+	
+	fx=(x2-x1)/(xx2-xx1);
+	fy=(y2-y1)/(yy2-yy1);
+	
+	if (FixR)
+	{
+		if (fx<fy)
+			fy=fx;
+		else
+			fx=fy;
+		
+		ScaleMesh(M, fx);
+	
+	}
+	else
+	{	
+		ScaleMeshX(M, fx);
+		ScaleMeshY(M, fy);
+	}
+	
+	xx1=(x1+x2)/2-fx*(xx1+xx2)/2;
+	yy1=(y1+y2)/2-fy*(yy1+yy2)/2;
+	
+	MoveMesh(M, xx1, yy1);
 }
 
 

@@ -618,6 +618,7 @@ void PrintConn(char *fn, mesh *M, int *selected)
 		{
 			xn=(M->nodes[i].x1+M->nodes[i].x2)/2;
 			yn=(M->nodes[i].y2+M->nodes[i].y1)/2;
+			fprintf(f, "# north of %d\n", M->nodes[i].id);
 			for (j=1;j<=M->nodes[i].north[0];j++)
 			{
 				N=SearchNode(*M, M->nodes[i].north[j]);
@@ -626,6 +627,7 @@ void PrintConn(char *fn, mesh *M, int *selected)
 				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, M->nodes[i].north[j],M->nodes[i].id);
 			
 			} 
+			fprintf(f, "# south of %d\n", M->nodes[i].id);
 			for (j=1;j<=M->nodes[i].south[0];j++)
 			{
 				N=SearchNode(*M, M->nodes[i].south[j]);
@@ -634,6 +636,7 @@ void PrintConn(char *fn, mesh *M, int *selected)
 				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, M->nodes[i].south[j],M->nodes[i].id);
 			
 			}
+			fprintf(f, "# east of %d\n", M->nodes[i].id);
 			for (j=1;j<=M->nodes[i].east[0];j++)
 			{
 				N=SearchNode(*M, M->nodes[i].east[j]);
@@ -642,6 +645,7 @@ void PrintConn(char *fn, mesh *M, int *selected)
 				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, M->nodes[i].east[j],M->nodes[i].id);
 			
 			}
+			fprintf(f, "# west of %d\n", M->nodes[i].id);
 			for (j=1;j<=M->nodes[i].west[0];j++)
 			{
 				N=SearchNode(*M, M->nodes[i].west[j]);
