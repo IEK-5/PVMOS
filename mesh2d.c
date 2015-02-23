@@ -1145,25 +1145,40 @@ void SplitListWhileCoarse(mesh *M, int *list, double d)
 void ScaleMeshX(mesh *M, double f)
 {
 	int i;
+	int *dummy;
+	double xx;
 	for (i=0;i<M->Nn;i++)
 	{
 		M->nodes[i].x1*=f;
 		M->nodes[i].x2*=f;
 		if (f<0) /* swap east and west */
 		{
-		
+			dummy=M->nodes[i].east;
+			M->nodes[i].east=M->nodes[i].west;
+			M->nodes[i].west=dummy;
+			xx=M->nodes[i].x1;
+			M->nodes[i].x1=M->nodes[i].x2;
+			M->nodes[i].x2=xx;
 		}
 	}
 }
 void ScaleMeshY(mesh *M, double f)
 {
 	int i;
+	int *dummy;
+	double yy;
 	for (i=0;i<M->Nn;i++)
 	{
 		M->nodes[i].y1*=f;
 		M->nodes[i].y2*=f;
 		if (f<0) /* swap north and south */
 		{
+			dummy=M->nodes[i].north;
+			M->nodes[i].north=M->nodes[i].south;
+			M->nodes[i].south=dummy;
+			yy=M->nodes[i].y1;
+			M->nodes[i].y1=M->nodes[i].y2;
+			M->nodes[i].y2=yy;
 		
 		}
 	}
@@ -1171,6 +1186,8 @@ void ScaleMeshY(mesh *M, double f)
 void ScaleMesh(mesh *M, double f)
 {
 	int i;
+	int *dummy;
+	double xx,yy;
 	for (i=0;i<M->Nn;i++)
 	{
 		M->nodes[i].x1*=f;
@@ -1179,7 +1196,21 @@ void ScaleMesh(mesh *M, double f)
 		M->nodes[i].y2*=f;
 		if (f<0) /* swap east and west, and north and south */
 		{
+			dummy=M->nodes[i].east;
+			M->nodes[i].east=M->nodes[i].west;
+			M->nodes[i].west=dummy;
 		
+			dummy=M->nodes[i].north;
+			M->nodes[i].north=M->nodes[i].south;
+			M->nodes[i].south=dummy;
+			
+			xx=M->nodes[i].x1;
+			M->nodes[i].x1=M->nodes[i].x2;
+			M->nodes[i].x2=xx;
+			
+			yy=M->nodes[i].y1;
+			M->nodes[i].y1=M->nodes[i].y2;
+			M->nodes[i].y2=yy;
 		}
 	}
 }
