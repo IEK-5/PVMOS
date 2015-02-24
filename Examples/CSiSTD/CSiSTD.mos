@@ -2,29 +2,29 @@
 # The complete cell is 12.5x12.5 cm
 # All along the solar cell there is a 1mm space free of fingers
 # Fingers are 200µm wide
-# there are two vertical fingers at the left andright side
-# horizontal fingers are therefore: 12.5-0.2-0.04=12.26 cm long 
+# there are two vertical fingers at the left and right side.
+# Horizontal fingers are therefore: 12.5-0.2-0.04=12.26 cm long 
 ###################################################################################################
 #		x1  y1		x2  	y2	Nx	Ny	name
 newmesh 	0.0 0.0 	12.26	0.02	10 	1	h_finger
 
 tic
 ###################################################################################################
-# our mesh will consist of veraious areas, one such are is "finger", wher the finger properties 
-# are defined (e.g. sheet resistance, zero photocurrent, etc.
-# To create an area we simply set a value for it, the actual value is irrelevant as we will 
+# our mesh will consist of verious areas. One such area is "finger", where the finger properties 
+# are defined (e.g. sheet resistance, zero photocurrent, etc.)
+# To create an area we simply set a value for it. The actual value is irrelevant as we will 
 # define the final parameter sets after creating the mesh geometry.
 # Important is that all elements in the mesh h_finger become members of the area finger
-# for that we sue the assign_properties command
+# for that we use the assign_properties command
 ###################################################################################################
 #			<mesh>.<area>		electrode index		sheet resistance
 set_Rel			h_finger.finger	0			0.005
 assign_properties 	h_finger.finger
 
 ###################################################################################################
-# Above the finger we have active area up to the next finger
+# Above the finger we have active area up to the next finger.
 # The width is the same as the finger, the height is computed such that the hight of the cell will 
-# be exactly 12.5 cm. The precison used here is perhaps exagerated. However, be ware that when 
+# be exactly 12.5 cm. The precison used here is perhaps exagerated. However, be aware that when 
 # glueing meshes together you do not want gaps to occur (i.e. if you use less accurate dimensions
 # be sure to take into account your rounding errors!) 
 ###################################################################################################
@@ -39,7 +39,7 @@ assign_properties 	h_cell.cell
 ###################################################################################################
 # Glueing time!
 # We glue the meshes h_finger to h_cell and then continue till we have 63 fingers with h_cells 
-# inbetween
+# in between
 ###################################################################################################
 #		x_off	mesh1  		mesh2		mesh_out
 joinmesh_v 	0.0 	h_finger	h_cell		h_unit
@@ -73,9 +73,9 @@ rm 62h_unit
 
 
 ###################################################################################################
-# Now we make the edges. Directly left and right of the fingers and cells we created 
-# are two vertical fingers. Next to those tow ther is 1mm cell area to the edge of the cell.
-# The vertical meshes here ar 12.3 cm tall (be accuarate here to avoid gaps!)
+# Now we make the edges. Directly left and right of the fingers and cells we created are two
+# vertical fingers. Next to these two fingers there is 1mm cell area to the edge of the cell.
+# The vertical meshes here are 12.3 cm tall (be accurate here to avoid gaps!)
 ###################################################################################################
 newmesh 	0.0 0.0 	0.02 	12.299999999999984	1 	10 	v_finger
 set_Rel			v_finger.finger	0			0.005
@@ -88,7 +88,7 @@ assign_properties 	v_cell.cell
 
 ###################################################################################################
 # For the top and bottom edges we only need to define the cell area (the fingers are already there)
-# These meshes are 12.5 cm long (i.2. the final width of the mesh, including the sides defined 
+# These meshes are 12.5 cm long (i.e. the final width of the mesh, including the sides defined 
 # above)
 ###################################################################################################
 newmesh 	0.0 0.0 	12.5	0.1	10 	1		h_cell
@@ -118,12 +118,12 @@ rm lcellr
 rm bcell
 toc
 ###################################################################################################
-# Create an ares of the busbars
+# Create an area of the busbars
 ###################################################################################################
 set_Rel		a_area.tab	0	0.005
 
 ###################################################################################################
-# The geometry of the busbars are defined using polygons.Here is the first busbar
+# The geometry of the busbars is defined using polygons. Here is the first busbar.
 ###################################################################################################
 define_poly
 2.00833333	0.0000000
@@ -135,11 +135,12 @@ define_poly
 define_poly
 
 ###################################################################################################
-# Note thet the position and width do not "fit" in the mesh very well. (Note that we could have 
+# Note that the position and width do not "fit" in the mesh very well. (Note that we could have 
 # prepared for this and crafted our mesh such that it would fit nicely, apart from the tapered 
 # ends. This is probably a cleaner method than what we do here but this is easier). For this PVMOS 
 # has a trick. PVMOS can "resolve" certain geometries, like polygons and circles, in the mesh. 
-# PVMOS will then split elements near the contour untill the contour is accurately described.
+# PVMOS will then split elements near the contour until the contour is accurately described (see 
+# the manual for a more detailed description of 'resolve_poly')
 # It is best to not use this trick to resolve 63 fingers as resolving contours tend to make a mesh 
 # messy, which may lead to poorer performance. Three busbars, however, should be no problem. 
 # Next I will resolve the busbar polygon in the mesh to 10µm precision. 
@@ -148,7 +149,7 @@ resolve_poly a_area 0.001 1
 
 ###################################################################################################
 # Once the polygon is accurately resolved in the mesh we select the elements which are to become
-# part of the area busbar.
+# part of the area 'busbar'.
 ###################################################################################################
 select_poly		a_area
 assign_properties 	a_area.tab
@@ -188,8 +189,12 @@ deselect 		a_area
 
 
 ###################################################################################################
-# Create contacts for the cell. We fist make a spacer mesh atthe top and bottom
-# this will be just insulating stuff apart from the tabbing wires connecting the cell
+# Create contacts for the cell. We first make a spacer mesh at the top and bottom. The spacer will
+# mostly be inactive. To avoid influence of the spacer on the simulation it is for the most part 
+# insulating (i.e. high electrode sheet resistances and high resistances between 
+# electrodes). However, we will create three small patches which connect to the front and back 
+# electrodes there where the busbars are. These patches will then be connected to the positive and 
+# negative nodes (external bias).
 ###################################################################################################
 newmesh 	0.0 0.0 	12.5   	0.1	1 	1 	spacer
 
@@ -211,14 +216,14 @@ set_Rel		cell.tab_bot	0	0.005
 
 
 ###################################################################################################
-# The tabbingwires must also be resolved in the mesh. We first resolve the bottom tabbing wires
+# The tabbing wires must also be resolved in the mesh. We first resolve the bottom tabbing wires
 ###################################################################################################
 resolve_rect	cell	0.001	2.00833333	0.0	2.15833333	0.1
 resolve_rect	cell	0.001	6.17500000	0.0	6.32500000	0.1
 resolve_rect	cell	0.001	10.34166667	0.0	10.49166667	0.1
 
 ###################################################################################################
-# Select elemnts and assign to the bottom tabbing wire area
+# Select elements and assign to the bottom tabbing wire area
 ###################################################################################################
 select_rect	2.00833333	0.0	2.15833333	0.1	cell
 assign_properties	cell.tab_bot
@@ -255,10 +260,10 @@ deselect cell
 # Optional: Define a shading pattern
 ###################################################################################################
 # Uncomment the following if you want to simulate what your solar cell is worth (at least 
-# efficiency wise) after some misfit under the name Banksy decided to spay-paint a rat hanging 
+# efficiency wise) after some misfit under the name Banksy decided to spray-paint a rat hanging 
 # from a parachute on the solar cell.
 ###################################################################################################
-## We first load a polygon from a file describing the grafitty 
+## We first load a polygon from a file describing the graffiti. 
 ## Note that it would be possible to define the file right here but with 400 points that makes 
 ## a rather unreadable input file.
 #simplify cell
@@ -269,12 +274,10 @@ deselect cell
 #set_Rel		cell.shade	1	40
 #set_Rel		cell.shade	0	0.005
 #
-## the mesh it rather coarse in many places so we better first refine he mesh
-## We do this only locally for the elements close to the polygon contour. This command selects
-## elements close to the contour (i.e. less than 0.7 cm from the contour)
+## the mesh it rather coarse in many places so we better first refine the mesh around the polygon.
 #resolve_poly cell 0.001 1 
 #
-## Using still the same polygon we select all elements *within* the polygon
+## Using still the same polygon we select all elements within the polygon
 #select_poly cell
 #
 ## These elemens will be shaded. This only affects the area cell so we make a sub-selection for 
@@ -290,8 +293,10 @@ deselect cell
 # Now for the parametrization
 ###################################################################################################
 # active cell area
-set_1DJV 	cell.cell	0	1e-12 	1.0 	0.037 	1e-5 	1e5	1.12
+set_1DJV 	cell.cell	0	1e-12 	1.0 	0.035 	1e-5 	1e5	1.12
+# electrode 1 is the Anode (emitter)
 set_Rel		cell.cell	1	40
+# electrode 0 is the Cathode (bulk, BSF, and back contact)
 set_Rel		cell.cell	0	0.005
 
 # grid fingers
@@ -301,26 +306,26 @@ set_Rel		cell.finger	0	0.005
 
 # busbar with tabbing wire
 set_1DJV 	cell.tab 	0	1e-12 	1.0 	0.0 	1e-5 	1e5	1.12
-set_Rel		cell.tab	1	0.000086
-set_Rel		cell.tab	0	0.000086
+set_Rel		cell.tab	1	0.005
+set_Rel		cell.tab	0	0.005
 
-# positive contact (tabbing wires at the top)
+# positive contact (tabbing wires at the top).
 set_R 		cell.tab_top 	0	1e20
 set_Rel		cell.tab_top	1	1e8
-set_Rel		cell.tab_top	0	0.000086
+set_Rel		cell.tab_top	0	0.005
 set_Rvp		cell.tab_top	0	1e-8
 set_SplitX	cell.tab_top
 set_SplitY	cell.tab_top
 
-# negative contact (tabbing wires at the bottom)
+# negative contact (tabbing wires at the bottom).
 set_R 		cell.tab_bot 	0	1e20
-set_Rel		cell.tab_bot	1	0.000086
+set_Rel		cell.tab_bot	1	0.005
 set_Rel		cell.tab_bot	0	1e8
 set_Rvn		cell.tab_bot	1	1e-8
 set_SplitX	cell.tab_bot
 set_SplitY	cell.tab_bot
 
-# spacer (insolating)
+# spacer (insulating).
 set_R 		cell.spacer 	0	1e8
 set_Rel		cell.spacer	1	1e20
 set_Rel		cell.spacer	0	1e20
@@ -329,13 +334,13 @@ set_SplitY	cell.spacer
 
 
 ###################################################################################################
-# After all the resolving ofp specific geometries the mesh got messy. This will not fix all but
-# does clean up things considerably (but it adds a bit of chaos here and there).
+# After all the resolving of specific geometries the mesh got messy. This will not fix everything
+# but does clean up things considerably (but it adds a bit of chaos here and there).
 ###################################################################################################
 simplify cell
 
 ###################################################################################################
-# As the mesh is now small it is a good moment to inspect the geometry. Here we output the
+# As the mesh is now small, it is a good moment to inspect the geometry. Here we output the
 # area definitions and the area paremeters
 ###################################################################################################
 printarea cell celldefs.dat

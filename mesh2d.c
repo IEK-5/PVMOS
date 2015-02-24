@@ -1153,6 +1153,8 @@ void ScaleMeshX(mesh *M, double f)
 		M->nodes[i].x2*=f;
 		if (f<0) /* swap east and west */
 		{
+			/* adapt nodes to new orientation */ 
+			/* swap east and west */
 			dummy=M->nodes[i].east;
 			M->nodes[i].east=M->nodes[i].west;
 			M->nodes[i].west=dummy;
@@ -1173,6 +1175,8 @@ void ScaleMeshY(mesh *M, double f)
 		M->nodes[i].y2*=f;
 		if (f<0) /* swap north and south */
 		{
+			/* adapt nodes to new orientation */ 
+			/* swap north and south */
 			dummy=M->nodes[i].north;
 			M->nodes[i].north=M->nodes[i].south;
 			M->nodes[i].south=dummy;
@@ -1194,8 +1198,10 @@ void ScaleMesh(mesh *M, double f)
 		M->nodes[i].x2*=f;
 		M->nodes[i].y1*=f;
 		M->nodes[i].y2*=f;
-		if (f<0) /* swap east and west, and north and south */
+		if (f<0)
 		{
+			/* adapt nodes to new orientation */ 
+			/* swap east and west, and north and south */
 			dummy=M->nodes[i].east;
 			M->nodes[i].east=M->nodes[i].west;
 			M->nodes[i].west=dummy;
@@ -1257,6 +1263,7 @@ void RotateMesh(mesh *M, double x, double y, int d)
 		
 	for (i=0;i<M->Nn;i++)
 	{
+		/* move & rotate nodes */
 		xx=(M->nodes[i].x1-x);
 		yy=(M->nodes[i].y1-y);
 		M->nodes[i].x1=x + xx*c - yy*s;
@@ -1266,6 +1273,7 @@ void RotateMesh(mesh *M, double x, double y, int d)
 		yy=(M->nodes[i].y2-y);
 		M->nodes[i].x2=x + xx*c - yy*s;
 		M->nodes[i].y2=y + yy*c + xx*s;
+		/* adapt nodes to new orientation */
 		switch (d)
 		{
 			case 1: /* E->N, S->E, W->S, N->W */
@@ -1274,6 +1282,7 @@ void RotateMesh(mesh *M, double x, double y, int d)
 				M->nodes[i].east=M->nodes[i].south;
 				M->nodes[i].south=M->nodes[i].west;
 				M->nodes[i].west=dummy;
+				/* make sure the lower left corner and the upper right corner are exactly that */
 				xx=M->nodes[i].x1;
 				M->nodes[i].x1=M->nodes[i].x2;
 				M->nodes[i].x2=xx;				
@@ -1285,6 +1294,7 @@ void RotateMesh(mesh *M, double x, double y, int d)
 				dummy=M->nodes[i].east;
 				M->nodes[i].east=M->nodes[i].west;
 				M->nodes[i].west=dummy;
+				/* make sure the lower left corner and the upper right corner are exactly that */
 				xx=M->nodes[i].x1;
 				M->nodes[i].x1=M->nodes[i].x2;
 				M->nodes[i].x2=xx;	
@@ -1298,6 +1308,7 @@ void RotateMesh(mesh *M, double x, double y, int d)
 				M->nodes[i].east=M->nodes[i].north;
 				M->nodes[i].north=M->nodes[i].west;
 				M->nodes[i].west=dummy;	
+				/* make sure the lower left corner and the upper right corner are exactly that */
 				yy=M->nodes[i].y1;
 				M->nodes[i].y1=M->nodes[i].y2;
 				M->nodes[i].y2=xx;	
@@ -1310,6 +1321,7 @@ void RotateMesh(mesh *M, double x, double y, int d)
 
 void GetMeshBB(mesh *M, double *x1, double *y1, double *x2, double *y2)
 {
+	/* compute bounding box of a mesh */
 	int i;
 	
 	(*x1)=M->nodes[0].x1;
@@ -1331,6 +1343,7 @@ void GetMeshBB(mesh *M, double *x1, double *y1, double *x2, double *y2)
 
 void SetMeshBB(mesh *M, double x1, double y1, double x2, double y2, int FixR)
 {
+	/* change bounding box of a mesh (using scaling and moving)  */
 	double xx1, xx2, yy1, yy2;
 	double fx,fy;
 	GetMeshBB(M, &xx1, &yy1, &xx2, &yy2);

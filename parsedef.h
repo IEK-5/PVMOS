@@ -153,7 +153,7 @@ const KeyWord KeyTable[] =
 	{"scale", SCALE},
 	{"scalex", SCALEX},
 	{"scaley", SCALEY},
-	{"set_bb", SETBB},
+	{"boundingbox", SETBB},
 	{"resolve_poly", RESOLVPOLY},
 	{"resolve_circ", RESOLVCIRC},
 	{"resolve_rect", RESOLVRECT},
