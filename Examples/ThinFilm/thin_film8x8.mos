@@ -181,6 +181,8 @@ select_circ 2.5 4 0.1 minimodule
 assign_properties minimodule.shunt
 deselect minimodule
 printmesh minimodule mesh0.dat
+printarea minimodule defs.dat
+printpars minimodule pars.dat
 adaptive_solve 	minimodule 	5 	0.3 	2
 printmesh minimodule mesh1.dat
 
