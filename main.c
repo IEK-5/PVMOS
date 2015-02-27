@@ -75,8 +75,14 @@ double cpu_time_rest=0;
 int peak_mem;
 void printenv(char *name)
 {
-	printf ("getenv (\"%s\") = \"%s\"\n", name, getenv (name) ? getenv (name) : "<null>");
+	printf ("%s = \"%s\"\n", name, getenv (name) ? getenv (name) : "<null>");
 }
+
+/* if we are linked to OpenBLAS we better disable multithreading */
+#ifdef OPENBLAS
+extern void openblas_set_num_threads(int num_threads);
+#endif
+
 int main(int argc, char **argv)
 {
 	int f=1;
@@ -87,8 +93,12 @@ int main(int argc, char **argv)
 #ifdef __MINGW32__ 
 	putenv("PRINTF_EXPONENT_DIGITS=2");
 #endif
-	putenv("OMP_NUM_THREADS=1");
-	putenv("BLAS_NUM_THREADS=1");
+
+/* if we are linked to OpenBLAS we better disable multithreading */
+#ifdef OPENBLAS
+	openblas_set_num_threads(1);
+#endif
+
 	if(argc==2||argc==3)
 	{
 		#ifndef __MINGW32__ 
