@@ -71,8 +71,10 @@ printmesh pinup pinupmesh3.dat
 # solve takes 4 arguments
 # 1: the mesh 2: start voltage 3: end voltage 4: number of steps
 solve pinup 0 1.0 1 
-#surfVplot pinup 0 0 10 10 200 200 0.5 pinupV_05.dat
+surfVjplot pinup 0 0 10 10 200 200 0.5 pinupVj_05.dat
+surfVplot pinup 0 0 10 10 200 200 0.5 pinupV_05.dat
 #surfPplot pinup 0 0 10 10 200 200 0.5 pinupP_05.dat
+surfVjplot pinup 0 0 10 10 200 200 0.0 pinupVj_00.dat
 surfVplot pinup 0 0 10 10 200 200 0.0 pinupV_00.dat
 surfPplot pinup 0 0 10 10 200 200 0.0 pinupP_00.dat
 printIV pinup pinupIV.dat

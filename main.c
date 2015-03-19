@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 #ifdef OPENBLAS
 	openblas_set_num_threads(1);
 #endif
-
+	printenv("OMP_NUM_THREADS");
 	if(argc==2||argc==3)
 	{
 		#ifndef __MINGW32__ 

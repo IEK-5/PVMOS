@@ -37,5 +37,5 @@
  *    Dr. Bart E. Pieters 2014                                   *
  *                                                               *             
  *****************************************************************/                                                                             
-double TwoDiode(double V, double J01, double J02, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI);
-double OneDiode(double V, double J0,double n, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI);
+double TwoDiode(double V, double J01, double J02, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj);
+double OneDiode(double V, double J0,double n, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj);

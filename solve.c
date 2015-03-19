@@ -164,22 +164,25 @@ void Diode_JVD(mesh M, node N, int inter_index, double V, double *I, double *dId
 #undef vv
 #undef jj
 
-void Diode(mesh M, node N, int inter_index, double V, double *I, double *dIdV)
+void Diode(mesh M, node N, int inter_index, double V, double *I, double *dIdV, double *Vj)
 {
 	switch (M.P[N.P].conn[inter_index].model)
 	{
 		case JVD:
 			Diode_JVD(M, N, inter_index, V, I, dIdV);
+			if (Vj)
+				(*Vj)=0; /* unknown junction voltage */
+
 			break;
 		case ONED:
-			OneDiode(V, M.P[N.P].conn[inter_index].J01, M.P[N.P].conn[inter_index].nid1, M.P[N.P].conn[inter_index].Eg, M.P[N.P].T, M.P[N.P].conn[inter_index].Jph, M.P[N.P].conn[inter_index].Rs, M.P[N.P].conn[inter_index].Rsh, I, dIdV);
+			OneDiode(V, M.P[N.P].conn[inter_index].J01, M.P[N.P].conn[inter_index].nid1, M.P[N.P].conn[inter_index].Eg, M.P[N.P].T, M.P[N.P].conn[inter_index].Jph, M.P[N.P].conn[inter_index].Rs, M.P[N.P].conn[inter_index].Rsh, I, dIdV, Vj);
 			if (I)
 				(*I)*=Area;
 			if (dIdV)
 				(*dIdV)*=Area;
 			break;
 		case TWOD:
-			TwoDiode(V, M.P[N.P].conn[inter_index].J01, M.P[N.P].conn[inter_index].J02, M.P[N.P].conn[inter_index].Eg, M.P[N.P].T, M.P[N.P].conn[inter_index].Jph, M.P[N.P].conn[inter_index].Rs, M.P[N.P].conn[inter_index].Rsh, I, dIdV);
+			TwoDiode(V, M.P[N.P].conn[inter_index].J01, M.P[N.P].conn[inter_index].J02, M.P[N.P].conn[inter_index].Eg, M.P[N.P].T, M.P[N.P].conn[inter_index].Jph, M.P[N.P].conn[inter_index].Rs, M.P[N.P].conn[inter_index].Rsh, I, dIdV, Vj);
 			if (I)
 				(*I)*=Area;
 			if (dIdV)
@@ -360,7 +363,7 @@ cholmod_sparse * JacobiMatrix(mesh M, double *V, cholmod_sparse *S, cholmod_comm
 			ii[pp[i]+2]=i+M.Nn;
 			pp[i+1]=pp[i]+3;
 			
-			Diode(M, *SearchNode(M, i%M.Nn), i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV);
+			Diode(M, *SearchNode(M, i%M.Nn), i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV, NULL);
 			/* diagonal */
 			xx[pp[i]+1]+=dIdV;
 			/* off diagonal */
@@ -389,7 +392,7 @@ cholmod_sparse * JacobiMatrix(mesh M, double *V, cholmod_sparse *S, cholmod_comm
 			ii[pp[i]+1]=i;	
 			pp[i+1]=pp[i]+2;
 			
-			Diode(M, *SearchNode(M, i%M.Nn), i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV);
+			Diode(M, *SearchNode(M, i%M.Nn), i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV, NULL);
 			/* diagonal */
 			xx[pp[i]+1]+=dIdV;
 			/* off diagonal */
@@ -452,6 +455,9 @@ void Residual(mesh M, double *V, double Va, double *I, double *E, double *Erel, 
 	double *bb, *vv;
 	double alpha[2]={1.0,0.0}, beta[2]={0.0,0.0};
 	cholmod_dense *v;
+	clock_t start, end;
+	
+     	start = clock();
 	
 	v=cholmod_allocate_dense(M.Nel*M.Nn,1,M.Nel*M.Nn,CHOLMOD_REAL, c);
 	
@@ -476,7 +482,7 @@ void Residual(mesh M, double *V, double Va, double *I, double *E, double *Erel, 
 			if (k>0)
 			{
 				/* connection between electrodes */
-				Diode(M, N, k-1, V[i+(k-1)*M.Nn]-V[i+k*M.Nn], &Id, NULL);
+				Diode(M, N, k-1, V[i+(k-1)*M.Nn]-V[i+k*M.Nn], &Id, NULL, NULL);
 				bb[i+(k-1)*M.Nn]+=Id;
 				bb[i+k*M.Nn]-=Id;
 				if (Erel)
@@ -505,6 +511,8 @@ void Residual(mesh M, double *V, double Va, double *I, double *E, double *Erel, 
 		(*Erel)=(*E)/(*Erel);
 	}
 	cholmod_free_dense(&v, c);
+     	end = clock();
+	cpu_time_rhs+=((double) (end - start)) / CLOCKS_PER_SEC;
 }
 
 #undef Area
@@ -522,15 +530,10 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 	
 	res=cholmod_allocate_dense(M.Nel*M.Nn,1,M.Nel*M.Nn,CHOLMOD_REAL, c);
 	
-     	start = clock();
-	
 	/* compute right hand side and error in KCL (E0) */
 	Residual(M, Vin, Va, I, &E0, NULL, S, res, c);
-     	end = clock();
-	cpu_time_rhs+=((double) (end - start)) / CLOCKS_PER_SEC;
 	
-     	start = clock();
-	
+     	start = clock();	
 	/* Determine Jacobi matrix */
 	J=JacobiMatrix(M, Vin, S, c);
      	end = clock();

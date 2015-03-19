@@ -242,6 +242,76 @@ void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	fclose(f);
 }
 
+void SurfVjPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
+{
+	int i,j, k, ln_y=0, ln_x=0;
+	double x,y, x_step, y_step;
+	double **Ex, **Ey, *V;
+	FILE *f;
+	if ((f=fopen(fn,"w"))==NULL)
+		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Junction voltages mapped to a regular mesh\n");
+	fprintf(f, "# Vj(i+0.5):      Junction voltage between the i-th and i+1 the electrode electrode\n");
+	fprintf(f, "# x [cm]\ty [cm]\tVj(i+0.5) [V]\tVj(i+1.5) [V]...\n");
+	Ex=malloc(M->Nel*sizeof(double *));
+	Ey=malloc(M->Nel*sizeof(double *));
+	V=malloc(M->Nel*sizeof(double));
+	for (i=0;i<M->Nel;i++)
+	{
+		Ex[i]=malloc(M->Nn*sizeof(double));
+		Ey[i]=malloc(M->Nn*sizeof(double));
+	}
+	/* compute the electric field in each node for each electrode */
+	Jfield(M, Vai, NULL, NULL, Ex, Ey);
+	
+	/* scan a regular mesh */
+	x_step=(x2-x1)/((double)Nx);
+	y_step=(y2-y1)/((double)Ny);
+	
+	x=x1;
+	for (i=0;i<=Nx;i++)
+	{
+		y=y1;
+		for (j=0;j<=Ny;j++)
+		{
+			node N;
+			double Vj;
+			ln_y=FindPos(*M, ln_y, x, y);
+			N=*SearchNode(*M,ln_y);
+			LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
+			fprintf(f,"%e %e", x, y);
+			for (k=0;k<M->Nel;k++)
+			{
+				if (k>0)
+				{
+					Diode(*M, N, k-1, V[k-1]-V[k], NULL, NULL, &Vj);
+					fprintf(f," %e", Vj);
+				}
+				
+			}
+			fprintf(f,"\n");
+			
+			if (j==0)
+				ln_x=ln_y;
+			y+=y_step;
+			
+		}
+		fprintf(f,"\n");
+		ln_y=ln_x;
+		x+=x_step;
+	}
+	for (i=0;i<M->Nel;i++)
+	{
+		free(Ex[i]);
+		free(Ey[i]);
+	}
+	free(Ex);
+	free(Ey);
+	free(V);
+	fclose(f);
+}
+
 void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
 {
 	int i,j, k, ln_y=0, ln_x=0;
@@ -289,7 +359,7 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 				P=sqrt((Jx[k][ln_y]*Jx[k][ln_y]+Jy[k][ln_y]*Jy[k][ln_y])*(Ex[k][ln_y]*Ex[k][ln_y]+Ey[k][ln_y]*Ey[k][ln_y]));
 				if (k>0)
 				{
-					Diode(*M, N, k-1, V[k-1]-V[k], &I, NULL);
+					Diode(*M, N, k-1, V[k-1]-V[k], &I, NULL, NULL);
 					Pj=(V[k-1]-V[k])*I/((N.x2-N.x1)*(N.y2-N.y1));
 					fprintf(f," %e %e", Pj, P);
 				}
@@ -360,7 +430,7 @@ void SurfJPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 			{
 				if (k>0)
 				{
-					Diode(*M, N, k-1, V[k-1]-V[k], &Jz, NULL);
+					Diode(*M, N, k-1, V[k-1]-V[k], &Jz, NULL, NULL);
 					Jz/=((N.x2-N.x1)*(N.y2-N.y1));
 					fprintf(f," %e %e %e", Jz, Jx[k][ln_y], Jy[k][ln_y]);
 				}

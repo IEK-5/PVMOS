@@ -39,7 +39,7 @@
  *****************************************************************/                                                                             
 void BubbleSortJV(int n, double *V, double *J);
 void Resistance(mesh M, node N1, node N2, double *R);
-void Diode(mesh M, node N, int inter_index, double V, double *I, double *dIdV);
+void Diode(mesh M, node N, int inter_index, double V, double *I, double *dIdV, double *Vj);
 int FindVa(double Va, double *list, int Nva);
 void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);
 void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);

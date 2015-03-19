@@ -76,7 +76,7 @@ Jph| \_ _/  /_ _\  /_ _\  |_ _|
              n=1    n=2    Rsh                                                  
              J01    J02                                                                                                           
 */
-void TwoDiode(double V, double J01, double J02, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI)
+void TwoDiode(double V, double J01, double J02, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj)
 {
 	double V1, lI, E, dIdV;
 	int iter=0;
@@ -93,6 +93,8 @@ void TwoDiode(double V, double J01, double J02, double Eg, double T, double Jph,
 		(*dI)=1/((1/dIdV)+Rs);
 	if (I)
 		(*I)=lI;
+	if (Vj)
+		(*Vj)=V1;
 }
 /* One Diode Model, note the non-fixed ideality factor */
 /*                                                                                 
@@ -109,7 +111,7 @@ Jph| \_ _/  /_ _\    |_ _|
              J0                                                                                                                
 */
 
-void OneDiode(double V, double J0,double n, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI)
+void OneDiode(double V, double J0,double n, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj)
 {
 	double V1, lI, E, dIdV;
 	int iter=0;
@@ -126,4 +128,6 @@ void OneDiode(double V, double J0,double n, double Eg, double T, double Jph, dou
 		(*dI)=1/((1/dIdV)+Rs);
 	if (I)
 		(*I)=lI;
+	if (Vj)
+		(*Vj)=V1;
 }

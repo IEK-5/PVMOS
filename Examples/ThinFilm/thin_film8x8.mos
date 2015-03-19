@@ -188,6 +188,7 @@ printmesh minimodule mesh1.dat
 
 # solve IV from 0-8 V in 41 steps (1V steps including both 0 and 35 V)
 solve minimodule 0 8 41\n");
+surfJplot minimodule 0 0 8 8 200 200 4.4 minimoduleJ_44.dat
 surfVplot minimodule 0 0 8 8 200 200 4.4 minimodule_44.dat
 surfVplot minimodule 0 0 8 8 200 200 0 minimodule_00.dat
 surfVplot minimodule 0 0 8 8 200 200 6.4 minimodule_64.dat
