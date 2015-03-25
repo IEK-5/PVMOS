@@ -145,8 +145,25 @@ This is only relevant if you want to define meshes using bitmap masks.
 \subsection{Inkscape}
 Inkscape is a powerfull vector graphics tool. One of the graphics objects Inkscape supports are ``paths''. In its simplest form a path is simply a polygon. As PVMOS can use polygons when defining a mesh it makes sense to use a tool such as Inkscape to create the polygons as Inkscape provides a powerfull, graphical, means to do so. In order to get the polygon data out of inkscape I created a simple extension which extracts the data out of a polygon. To use this extention select a path with polygon data and select the ExportXY extension, a popup window will come up with coordinates you can select and paste in a polygon data file. Note however that Inkscape paths may also be bezier curves, which PVMOS does not support. To use the extension is is thus required that the path data is forced to be a polygon. For this you can use the flatten Bezier extention in Inkscape. I have not fully dug into Inkscape's internal units. This can be tricky as Inkscape may use all sorts of transforms on objects. This means that the polygon data may need to be scaled, rotated, mirrored and shifted to get the data in the correct unit. For this I provide a small CLI program ``transformpolygon''. 
 
-\section{\label{syntax}PVMOS command reference}
+\section{\label{syntax}PVMOS input file format}
+\subsection{\label{expressions}expressions}
+If at any place in the input file PVMOS encounters an expression between two suare brackets, i.e. [\textless expression\textgreater], the expression will be evaluated. PVMOS will then interpret the whole expression including the brackts as the result of the evaluation. For example, \texttt{[1 + 2 ]} will be interpreted as if it says \texttt{3}. The expresssions can include mathematical expressions and also variables. Variables can be defined with the  \texttt{define} command (see Section \ref{commref}). Note that expressions can be used throuhout the input file wherever a numerical value is required. 
 
+% Supported constants are (names that should be used are given in parenthesis): e (e), log2(e) (log2e), log10(e) (log10e), ln(2) (ln2), ln(10) (ln10), pi (pi), pi / 2 (pi_2), pi / 4 (pi_4), 1 / pi (1_pi), 2 / pi (2_pi), 2 / sqrt(pi) (2_sqrtpi), sqrt(2) (sqrt) and sqrt(1 / 2) (sqrt1_2).
+
+% Variable name is any combination of alphanumericals and _ characters beginning with a non-digit that is not elementary function name.
+
+% Supported elementary functions are (names that should be used are given in parenthesis): exponential (exp), logarithmic (log), square root (sqrt), sine (sin), cosine (cos), tangent (tan), cotangent (cot), secant (sec), cosecant (csc), inverse sine (asin), inverse cosine (acos), inverse tangent (atan), inverse cotangent (acot), inverse secant (asec), inverse cosecant (acsc), hyperbolic sine (sinh), cosine (cosh), hyperbolic tangent (tanh), hyperbolic cotangent (coth), hyperbolic secant (sech), hyperbolic cosecant (csch), hyperbolic inverse sine (asinh), hyperbolic inverse cosine (acosh), hyperbolic inverse tangent (atanh), hyperbolic inverse cotangent (acoth), hyperbolic inverse secant (asech), hyperbolic inverse cosecant (acsch), absolute value (abs), Heaviside step function (step) with value 1 defined for x = 0, Dirac delta function with infinity (delta) and not-a-number (nandelta) values defined for x = 0, and error function (erf).
+
+% Supported unary operation is unary minus ('-').
+
+% Supported binary operations are addition ('+'), subtraction ('+'), multiplication ('*'), division multiplication ('/') and exponentiation ('^').
+
+% Usual mathematical rules regarding operation precedence apply. Parenthesis ('(' and ')') could be used to change priority order.
+
+% Blanks and tab characters are allowed in string representing function; newline characters must not appear in this string. 
+
+\subsection{\label{commref}Command Reference}
 \begin{longtable}{p{0.2\textwidth}p{0.8\textwidth}}
 \multicolumn{2}{l}{\textsc{Creating Meshes}} \\*
 \hline
@@ -743,6 +760,11 @@ Keyword & Description \\
 Keyword & Description \\
 \texttt{tic}	&  Start the timer.\\
 \texttt{toc}	&  Print seconds since last \texttt{tic} command (or start of execution if no \texttt{tic} command was issued)\\
+\texttt{define}	&  Define a variable. These variables can be used in expressions (see Section \ref{expressions}). The command takes two arguments:
+\begin{enumerate}
+\item \texttt{name}, name of the variable
+\item \texttt{value}, value of the variable
+\end{enumerate}\\
 \hline
 \\
 \end{longtable}

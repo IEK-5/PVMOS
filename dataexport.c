@@ -843,6 +843,49 @@ void PrintIV(char *fn, mesh *M)
 	fclose(f);
 }
 
+void PrintProbe(char *fn, mesh *M, double x, double y)
+{
+	int i,k;
+	double **Ex, **Ey, *V;
+	node N;
+	FILE *f;
+	if ((f=fopen(fn,"w"))==NULL)
+		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated Potentials at coordinate (%e %e)\n", x, y);
+	fprintf(f, "# Va [V]\tVprobe [V]\n");
+	Ex=malloc(M->Nel*sizeof(double *));
+	Ey=malloc(M->Nel*sizeof(double *));
+	V=malloc(M->Nel*sizeof(double));
+	for (i=0;i<M->Nel;i++)
+	{
+		Ex[i]=malloc(M->Nn*sizeof(double));
+		Ey[i]=malloc(M->Nn*sizeof(double));
+	}
+	                              
+	N=*SearchNode(*M,FindPos(*M, 0, x, y));
+	
+	for (i=0;i<M->res.Nva;i++)
+	{
+		/* compute the electric field in each node for each electrode */
+		Jfield(M, i, NULL, NULL, Ex, Ey);
+		LocalVoltage(M, i, N, Ex, Ey, x, y, V);
+		fprintf(f,"%e",M->res.Va[i]);
+		for (k=0;k<M->Nel;k++)
+			fprintf(f," %e",V[k]);
+		fprintf(f,"\n");
+	}
+	for (i=0;i<M->Nel;i++)
+	{
+		free(Ex[i]);
+		free(Ey[i]);
+	}
+	free(Ex);
+	free(Ey);
+	free(V);
+	fclose(f);
+}
+
 void BubbleSortIIIV(int n, double *V, double *I1, double *I2, double *I3)
 {
 	int a, b, s;

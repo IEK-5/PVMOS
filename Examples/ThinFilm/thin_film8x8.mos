@@ -32,7 +32,7 @@ newmesh 	0.0 0.0 	8e-3 	8 	1 	21 	cn
 # Here we set the diode properties of the area cell_a in the mesh cell_a:
 ###################################################################################################
 #		mesh.area	conn	J0		n	Jph	Rs	Rsh		Eg
-set_1DJV 	cell_a.cell_a 	0	2.4803e-12 	1.5 	0.015 	7.6529 	6.1273e+04	1.7
+set_1DJV 	cell_a.cell_a 	0	2.4803e-12 	1.5 	0.000 	7.6529 	2e+3	1.7
 
 ###################################################################################################
 # here we set the sheet resistances for the same area, for the positive and negative electrodes
@@ -50,19 +50,19 @@ set_Rel		p1.p1		0	1e9
 set_Rel		p1.p1		1	0.5
 set_SplitX	p1.p1
 
-set_1DJV 	da.da 		0	2.4803e-12 	1.5 	0.015 	7.6529 	6.1273e+04 	1.7
+set_1DJV 	da.da 		0	2.4803e-12 	1.5 	0.000 	7.6529 	6.1273e+04 	1.7
 set_Rel		da.da		0	5
 set_Rel		da.da		1	0.5
 set_SplitX	da.da
 
-set_R 		p2.p2 	 	0	1e-2
+set_R 		p2.p2 	 	0	1e-8
 set_Rel		p2.p2		0	5
 set_Rel		p2.p2		1	0.5
 set_SplitX	p2.p2
 
 set_R 		p3.p3 	 	0	1e90
 set_Rel		p3.p3		0	5
-set_Rel		p3.p3		1	1e9
+set_Rel		p3.p3		1	1e12
 set_SplitX	p3.p3
 
 set_R 		cp.cp 	 	0	1e90
@@ -129,7 +129,7 @@ joinmesh_h 0.0 		cp8cells		cn	minimodule
 # First we create a new area with the defect properties
 set_Rel		minimodule.shunt 	0 	5
 set_Rel		minimodule.shunt 	1 	0.5
-set_R		minimodule.shunt 	0 	0.0001
+set_R		minimodule.shunt 	0 	0.00001
 
 ###################################################################################################
 # we will make the defect in the center of the third cell
@@ -170,14 +170,14 @@ split_coarse minimodule 0.005
 # Finally we refine around the contour of the defect, to get a very acurate shape (in 5 µm 
 # resolution)
 ###################################################################################################
-# select_circ_contour 2.5 4 0.1 0.005 minimodule
-# split_coarse minimodule 0.0005
-# deselect minimodule
+select_circ_contour 2.5 4 0.1 0.005 minimodule
+split_coarse minimodule 0.0005
+deselect minimodule
 
 ###################################################################################################
 # Time to create ourselves a defect
 ###################################################################################################
-select_circ 2.5 4 0.1 minimodule
+select_circ 2.5 4 0.02 minimodule
 assign_properties minimodule.shunt
 deselect minimodule
 printmesh minimodule mesh0.dat
@@ -186,13 +186,8 @@ printpars minimodule pars.dat
 adaptive_solve 	minimodule 	5 	0.3 	2
 printmesh minimodule mesh1.dat
 
-# solve IV from 0-8 V in 41 steps (1V steps including both 0 and 35 V)
-solve minimodule 0 8 41\n");
-surfJplot minimodule 0 0 8 8 200 200 4.4 minimoduleJ_44.dat
-surfVplot minimodule 0 0 8 8 200 200 4.4 minimodule_44.dat
-surfVplot minimodule 0 0 8 8 200 200 0 minimodule_00.dat
-surfVplot minimodule 0 0 8 8 200 200 6.4 minimodule_64.dat
-surfPplot minimodule 2 3.5 3 4.5 600 600 4.4 minimoduleP_44.dat
-surfPplot minimodule 2 3.5 3 4.5 600 600 0 minimoduleP_00.dat
-surfPplot minimodule 2 3.5 3 4.5 600 600 6.4 minimoduleP_64.dat
+solve minimodule 0 -8 41
+surfPplot minimodule 0 0 8 8 600 600 -1 minimoduleP_-1.dat
+surfPplot minimodule 0 0 8 8 600 600 -4 minimoduleP_-2.dat
+surfPplot minimodule 0 0 8 8 600 600 -8 minimoduleP_-8.dat
 printIV minimodule IV_minimodule.dat

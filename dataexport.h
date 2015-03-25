@@ -43,6 +43,7 @@ void PrintConn(char *fn, mesh *M, int *selected);
 void PrintSurfDef(char *fn, mesh *M, int *selected);
 void PrintSurfV(char *fn, mesh *M, int *selected);
 void PrintIV(char *fn, mesh *M);
+void PrintProbe(char *fn, mesh *M, double x, double y);
 void PrintInIp(char *fn, mesh *M, int *selected);
 void PrintPars(char *fn, mesh *M);
 /*void SurfVPlotNearest(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny);*/

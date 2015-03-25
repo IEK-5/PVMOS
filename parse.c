@@ -60,6 +60,7 @@
 #include "solve.h"
 #include "parsedef.h"
 #include "parse.h"
+#include "expr.h"
 
 #define MAXSTRLEN 256
 #define TWOPI 6.28318530717959
@@ -116,8 +117,31 @@ static char *GetWord (char *begin, char *word)
 		return NULL;
 	}
 	end=End(begin);	
-	word=strncpy(word,begin,end-begin);
-	word[end-begin]='\0';
+	if (begin[0]=='[')
+	{ 
+	/* this is an expression, must read till the end of the expression and feed the result through ExprEval */
+		char *b;
+		char *expr;		
+		b=begin;
+		while (b&&(*(end-1)!=']'))
+		{
+			b=Begin(end);
+			end=End(b);
+		}
+		if (*(end-1)!=']')
+			Error("No matching \"]\" found\n");
+			
+		expr=malloc(MAXSTRLEN*sizeof(char));
+		expr=strncpy(expr,begin+1,end-begin-2);
+		expr[end-begin-2]='\0';
+		ExprEval(expr, word);
+		free(expr);
+	}
+	else	
+	{
+		word=strncpy(word,begin,end-begin);
+		word[end-begin]='\0';
+	}
 	begin=Begin(end);
 	return begin;
 }
@@ -1169,6 +1193,24 @@ void Parse (char *file)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						PrintIV(args[1],&(MV->M));
 						FreeArgs (args, 2);	
+						break;
+					}
+					case PRINTPROBE:
+					{
+						meshvar *MV;			
+						char **args;
+						double x,y;
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print simulated probe voltages of mesh %s to file %s",line_nr,args[0], args[1]);
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						x=atof(args[1]);
+						y=atof(args[2]);						
+						PrintProbe(args[3],&(MV->M),x,y);
+						FreeArgs (args, 4);	
 						break;
 					}
 					case PRINTINIPIV:
@@ -3072,6 +3114,15 @@ void Parse (char *file)
 						Print(NORMAL, "-----------------------timer readout----------------------------");
 						Print(NORMAL,"* line %3d: %e seconds since last tic",line_nr, ((double) (toc - tic)) / CLOCKS_PER_SEC);
 						break;
+					case EXPR_DEF:	
+					{	
+						char **args;
+						args=GetArgs (&begin, 2);
+						Print(NORMAL,"* line %3d: defining \"%s=%s\"\n",line_nr, args[0], args[1]);	
+						DefineVar(args[0], atof(args[1]));
+						FreeArgs (args, 2);
+						break;
+					}
 					/********************************* Secion verbosity settings*/
 					case _QUIET:
 						if(!fixverb)
