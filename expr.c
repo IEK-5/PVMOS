@@ -15,19 +15,6 @@ void InitExprEval()
 	var_values=malloc(sizeof(double));
 }
 
-void DefineVar(char *name, double value)
-{
-	int len;
-	len=strlen(name)+1;
-	var_count++;
-	var_names=realloc(var_names, (var_count+1)*sizeof(char *));
-	var_names[var_count-1]=malloc((len+1)*sizeof(char));
-	strncpy(var_names[var_count-1], name, strlen(name)+1);
-	
-	var_values=realloc(var_values, (var_count+1)*sizeof(double));
-	var_values[var_count-1]=value;
-}
-
 void DestroyExprEval()
 {
 	int i;
@@ -58,6 +45,31 @@ int IsDefined(char *name)
 	return (var_count!=NameIndex(name));
 }
 
+void DefineVar(char *name, double value)
+{
+	int len;
+	len=strlen(name)+1;
+	if (IsDefined(name))
+	{
+		int i;
+		fprintf(stderr, "Warning: redefining variable %s\n",name);
+		i=NameIndex(name);
+		var_names[i]=realloc(var_names[i],(len+1)*sizeof(char));
+		strncpy(var_names[i], name, strlen(name)+1);	
+		var_values[i]=value;		
+	}
+	else
+	{
+		var_count++;
+		var_names=realloc(var_names, (var_count+1)*sizeof(char *));
+		var_names[var_count-1]=malloc((len+1)*sizeof(char));
+		strncpy(var_names[var_count-1], name, strlen(name)+1);
+	
+		var_values=realloc(var_values, (var_count+1)*sizeof(double));
+		var_values[var_count-1]=value;
+	}
+}
+
 int ExprEval(char * expr, char *result)
 {
 	int i;
@@ -83,13 +95,13 @@ int ExprEval(char * expr, char *result)
 			return 1;
 		}
 	}
-	snprintf(result, BUFFER_SIZE, "%g", evaluator_evaluate(f, var_count, var_names, var_values));
+	snprintf(result, BUFFER_SIZE, "%.14g", evaluator_evaluate(f, var_count, var_names, var_values));
 
 	evaluator_destroy (f);
 #else
 	i=NameIndex(expr);
 	if (i<var_count)
-		snprintf(result, BUFFER_SIZE, "%g", var_values[i]);
+		snprintf(result, BUFFER_SIZE, "%g.14", var_values[i]);
 	else
 	{
 		fprintf(stderr, "ExprEval: Error variable \"%s\" not defined\n", expr);
