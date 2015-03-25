@@ -147,8 +147,11 @@ Inkscape is a powerfull vector graphics tool. One of the graphics objects Inksca
 
 \section{\label{syntax}PVMOS input file format}
 \subsection{\label{expressions}expressions}
-If at any place in the input file PVMOS encounters an expression between two suare brackets, i.e. [\textless expression\textgreater], the expression will be evaluated. PVMOS will then interpret the whole expression including the brackts as the result of the evaluation. For example, \texttt{[1 + 2 ]} will be interpreted as if it says \texttt{3}. The expresssions can include mathematical expressions and also variables. Variables can be defined with the  \texttt{define} command (see Section \ref{commref}). Note that expressions can be used throuhout the input file wherever a numerical value is required. 
-
+If at any place in the input file PVMOS encounters an expression between two suare brackets, i.e. [\textless expression\textgreater], the expression will be evaluated. PVMOS will then interpret the whole expression including the brackts as the result of the evaluation. For example, \texttt{[1 + 2 ]} will be interpreted as if it says \texttt{3}. The expresssions can include mathematical expressions and also variables. Variables can be defined with the  \texttt{define} command (see Section \ref{commref}). Note that expressions can be used throuhout the input file wherever a numerical value is required. Some examples:
+\texttt{define N 10} \\
+\texttt{newmesh 0 0 1 1 [N] [N] mesh}\\
+\texttt{newmesh 0 0 1 1 [N+5] [N\textasciicircum 2] mesh2}\\
+\texttt{define Jph 0.03} \\
 % Supported constants are (names that should be used are given in parenthesis): e (e), log2(e) (log2e), log10(e) (log10e), ln(2) (ln2), ln(10) (ln10), pi (pi), pi / 2 (pi_2), pi / 4 (pi_4), 1 / pi (1_pi), 2 / pi (2_pi), 2 / sqrt(pi) (2_sqrtpi), sqrt(2) (sqrt) and sqrt(1 / 2) (sqrt1_2).
 
 % Variable name is any combination of alphanumericals and _ characters beginning with a non-digit that is not elementary function name.

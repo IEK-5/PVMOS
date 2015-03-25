@@ -7,18 +7,19 @@ CC=gcc
 target=pvmos
 
 # CFLAGS=-O3
-# CFLAGS=-Ofast -flto -Wall -fPIC
-CFLAGS=-Og -g -Wall -fPIC
+CFLAGS=-Ofast -flto -Wall -fPIC
+# CFLAGS=-Og -g -Wall -fPIC
 LFLAGS= -flto -lcholmod -lopenblas-r0.2.13 -lm -lmatheval
 # if linking to OpenBLAS we need to set the numthreads to 1
 # Uncomment this if you are not using OpenBLAS or believe OpenBLAS should run on more threads (at least for OpenBLAS version 0.2.13 this is a bad idea)
 OPENBLAS=""
+WITH_LIBMATHEVAL=""
 
 # CFLAGS=-Og -g -Wall -fPIC
 # LFLAGS=-lcholmod -lopenblas-r0.2.13 -lm
 # LFLAGS= -lcholmod -L/usr/lib64/libblas.so.3 -lm
 #LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
-VERSION=0.63
+VERSION=0.64
 
 pvmos: $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)
@@ -40,6 +41,11 @@ select_nodes.o: select_nodes.c list.h utils.h mesh2d.h
 dataexport.o: dataexport.c list.h utils.h mesh2d.h
 diode.o: diode.c diode.h
 expr.o: expr.c expr.h
+ifdef WITH_LIBMATHEVAL
+	$(CC) $(CFLAGS)   -c -o expr.o -DWITH_LIBMATHEVAL expr.c
+else
+	$(CC) $(CFLAGS)   -c -o expr.o expr.c
+endif	
 mkpvmosmesh: mesh2d.o utils.o list.o
 	mkoctfile -v  mkpvmosmesh.cc mesh2d.o utils.o list.o
 clean:

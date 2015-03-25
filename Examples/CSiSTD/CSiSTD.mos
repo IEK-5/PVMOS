@@ -292,34 +292,48 @@ deselect cell
 ###################################################################################################
 # Now for the parametrization
 ###################################################################################################
+# diode parameters
+define J0 	1e-12
+define nid 	1.0
+define Jph	0.035
+define Rs	1e-5
+define Rsh	1e5
+define Eg	1.12
+
+# electrode resistances
+define Rf	40
+define Rb	0.005
+define Rtab	0.005
+define Rfi	0.15
+
 # active cell area
-set_1DJV 	cell.cell	0	1e-12 	1.0 	0.035 	1e-5 	1e5	1.12
+set_1DJV 	cell.cell	0	[J0]	[nid]	[Jph] 	[Rs] 	[Rsh]	[Eg]
 # electrode 1 is the Anode (emitter)
-set_Rel		cell.cell	1	40
+set_Rel		cell.cell	1	[Rf]
 # electrode 0 is the Cathode (bulk, BSF, and back contact)
-set_Rel		cell.cell	0	0.005
+set_Rel		cell.cell	0	[Rb]
 
 # grid fingers
-set_1DJV 	cell.finger	0	1e-12 	1.0 	0.0 	1e-5 	1e5	1.12
-set_Rel		cell.finger	1	0.15
-set_Rel		cell.finger	0	0.005
+set_1DJV 	cell.finger	0	[J0]	[nid]	0.0 	[Rs] 	[Rsh]	[Eg]
+set_Rel		cell.finger	1	[Rfi]
+set_Rel		cell.finger	0	[Rb]
 
 # busbar with tabbing wire
-set_1DJV 	cell.tab 	0	1e-12 	1.0 	0.0 	1e-5 	1e5	1.12
-set_Rel		cell.tab	1	0.005
-set_Rel		cell.tab	0	0.005
+set_1DJV 	cell.tab 	0	[J0]	[nid]	0.0 	[Rs] 	[Rsh]	[Eg]
+set_Rel		cell.tab	1	[Rtab]
+set_Rel		cell.tab	0	[Rtab]
 
 # positive contact (tabbing wires at the top).
 set_R 		cell.tab_top 	0	1e20
 set_Rel		cell.tab_top	1	1e8
-set_Rel		cell.tab_top	0	0.005
+set_Rel		cell.tab_top	0	[Rtab]
 set_Rvp		cell.tab_top	0	1e-8
 set_SplitX	cell.tab_top
 set_SplitY	cell.tab_top
 
 # negative contact (tabbing wires at the bottom).
 set_R 		cell.tab_bot 	0	1e20
-set_Rel		cell.tab_bot	1	0.005
+set_Rel		cell.tab_bot	1	[Rtab]
 set_Rel		cell.tab_bot	0	1e8
 set_Rvn		cell.tab_bot	1	1e-8
 set_SplitX	cell.tab_bot

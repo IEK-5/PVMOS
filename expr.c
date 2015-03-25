@@ -8,7 +8,7 @@ char **var_names;			/* variables names. */
 double *var_values;			/* variables values. */
 int var_count;				/* Number of variables. */
 
-void InitMathEval()
+void InitExprEval()
 {
 	var_count=0;
 	var_names=malloc(sizeof(char *));
@@ -28,7 +28,7 @@ void DefineVar(char *name, double value)
 	var_values[var_count-1]=value;
 }
 
-void DestroyMathEval()
+void DestroyExprEval()
 {
 	int i;
 	for (i=0;i<var_count;i++)
@@ -37,7 +37,9 @@ void DestroyMathEval()
 	free(var_values);
 }
 
-int IsDefined(char *name)
+
+
+int NameIndex(char *name)
 {
 	int nl, i;
 	nl=strlen(name);
@@ -45,16 +47,24 @@ int IsDefined(char *name)
 	{
 		if (nl==strlen(var_names[i]))
 			if (strncmp(name, var_names[i], nl)==0)
-				return 1;
+				return i;
 	}
-	return 0;
+	return i;
+}
+
+
+int IsDefined(char *name)
+{
+	return (var_count!=NameIndex(name));
 }
 
 int ExprEval(char * expr, char *result)
 {
+	int i;
+#ifdef WITH_LIBMATHEVAL
 	void *f;
 	char **names;
-	int count, i;
+	int count;
 	f = evaluator_create (expr);
 	if (!f)
 	{
@@ -76,6 +86,16 @@ int ExprEval(char * expr, char *result)
 	snprintf(result, BUFFER_SIZE, "%g", evaluator_evaluate(f, var_count, var_names, var_values));
 
 	evaluator_destroy (f);
+#else
+	i=NameIndex(expr);
+	if (i<var_count)
+		snprintf(result, BUFFER_SIZE, "%g", var_values[i]);
+	else
+	{
+		fprintf(stderr, "ExprEval: Error variable \"%s\" not defined\n", expr);
+		return 1;
+	}
+#endif
 	return 0;
 }
 

@@ -134,7 +134,9 @@ static char *GetWord (char *begin, char *word)
 		expr=malloc(MAXSTRLEN*sizeof(char));
 		expr=strncpy(expr,begin+1,end-begin-2);
 		expr[end-begin-2]='\0';
-		ExprEval(expr, word);
+		if (ExprEval(expr, word))
+			Error("Failed to evaluate expression: \"%s\"\n", expr);
+			;
 		free(expr);
 	}
 	else	
@@ -470,6 +472,7 @@ void Parse (char *file)
 	word=malloc(MAXSTRLEN*sizeof(char));
 	
 	Meshes=malloc((Nm+1)*sizeof(meshvar));
+	InitExprEval();
 	
     	fgets(line, MAXSTRLEN-1, f);
 	
@@ -3118,7 +3121,7 @@ void Parse (char *file)
 					{	
 						char **args;
 						args=GetArgs (&begin, 2);
-						Print(NORMAL,"* line %3d: defining \"%s=%s\"\n",line_nr, args[0], args[1]);	
+						Print(NORMAL,"* line %3d: defining \"%s=%s\"",line_nr, args[0], args[1]);	
 						DefineVar(args[0], atof(args[1]));
 						FreeArgs (args, 2);
 						break;
@@ -3158,6 +3161,7 @@ premature_end:
 	fclose(f);
 	free(line);
 	free(word);
+	DestroyExprEval();	
 	if (P.N)
 	{
 		free(P.x);
