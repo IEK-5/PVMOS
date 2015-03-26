@@ -752,17 +752,16 @@ Keyword & Description \\
 \\
 \end{longtable}
 \subsection{\label{expressions}Variables and expressions}
-As we have seen in the command reference, one can define variables in PVMOS. These variables can be accessed by placing the variable name between square brackets, i.e.  [\textless variable-name\textgreater]. You can use the variable value whereever PVMOS expects a numerical value. If PVMOS is compiled with libmatheval support it also features the ability to evaluate mathematical expressions placed between square brackets. Naturally you can use the defined variables in these expressions. At least for now the latter feature is not supported on windows systems (untill someone takes the time and effort to compile libmatheval for windows), i.e. under windows, or generally without libmathevel support, only variable names will be evaluated between brackets. Some examples:
+As we have seen in the command reference, one can define variables in PVMOS. These variables can be accessed by placing the variable name between square brackets, i.e.  [\textless variable-name\textgreater]. You can use the variable value anywhere where PVMOS expects a numerical value. If PVMOS is compiled with libmatheval support it also features the ability to evaluate mathematical expressions placed between square brackets. Naturally you can use the defined variables in these expressions. Some examples:
 \texttt{define N 10} \\
 \texttt{newmesh 0 0 1 1 [N] [N] mesh}\\
 \texttt{newmesh 0 0 1 1 [N+5] [N\textasciicircum 2] mesh2}\\
 \texttt{define Jph 0.03} \\
-\texttt{define Jph2 [Jph/2]} \\
 \texttt{define kT 0.0259} \\
 \texttt{define J0 1e-12} \\
 \texttt{define Voc [kT*log(Jph/J0+1)]} \\
 
-With libmatheval support the following functions are supported:
+PVMOS with libmatheval supports the following functions:
 \begin{itemize}
 \item{} \texttt{exp} - exponential
 \item{} \texttt{log} - logarithmic
@@ -815,17 +814,7 @@ In addition libmatheval defines the following constants:
 \item{} \texttt{sqrt1\_2} - $\sqrt(1 / 2)$
 \end{itemize}
 
-% Variable name is any combination of alphanumericals and _ characters beginning with a non-digit that is not elementary function name.
-
-% Supported elementary functions are (names that should be used are given in parenthesis): exponential (exp), logarithmic (log), square root (sqrt), sine (sin), cosine (cos), tangent (tan), cotangent (cot), secant (sec), cosecant (csc), inverse sine (asin), inverse cosine (acos), inverse tangent (atan), inverse cotangent (acot), inverse secant (asec), inverse cosecant (acsc), hyperbolic sine (sinh), cosine (cosh), hyperbolic tangent (tanh), hyperbolic cotangent (coth), hyperbolic secant (sech), hyperbolic cosecant (csch), hyperbolic inverse sine (asinh), hyperbolic inverse cosine (acosh), hyperbolic inverse tangent (atanh), hyperbolic inverse cotangent (acoth), hyperbolic inverse secant (asech), hyperbolic inverse cosecant (acsch), absolute value (abs), Heaviside step function (step) with value 1 defined for x = 0, Dirac delta function with infinity (delta) and not-a-number (nandelta) values defined for x = 0, and error function (erf).
-
-% Supported unary operation is unary minus ('-').
-
-% Supported binary operations are addition ('+'), subtraction ('+'), multiplication ('*'), division multiplication ('/') and exponentiation ('^').
-
-% Usual mathematical rules regarding operation precedence apply. Parenthesis ('(' and ')') could be used to change priority order.
-
-% Blanks and tab characters are allowed in string representing function; newline characters must not appear in this string. 
+Note that function and constant names cannot be redefined as a variable. 
 
 \section{Examples}
 In this section I discuss several examples which can be found in the example directory.

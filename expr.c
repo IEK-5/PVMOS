@@ -178,25 +178,3 @@ int ExprEval(char * expr, char *result)
 	return 0;
 }
 
-/*
-int main (int argc, char **argv)
-{
-	char *result;
-	
-	result=malloc(BUFFER_SIZE*sizeof(char));
-	InitMathEval();
-	DefineVar("a", 10);
-	DefineVar("b", 2);
-	DefineVar("c", 5);
-	ExprEval("a", result);
-	printf("a=%s\n",result);
-	ExprEval("b", result);
-	printf("b=%s\n",result);
-	ExprEval("c", result);
-	printf("c=%s\n",result);
-	ExprEval("a*e^2+b*e+c+d", result);
-	printf("a*e^2+b*e+c+d=%s\n",result);	
-	DestroyMathEval();
-	free(result);
-}
- */
