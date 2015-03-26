@@ -146,26 +146,6 @@ This is only relevant if you want to define meshes using bitmap masks.
 Inkscape is a powerfull vector graphics tool. One of the graphics objects Inkscape supports are ``paths''. In its simplest form a path is simply a polygon. As PVMOS can use polygons when defining a mesh it makes sense to use a tool such as Inkscape to create the polygons as Inkscape provides a powerfull, graphical, means to do so. In order to get the polygon data out of inkscape I created a simple extension which extracts the data out of a polygon. To use this extention select a path with polygon data and select the ExportXY extension, a popup window will come up with coordinates you can select and paste in a polygon data file. Note however that Inkscape paths may also be bezier curves, which PVMOS does not support. To use the extension is is thus required that the path data is forced to be a polygon. For this you can use the flatten Bezier extention in Inkscape. I have not fully dug into Inkscape's internal units. This can be tricky as Inkscape may use all sorts of transforms on objects. This means that the polygon data may need to be scaled, rotated, mirrored and shifted to get the data in the correct unit. For this I provide a small CLI program ``transformpolygon''. 
 
 \section{\label{syntax}PVMOS input file format}
-\subsection{\label{expressions}expressions}
-If at any place in the input file PVMOS encounters an expression between two suare brackets, i.e. [\textless expression\textgreater], the expression will be evaluated. PVMOS will then interpret the whole expression including the brackts as the result of the evaluation. For example, \texttt{[1 + 2 ]} will be interpreted as if it says \texttt{3}. The expresssions can include mathematical expressions and also variables. Variables can be defined with the  \texttt{define} command (see Section \ref{commref}). Note that expressions can be used throuhout the input file wherever a numerical value is required. Some examples:
-\texttt{define N 10} \\
-\texttt{newmesh 0 0 1 1 [N] [N] mesh}\\
-\texttt{newmesh 0 0 1 1 [N+5] [N\textasciicircum 2] mesh2}\\
-\texttt{define Jph 0.03} \\
-% Supported constants are (names that should be used are given in parenthesis): e (e), log2(e) (log2e), log10(e) (log10e), ln(2) (ln2), ln(10) (ln10), pi (pi), pi / 2 (pi_2), pi / 4 (pi_4), 1 / pi (1_pi), 2 / pi (2_pi), 2 / sqrt(pi) (2_sqrtpi), sqrt(2) (sqrt) and sqrt(1 / 2) (sqrt1_2).
-
-% Variable name is any combination of alphanumericals and _ characters beginning with a non-digit that is not elementary function name.
-
-% Supported elementary functions are (names that should be used are given in parenthesis): exponential (exp), logarithmic (log), square root (sqrt), sine (sin), cosine (cos), tangent (tan), cotangent (cot), secant (sec), cosecant (csc), inverse sine (asin), inverse cosine (acos), inverse tangent (atan), inverse cotangent (acot), inverse secant (asec), inverse cosecant (acsc), hyperbolic sine (sinh), cosine (cosh), hyperbolic tangent (tanh), hyperbolic cotangent (coth), hyperbolic secant (sech), hyperbolic cosecant (csch), hyperbolic inverse sine (asinh), hyperbolic inverse cosine (acosh), hyperbolic inverse tangent (atanh), hyperbolic inverse cotangent (acoth), hyperbolic inverse secant (asech), hyperbolic inverse cosecant (acsch), absolute value (abs), Heaviside step function (step) with value 1 defined for x = 0, Dirac delta function with infinity (delta) and not-a-number (nandelta) values defined for x = 0, and error function (erf).
-
-% Supported unary operation is unary minus ('-').
-
-% Supported binary operations are addition ('+'), subtraction ('+'), multiplication ('*'), division multiplication ('/') and exponentiation ('^').
-
-% Usual mathematical rules regarding operation precedence apply. Parenthesis ('(' and ')') could be used to change priority order.
-
-% Blanks and tab characters are allowed in string representing function; newline characters must not appear in this string. 
-
 \subsection{\label{commref}Command Reference}
 \begin{longtable}{p{0.2\textwidth}p{0.8\textwidth}}
 \multicolumn{2}{l}{\textsc{Creating Meshes}} \\*
@@ -763,7 +743,7 @@ Keyword & Description \\
 Keyword & Description \\
 \texttt{tic}	&  Start the timer.\\
 \texttt{toc}	&  Print seconds since last \texttt{tic} command (or start of execution if no \texttt{tic} command was issued)\\
-\texttt{define}	&  Define a variable. These variables can be used in expressions (see Section \ref{expressions}). The command takes two arguments:
+\texttt{define}	&  Define a variable. PVMOS variables only support numerical values. These variables can be used in wherever a numerical value is requires (see Section \ref{expressions}). The command takes two arguments:
 \begin{enumerate}
 \item \texttt{name}, name of the variable
 \item \texttt{value}, value of the variable
@@ -771,6 +751,81 @@ Keyword & Description \\
 \hline
 \\
 \end{longtable}
+\subsection{\label{expressions}Variables and expressions}
+As we have seen in the command reference, one can define variables in PVMOS. These variables can be accessed by placing the variable name between square brackets, i.e.  [\textless variable-name\textgreater]. You can use the variable value whereever PVMOS expects a numerical value. If PVMOS is compiled with libmatheval support it also features the ability to evaluate mathematical expressions placed between square brackets. Naturally you can use the defined variables in these expressions. At least for now the latter feature is not supported on windows systems (untill someone takes the time and effort to compile libmatheval for windows), i.e. under windows, or generally without libmathevel support, only variable names will be evaluated between brackets. Some examples:
+\texttt{define N 10} \\
+\texttt{newmesh 0 0 1 1 [N] [N] mesh}\\
+\texttt{newmesh 0 0 1 1 [N+5] [N\textasciicircum 2] mesh2}\\
+\texttt{define Jph 0.03} \\
+\texttt{define Jph2 [Jph/2]} \\
+\texttt{define kT 0.0259} \\
+\texttt{define J0 1e-12} \\
+\texttt{define Voc [kT*log(Jph/J0+1)]} \\
+
+With libmatheval support the following functions are supported:
+\begin{itemize}
+\item{} \texttt{exp} - exponential
+\item{} \texttt{log} - logarithmic
+\item{} \texttt{sqrt} - square root
+\item{} \texttt{sin} - sine
+\item{} \texttt{cos} - cosine
+\item{} \texttt{tan} - tangent
+\item{} \texttt{cot} - cotangent
+\item{} \texttt{sec} - secant
+\item{} \texttt{csc} - cosecant
+\item{} \texttt{asin} - inverse sine
+\item{} \texttt{acos} - inverse cosine
+\item{} \texttt{atan} - inverse tangent
+\item{} \texttt{acot} - inverse cotangent
+\item{} \texttt{asec} - inverse secant
+\item{} \texttt{acsc} - inverse cosecant
+\item{} \texttt{sinh} - hyperbolic sine
+\item{} \texttt{cosh} - cosine
+\item{} \texttt{tanh} - hyperbolic tangent
+\item{} \texttt{coth} - hyperbolic cotangent
+\item{} \texttt{sech} - hyperbolic secant
+\item{} \texttt{csch} - hyperbolic cosecant
+\item{} \texttt{asinh} - hyperbolic inverse sine
+\item{} \texttt{acosh} - hyperbolic inverse cosine
+\item{} \texttt{atanh} - hyperbolic inverse tangent
+\item{} \texttt{acoth} - hyperbolic inverse cotangent
+\item{} \texttt{asech} - hyperbolic inverse secant
+\item{} \texttt{acsch} - hyperbolic inverse cosecant
+\item{} \texttt{abs} - absolute value
+\item{} \texttt{step} - with value 1 defined for x = 0 Heaviside step function
+\item{} \texttt{nandelta}  - Dirac delta function with not-a-number at $x = 0$
+\item{} \texttt{delta} - Dirac delta function with infinity at $x = 0$ 
+\item{} \texttt{erf} - error function
+\end{itemize}
+
+In addition libmatheval defines the following constants:
+\begin{itemize}
+\item{} \texttt{e} - $e$
+\item{} \texttt{log2e} - $\log2(e)$
+\item{} \texttt{log10e} - $\log10(e)$
+\item{} \texttt{ln2} - $\ln(2)$
+\item{} \texttt{ln10} - $\ln(10)$
+\item{} \texttt{pi} - $\pi$
+\item{} \texttt{pi\_2} - $\pi / 2$
+\item{} \texttt{pi\_4} - $\pi / 4$
+\item{} \texttt{1\_pi} - $1 / \pi$
+\item{} \texttt{2\_pi} - $2 / \pi$
+\item{} \texttt{2\_sqrtpi} - $2 / \sqrt(\pi)$
+\item{} \texttt{sqrt} - $\sqrt(2)$
+\item{} \texttt{sqrt1\_2} - $\sqrt(1 / 2)$
+\end{itemize}
+
+% Variable name is any combination of alphanumericals and _ characters beginning with a non-digit that is not elementary function name.
+
+% Supported elementary functions are (names that should be used are given in parenthesis): exponential (exp), logarithmic (log), square root (sqrt), sine (sin), cosine (cos), tangent (tan), cotangent (cot), secant (sec), cosecant (csc), inverse sine (asin), inverse cosine (acos), inverse tangent (atan), inverse cotangent (acot), inverse secant (asec), inverse cosecant (acsc), hyperbolic sine (sinh), cosine (cosh), hyperbolic tangent (tanh), hyperbolic cotangent (coth), hyperbolic secant (sech), hyperbolic cosecant (csch), hyperbolic inverse sine (asinh), hyperbolic inverse cosine (acosh), hyperbolic inverse tangent (atanh), hyperbolic inverse cotangent (acoth), hyperbolic inverse secant (asech), hyperbolic inverse cosecant (acsch), absolute value (abs), Heaviside step function (step) with value 1 defined for x = 0, Dirac delta function with infinity (delta) and not-a-number (nandelta) values defined for x = 0, and error function (erf).
+
+% Supported unary operation is unary minus ('-').
+
+% Supported binary operations are addition ('+'), subtraction ('+'), multiplication ('*'), division multiplication ('/') and exponentiation ('^').
+
+% Usual mathematical rules regarding operation precedence apply. Parenthesis ('(' and ')') could be used to change priority order.
+
+% Blanks and tab characters are allowed in string representing function; newline characters must not appear in this string. 
 
 \section{Examples}
 In this section I discuss several examples which can be found in the example directory.

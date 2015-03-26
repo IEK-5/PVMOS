@@ -7,6 +7,54 @@
 char **var_names;			/* variables names. */
 double *var_values;			/* variables values. */
 int var_count;				/* Number of variables. */
+int NPD=45;
+char *PREDEF[45] = {
+	"exp",
+	"log",
+	"sqrt",
+	"sin",
+	"cos",
+	"tan",
+	"cot",
+	"sec",
+	"csc",
+	"asin",
+	"acos",
+	"atan",
+	"acot",
+	"asec",
+	"acsc",
+	"sinh",
+	"cosh",
+	"tanh",
+	"coth",
+	"sech",
+	"csch",
+	"asinh",
+	"acosh",
+	"atanh",
+	"acoth",
+	"asech",
+	"acsch",
+	"abs",
+	"step",
+	"nandelta",
+	"delta",
+	"erf",
+	"e",
+	"log2e",
+	"log10e",
+	"ln2",
+	"ln10",
+	"pi",
+	"pi_2",
+	"pi_4",
+	"1_pi",
+	"2_pi",
+	"2_sqrtpi",
+	"sqrt",
+	"sqrt1_2"
+};
 
 void InitExprEval()
 {
@@ -45,10 +93,29 @@ int IsDefined(char *name)
 	return (var_count!=NameIndex(name));
 }
 
+int IsPreDefined(char *name)
+{
+	int nl, i;
+	nl=strlen(name);
+	for (i=0;i<NPD;i++)
+	{
+		if (nl==strlen(PREDEF[i]))
+			if (strncmp(name, PREDEF[i], nl)==0)
+				return 1;
+	}
+	return 0;
+}
+
+
 void DefineVar(char *name, double value)
 {
 	int len;
 	len=strlen(name)+1;
+	if (IsPreDefined(name))
+	{
+		fprintf(stderr, "Warning: illegal variable name %s\n",name);
+		return;
+	}
 	if (IsDefined(name))
 	{
 		int i;
