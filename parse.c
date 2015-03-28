@@ -110,41 +110,56 @@ static char * End (char *line)
 /* the function returns a poiinter to the next word in the string  */
 static char *GetWord (char *begin, char *word)
 {
-	char *end;
+	char *end, *be;
 	if(!begin)
 	{
 		*word='\0';
 		return NULL;
 	}
 	end=End(begin);	
-	if (begin[0]=='[')
-	{ 
-	/* this is an expression, must read till the end of the expression and feed the result through ExprEval */
-		char *b;
-		char *expr;		
-		b=begin;
-		while (b&&(*(end-1)!=']'))
-		{
-			b=Begin(end);
-			end=End(b);
-		}
-		if (*(end-1)!=']')
-			Error("No matching \"]\" found\n");
-			
-		expr=malloc(MAXSTRLEN*sizeof(char));
-		expr=strncpy(expr,begin+1,end-begin-2);
-		expr[end-begin-2]='\0';
-		if (ExprEval(expr, word))
-			Error("Failed to evaluate expression: \"%s\"\n", expr);
-			;
-		free(expr);
-	}
-	else	
-	{
-		word=strncpy(word,begin,end-begin);
-		word[end-begin]='\0';
-	}
+	word=strncpy(word,begin,end-begin);
+	word[end-begin]='\0';
 	begin=Begin(end);
+	be=word;
+	while ((*be)&&(*be!='['))
+		be++;
+	if (*be)
+	{
+		/* (part of) this word is an expression */
+		char *ee, *expr, *res, *p, *q;
+		ee=be;
+		while ((*ee)&&(*ee!=']'))
+			ee++;
+		if (!(*ee))
+			Error("No matching \"]\" found\n");
+		
+		expr=malloc(MAXSTRLEN*sizeof(char));
+		res=malloc(MAXSTRLEN*sizeof(char));
+		expr=strncpy(expr,be+1,ee-be-1);
+		expr[ee-be-1]='\0';
+		
+		if (ExprEval(expr, res))
+			Error("Failed to evaluate expression: \"%s\"\n", expr);
+		p=res+strlen(res);
+		q=ee+1;
+		while ((*q)&&(p-res+be-word<MAXSTRLEN))
+		{
+			*p=*q;
+			q++;
+			p++;
+		}
+		*p='\0';
+		p=res;
+		while (*p)
+		{
+			*be=*p;
+			be++;
+			p++;
+		}
+		*be='\0';
+		free(expr);
+		free(res);
+	}
 	return begin;
 }
 
