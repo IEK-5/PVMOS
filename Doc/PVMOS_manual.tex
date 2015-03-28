@@ -752,10 +752,12 @@ Keyword & Description \\
 \\
 \end{longtable}
 \subsection{\label{expressions}Variables and expressions}
-As we have seen in the command reference, one can define variables in PVMOS. These variables can be accessed by placing the variable name between square brackets, i.e.  [\textless variable-name\textgreater]. You can use the variable value anywhere where PVMOS expects a numerical value. If PVMOS is compiled with libmatheval support it also features the ability to evaluate mathematical expressions placed between square brackets. Naturally you can use the defined variables in these expressions. Some examples:
+PVMOS also features ``expressions'', which are placed between square brackets, i.e., [\textless expression\textgreater]. You can refer to variables, as defined with the \texttt{define} command (see the previous section), in expressions. Furthermore, PVMOS can evaluate mathematical expressions, provided PVMOS is compiled with libmatheval support. Expressions can be placed anywhere in the PVMOS input file, also as part of a word. Nesting of expressions is also allowed. Perhaps the best way to explain the use of expressions is with a few examples.\\
+Define $N=10$:\\
 \texttt{define N 10} \\
-\texttt{newmesh 0 0 1 1 [N] [N] mesh}\\
-\texttt{newmesh 0 0 1 1 [N+5] [N\textasciicircum 2] mesh2}\\
+Initialize \texttt{mesh10}:\\
+\texttt{newmesh 0 0 1 1 [N] [N] mesh[N]}\\
+Define some variables and calculate with them:\\
 \texttt{define Jph 0.03} \\
 \texttt{define kT 0.0259} \\
 \texttt{define J0 1e-12} \\
