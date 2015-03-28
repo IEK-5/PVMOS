@@ -111,6 +111,7 @@ static char * End (char *line)
 static char *GetWord (char *begin, char *word)
 {
 	char *end, *be;
+	int parseExp=1;
 	if(!begin)
 	{
 		*word='\0';
@@ -120,45 +121,56 @@ static char *GetWord (char *begin, char *word)
 	word=strncpy(word,begin,end-begin);
 	word[end-begin]='\0';
 	begin=Begin(end);
-	be=word;
-	while ((*be)&&(*be!='['))
-		be++;
-	if (*be)
+	
+	/* check for expressions as part of the word */
+	/* we support nested expressions */
+	while (parseExp)
 	{
-		/* (part of) this word is an expression */
-		char *ee, *expr, *res, *p, *q;
-		ee=be;
-		while ((*ee)&&(*ee!=']'))
-			ee++;
-		if (!(*ee))
-			Error("No matching \"]\" found\n");
+		/* we search backwards from the end for the last '[' */
+		be=word+strlen(word);
 		
-		expr=malloc(MAXSTRLEN*sizeof(char));
-		res=malloc(MAXSTRLEN*sizeof(char));
-		expr=strncpy(expr,be+1,ee-be-1);
-		expr[ee-be-1]='\0';
-		
-		if (ExprEval(expr, res))
-			Error("Failed to evaluate expression: \"%s\"\n", expr);
-		p=res+strlen(res);
-		q=ee+1;
-		while ((*q)&&(p-res+be-word<MAXSTRLEN))
+		while ((be>=word)&&(*be!='['))
+			be--;
+		if (be>=word)
 		{
-			*p=*q;
-			q++;
-			p++;
+			/* we have a '[', find the matching ']' and substitute the expression in the word with its result */
+			char *ee, *expr, *res, *p, *q;
+			ee=be;
+			while ((*ee)&&(*ee!=']'))
+				ee++;
+			if (!(*ee))
+				Error("No matching \"]\" found\n");
+			
+			expr=malloc(MAXSTRLEN*sizeof(char));
+			res=malloc(MAXSTRLEN*sizeof(char));
+			expr=strncpy(expr,be+1,ee-be-1);
+			expr[ee-be-1]='\0';
+			
+			if (ExprEval(expr, res))
+				Error("Failed to evaluate expression: \"%s\"\n", expr);
+			p=res+strlen(res);
+			q=ee+1;
+			while ((*q)&&(p-res+be-word<MAXSTRLEN))
+			{
+				*p=*q;
+				q++;
+				p++;
+			}
+			*p='\0';
+			p=res;
+			while (*p)
+			{
+				*be=*p;
+				be++;
+				p++;
+			}
+			*be='\0';
+			free(expr);
+			free(res);
 		}
-		*p='\0';
-		p=res;
-		while (*p)
-		{
-			*be=*p;
-			be++;
-			p++;
-		}
-		*be='\0';
-		free(expr);
-		free(res);
+		else
+			/* we have no '[', no more expression in the word */
+			parseExp=0;
 	}
 	return begin;
 }
