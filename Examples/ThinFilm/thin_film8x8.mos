@@ -32,7 +32,7 @@ newmesh 	0.0 0.0 	8e-3 	8 	1 	21 	cn
 # Here we set the diode properties of the area cell_a in the mesh cell_a:
 ###################################################################################################
 #		mesh.area	conn	J0		n	Jph	Rs	Rsh		Eg
-set_1DJV 	cell_a.cell_a 	0	2.4803e-12 	1.5 	0.000 	7.6529 	2e+3	1.7
+set_1DJV 	cell_a.cell_a 	0	2.4803e-12 	1.5 	0.015 	7.6529 	2e+3	1.7
 
 ###################################################################################################
 # here we set the sheet resistances for the same area, for the positive and negative electrodes
@@ -50,7 +50,7 @@ set_Rel		p1.p1		0	1e9
 set_Rel		p1.p1		1	0.5
 set_SplitX	p1.p1
 
-set_1DJV 	da.da 		0	2.4803e-12 	1.5 	0.000 	7.6529 	6.1273e+04 	1.7
+set_1DJV 	da.da 		0	2.4803e-12 	1.5 	0.015 	7.6529 	6.1273e+04 	1.7
 set_Rel		da.da		0	5
 set_Rel		da.da		1	0.5
 set_SplitX	da.da
@@ -186,7 +186,10 @@ printpars minimodule pars.dat
 adaptive_solve 	minimodule 	5 	0.3 	2
 printmesh minimodule mesh1.dat
 
-solve minimodule 0 -8 41
+solve minimodule 0 8 21
+refine_oc minimodule 1e-10 1e-10 5
+refine_mpp minimodule 1e-10 1e-10 10
+define_solpar minimodule
 surfPplot minimodule 0 0 8 8 600 600 -1 minimoduleP_-1.dat
 surfPplot minimodule 0 0 8 8 600 600 -4 minimoduleP_-2.dat
 surfPplot minimodule 0 0 8 8 600 600 -8 minimoduleP_-8.dat

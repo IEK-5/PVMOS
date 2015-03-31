@@ -724,6 +724,20 @@ Keyword & Description \\
 \item \texttt{V\_end}, End voltage
 \item \texttt{N\_step}, Number of voltage steps
 \end{enumerate}\\
+\texttt{refine\_oc}	&  Given a voltage sweep is present which includes voltages above and below $V_{oc}$, this command tries to refine the IV characteristics to include the open circuit point. The command takes four arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{tol\_i}, current tolerance
+\item \texttt{tol\_v}, voltage tolerance
+\item \texttt{Nmax}, Maximum number of iterations
+\end{enumerate}\\
+\texttt{refine\_mpp}	&  Given a voltage sweep is present of at least three points, which includes voltages above and below $V_{mpp}$, this command tries to refine the IV characteristics to include the maximum power point. The command takes four arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{tol\_i}, current tolerance
+\item \texttt{tol\_v}, voltage tolerance
+\item \texttt{Nmax}, Maximum number of iterations
+\end{enumerate}\\
 \texttt{adaptive\_solve}	&  Solve the system and adapt the mesh at one specified voltage. The command takes four arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
@@ -743,10 +757,14 @@ Keyword & Description \\
 Keyword & Description \\
 \texttt{tic}	&  Start the timer.\\
 \texttt{toc}	&  Print seconds since last \texttt{tic} command (or start of execution if no \texttt{tic} command was issued)\\
-\texttt{define}	&  Define a variable. PVMOS variables only support numerical values. These variables can be used in wherever a numerical value is requires (see Section \ref{expressions}). The command takes two arguments:
+\texttt{define}	&  Define a variable. PVMOS variables only support numerical values. These variables can be used wherever a numerical value is required (see Section \ref{expressions}). The command takes two arguments:
 \begin{enumerate}
 \item \texttt{name}, name of the variable
 \item \texttt{value}, value of the variable
+\end{enumerate}\\
+\texttt{define\_solpar}	&  Determine the solar cell parameters from the simulated IV points for a mesh and define the variables \texttt{Isc}, \texttt{Voc}, \texttt{Impp}, and \texttt{Vmpp}, with their values set accordingly. These variables can be used wherever a numerical value is required (see Section \ref{expressions}). The command takes one argument:
+\begin{enumerate}
+\item \texttt{mesh-name}, name of the mesh
 \end{enumerate}\\
 \hline
 \\

@@ -42,4 +42,7 @@ void Resistance(mesh M, node N1, node N2, double *R);
 void Diode(mesh M, node N, int inter_index, double V, double *I, double *dIdV, double *Vj);
 int FindVa(double Va, double *list, int Nva);
 void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);
+void SolPar(mesh *M, int *isc, int *imp_m, int *imp, int *imp_p, int *ioc_m, int *ioc_p);
+void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);
+void RefineMPP(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);
 void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);

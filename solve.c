@@ -689,6 +689,265 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 	cholmod_free_sparse(&S, &c);	
 	cholmod_finish(&c);
 }
+
+/* returns indexes to datapoints we need to compute/refine solar cell parameters */
+/* As we can set the applied voltage to 0 we dpo not need to refinbe Isc, thus I return just the index of the minimal voltage */
+/* To refine Voc I need one point above and one point below, thus I returnb two indexes */
+/* To refine Pmpp I need Pmax, one below this and one abovce it, i.e. I look for three indexes */
+int SolPar(mesh *M, int *isc, int *imp_m, int *imp, int *imp_p, int *ioc_m, int *ioc_p)
+{
+	double Vsc;
+	double Ioc_m, Ioc_p;
+	
+	double Vmp_m;
+	double Vmp_p;
+	double Vmp;
+	
+	double Pmax;
+	
+	int i;
+	(*isc)=-1;
+	(*imp_m)=-1;
+	(*imp)=-1;
+	(*imp_p)=-1;
+	(*ioc_m)=-1;
+	(*ioc_p)=-1;
+	
+	if (M->res.Nva>0)
+	{
+		Vsc=M->res.Va[0];
+		(*isc)=0;
+		if (M->res.I[0]<0)
+		{
+			(*ioc_m)=0;
+			Ioc_m=M->res.I[0];
+		}
+		else
+		{
+			(*ioc_p)=0;
+			Ioc_p=M->res.I[0];
+		}
+		Pmax=-(M->res.I[i]*M->res.Va[i]);
+		Vmp=Vsc;
+		(*imp)=0;
+						
+	}
+	
+	for (i=1;i<M->res.Nva;i++)
+	{
+		if (fabs(Vsc)>fabs(M->res.Va[i]))
+		{
+			Vsc=M->res.Va[i];
+			(*isc)=i;		
+		}
+		
+		if ((M->res.I[i]<0)&&((Ioc_m<M->res.I[i])||((*ioc_m)<0)))
+		{
+			(*ioc_m)=i;
+			Ioc_m=M->res.I[i];			
+		}
+			
+		if ((M->res.I[i]>=0)&&((Ioc_p>M->res.I[i])||((*ioc_p)<0)))
+		{
+			(*ioc_p)=i;
+			Ioc_p=M->res.I[i];			
+		}
+		
+		if (Pmax<-(M->res.I[i]*M->res.Va[i]))		
+		{
+			if (Vmp<M->res.Va[i])
+			{
+				(*imp_m)=(*imp);
+				Vmp_m=Vmp;				
+			}
+			else
+			{
+				(*imp_p)=(*imp);
+				Vmp_p=Vmp;				
+			}
+			Pmax=-(M->res.I[i]*M->res.Va[i]);
+			Vmp=M->res.Va[i];
+			(*imp)=i;
+		}
+		else if ((imp_m<0)&&(Vmp>M->res.Va[i]))
+		{
+				(*imp_m)=i;
+				Vmp_m=M->res.Va[i];		
+		}
+		else if ((imp_p<0)&&(Vmp<M->res.Va[i]))
+		{
+				(*imp_p)=i;
+				Vmp_p=M->res.Va[i];		
+		}
+	        else if ((Vmp<M->res.Va[i])&&(Vmp_p>M->res.Va[i]))
+		{
+				(*imp_p)=i;
+				Vmp_p=M->res.Va[i];		
+		}
+	        else if ((Vmp>M->res.Va[i])&&(Vmp_m<M->res.Va[i]))
+		{
+				(*imp_m)=i;
+				Vmp_m=M->res.Va[i];		
+		}
+			
+	}
+		
+	if (((*isc)<0)||((*imp_m)<0)||((*imp)<0)||((*imp_p)<0)||((*ioc_m)<0)||((*ioc_p)<0))
+		return 1;
+	return 0;
+}
+
+#define rat_bisect 1e-2
+#define sign(a) (((a)>=0)?(1.0):(-1.0))
+void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+{
+	double x1,x2,x3,x4;
+	double f1,f2,f3,f4;
+	int isc, imp_m, imp, imp_p, ioc_m, ioc_p, iter=0;
+	SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);
+	if ((ioc_m<0)||(ioc_p<0))
+	{
+		Warning("Cannot refine Voc, I need at least one simulated bias above and one below Voc\n");
+		return;
+	}
+	
+	/* Ridder's method */	
+	
+	x1=M->res.Va[ioc_m];
+	f1=M->res.I[ioc_m];
+	
+	x2=M->res.Va[ioc_p];
+	f2=M->res.I[ioc_p];
+	
+	while ((fabs(x2-x1)>tol_v)&&(iter<Niter))
+	{
+		x3=(x1+x2)/2;
+		SolveVa(M, x3, x3, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter);
+		f3=M->res.I[M->res.Nva-1];
+		if (fabs(f3)<tol_i)
+			return;
+		x4=x3+(x3-x1)*sign(f1-f2)*f3/(sqrt(f3*f3-f2*f1));
+		SolveVa(M, x4, x4, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter);
+		f4=M->res.I[M->res.Nva-1];
+		if (fabs(f4)<tol_i)
+			return;
+		if (sign(f4)!=sign(f3))
+		{
+			x1=x3;
+			f1=f3;
+			x2=x4;
+			f2=f4;
+		}
+		else if (sign(f1)!=sign(f4))
+		{
+			x2=x4;
+			f2=f4;
+		} 
+		else if  (sign(f2)!=sign(f4))
+		{
+			x1=x4;
+			f1=f4;
+		} 
+		else
+		{
+			Warning("Cannot find Voc, aborting\n");
+			return;
+		}
+		iter++;	
+	}
+}
+void RefineMPP(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+{
+	double Pm,Pmin,Pmax;
+	double Vm,Vmin,Vmax;
+	double Im,Imin,Imax;
+	int isc, imp_m, imp, imp_p, ioc_m, ioc_p, iter=0;
+	SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);
+	if ((imp_m<0)||(imp_p<0)||(imp<0))
+	{
+		Warning("Cannot refine maximum powerpoint, I need at least one three bias points\n");
+		return;
+	}
+	
+	Pmin=M->res.Va[imp_m]*M->res.I[imp_m];
+	Pmax=M->res.Va[imp_p]*M->res.I[imp_p];
+	Pm=M->res.Va[imp]*M->res.I[imp];
+	
+	Vmin=M->res.Va[imp_m];
+	Vmax=M->res.Va[imp_p];
+	Vm=M->res.Va[imp];
+	
+	Imin=M->res.I[imp_m];
+	Imax=M->res.I[imp_p];
+	Im=M->res.I[imp];
+	
+	while ((Vmax-Vmin>tol_v)&&((Im-Imin>tol_i)||(Imax-Im>tol_i))&&(iter<Niter))
+	{
+		double v1, v2, vv, p1, p2, pp;
+		v1=(Vmin+Vm)/2;
+		v2=(Vmax+Vm)/2;
+		
+		/* the derivative of the power is a somewhat exponential function, taking the log makes it a tad more linear and thus faster to optimize */
+		p1=log(1+(Pmin-Pm)/(Vm-Vmin));
+		p2=log(1+(Pmax-Pm)/(Vmax-Vm));
+		
+		/* attempt a sort of false position scheme to maximizing the power */
+		/* i.e. use false position type of derivative calculation between Vmin Vm and between Vm and Vmax.*/
+		vv=(p2*v1+p1*v2)/(p1+p2);			
+		if (fabs(Vm-vv)/(Vmax-Vmin)<rat_bisect) /* we modify the false positions using some sort of half-baked Illinois algorithm */
+		{
+			if (Vmax-Vm>Vm-Vmin)
+				vv=(0.5*p2*v1+p1*v2)/(p1+0.5*p2);
+			else
+				vv=(p2*v1+0.5*p1*v2)/(0.5*p1+p2);
+		}
+				
+		
+		SolveVa(M, vv, vv, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter);
+
+		pp=vv*M->res.I[M->res.Nva-1];
+		if (pp<Pm)
+		{			
+			if (vv<Vm)
+			{
+				Vmax=Vm;
+				Imax=Im;
+				Pmax=Pm;
+			}
+			else
+			{
+				Vmin=Vm;
+				Imin=Im;
+				Pmin=Pm;
+			}
+			
+			Pm=pp;
+			Vm=vv;	
+			Im=M->res.I[M->res.Nva-1];	
+		}
+		else
+		{
+			if (vv<Vm)
+			{
+				Vmin=vv;
+				Imin=Im;
+				Pmin=pp;
+			}
+			else
+		 	{
+				Vmax=vv;
+				Imax=Im;
+				Pmax=pp;	
+			}
+		}
+		iter++;	
+	}
+
+	
+}
+
+
+
 #define MAXRATIO 4
 void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 {

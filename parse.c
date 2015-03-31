@@ -3109,6 +3109,53 @@ void Parse (char *file)
 						SolveVa(M, Vstart, Vend, Nstep, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
 						FreeArgs (args, 4);
 						break;
+					}	
+					case REFINEOC:
+					{
+						mesh *M;
+						double tol_v, tol_i;
+						int Niter;				
+						char **args;
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;
+							
+						Print(NORMAL,"* line %3d: Refining open circuit point for mesh %s",line_nr, args[0]);						
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
+						tol_i=atof(args[1]);
+						tol_v=atof(args[2]);
+						Niter=atoi(args[3]);
+						
+						RefineOC(M, tol_i, tol_v, Niter, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						FreeArgs (args, 4);
+						
+						break;
+					}		
+					case REFINEMPP:
+					{
+						mesh *M;
+						double tol_v, tol_i;
+						int Niter;			
+						char **args;
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;
+							
+						Print(NORMAL,"* line %3d: Refining maximum power-point for mesh %s",line_nr, args[0]);						
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
+						
+						tol_i=atof(args[1]);
+						tol_v=atof(args[2]);
+						Niter=atoi(args[3]);
+						RefineMPP(M, tol_i, tol_v, Niter, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						FreeArgs (args, 4);
+						break;
 					}
 					case ADAPTIVE_SOLVE:
 					{
@@ -3151,6 +3198,62 @@ void Parse (char *file)
 						Print(NORMAL,"* line %3d: defining \"%s=%s\"",line_nr, args[0], args[1]);	
 						DefineVar(args[0], atof(args[1]));
 						FreeArgs (args, 2);
+						break;
+					}
+					case EXPR_DEF_SOLPAR:	
+					{	
+						meshvar *MV;
+						char **args;
+						int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
+						args=GetArgs (&begin, 1);
+						Print(NORMAL,"* line %3d: defining solar cell parameters according to mesh %s",line_nr, args[0]);				
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
+						SolPar(&(MV->M), &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);
+						if (isc>=0)
+						{							
+							Print(NORMAL,"* line %3d: defining \"Isc\" = %e",line_nr,MV->M.res.I[isc]);
+							DefineVar("Isc", MV->M.res.I[isc]);
+						}
+						else
+							Print(NORMAL,"* line %3d: Isc could not be determined",line_nr);
+						if ((ioc_m>=0)||(ioc_p>=0))
+						{
+							
+							if ((ioc_m>=0)&&(ioc_p>=0))
+							{
+								double Voc;
+								Voc=(MV->M.res.Va[ioc_m]*fabs(MV->M.res.I[ioc_p])+MV->M.res.Va[ioc_p]*fabs(MV->M.res.I[ioc_m]))/(fabs(MV->M.res.I[ioc_p])+fabs(MV->M.res.I[ioc_m]));
+								Print(NORMAL,"* line %3d: defining \"Voc\" = %e",line_nr,Voc);
+								DefineVar("Voc", Voc);
+							}
+							else
+							{
+								Print(NORMAL,"* line %3d: Voc cannot be determined, giving it my best guess (which possibly is a very bad estimate)",line_nr);
+								if (ioc_m>=0)
+								{
+									Print(NORMAL,"* line %3d: defining \"Voc\" = %e",line_nr,MV->M.res.Va[ioc_m]);
+									DefineVar("Voc", MV->M.res.Va[ioc_m]);
+								}
+								else 
+								{
+									Print(NORMAL,"* line %3d: defining \"Voc\" = %e",line_nr,MV->M.res.Va[ioc_p]);
+									DefineVar("Voc", MV->M.res.Va[ioc_p]);
+								}
+							}
+						}
+						if (imp>=0)
+						{
+							Print(NORMAL,"* line %3d: defining \"Vmpp\" = %e",line_nr,MV->M.res.Va[imp]);
+							DefineVar("Vmpp", MV->M.res.Va[imp]);
+							Print(NORMAL,"* line %3d: defining \"Impp\" = %e",line_nr,MV->M.res.I[imp]);
+							DefineVar("Impp", MV->M.res.I[imp]);							
+						}
+						else
+							Print(NORMAL,"* line %3d: Maximum power-point could not be determined",line_nr);
+						FreeArgs (args, 1);
 						break;
 					}
 					/********************************* Secion verbosity settings*/
