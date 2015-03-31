@@ -42,6 +42,7 @@ void PrintMesh(char *fn, mesh *M, int *selected);
 void PrintConn(char *fn, mesh *M, int *selected);
 void PrintSurfDef(char *fn, mesh *M, int *selected);
 void PrintSurfV(char *fn, mesh *M, int *selected);
+void PrintSolPar(char *fn, mesh *M);
 void PrintIV(char *fn, mesh *M);
 void PrintProbe(char *fn, mesh *M, double x, double y);
 void PrintInIp(char *fn, mesh *M, int *selected);

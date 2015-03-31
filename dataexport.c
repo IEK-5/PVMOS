@@ -817,6 +817,29 @@ void PrintPars(char *fn, mesh *M)
 	}
 	fclose(f);
 }
+
+void PrintSolPar(char *fn, mesh *M)
+{
+	FILE *f;
+	double Voc, P;
+	int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
+	if(SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p))
+		Error("Could not determine solar cell parameters\n");
+		
+	if ((f=fopen(fn,"w"))==NULL)
+		Error("Cannot open %s for writing\n", fn);
+	PrintFileHeader(f);
+	fprintf(f, "# Simulated solar cell parameters\n");
+	
+	Voc=(M->res.Va[ioc_m]*fabs(M->res.I[ioc_p])+M->res.Va[ioc_p]*fabs(M->res.I[ioc_m]))/(fabs(M->res.I[ioc_p])+fabs(M->res.I[ioc_m]));
+	P=M->res.I[imp]*M->res.Va[imp];
+	
+	fprintf(f, "Isc: %e [A]\t\tImpp: %e [A]\n", M->res.I[isc], M->res.I[imp]);
+	fprintf(f, "Voc: %e [V]\t\tVmpp: %e [V]\n", Voc, M->res.Va[imp]);	
+	fprintf(f, "FF:  %e [-]\t\tPmpp: %e [W]\n", P/(M->res.I[isc]*Voc), P);
+	fclose(f);
+}
+
 void PrintIV(char *fn, mesh *M)
 {
 	int i;

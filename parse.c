@@ -1210,6 +1210,21 @@ void Parse (char *file)
 						FreeArgs (args, 2);	
 						break;
 					}
+					case PRINTSOLPAR:
+					{
+						meshvar *MV;			
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print solar cell parameters for mesh %s to file %s",line_nr,args[0], args[1]);
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						PrintSolPar(args[1],&(MV->M));
+						FreeArgs (args, 2);	
+						break;
+					}
 					case PRINTIV:
 					{
 						meshvar *MV;			
