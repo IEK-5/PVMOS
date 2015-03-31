@@ -17,7 +17,7 @@ Synopsys:
 polytransform <polygon> [[operation1] [args 1] [operation 2] [args2]...]
 
 Operation
-   move:	Shits all coordinates over an x- and y-offset. Thus it
+   move:	Shifts all coordinates over an x- and y-offset. Thus it
 		takes two arguments, xoff and yoff
    rot:		Rotate coordinates around a center coordinate. Takes
 		three arguments, the center coordinates, xc and yc, 

@@ -3062,28 +3062,28 @@ void Parse (char *file)
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
-						Print(NORMAL,"* line %3d: Setting absolute voltage totelance to %s",line_nr, word);							
+						Print(NORMAL,"* line %3d: Setting absolute voltage tolerance to %s",line_nr, word);							
 						TolV=atof(word);
 						break;		
 					case RELTOLV:
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
-						Print(NORMAL,"* line %3d: Setting relative voltage totelance to %s",line_nr, word);							
+						Print(NORMAL,"* line %3d: Setting relative voltage tolerance to %s",line_nr, word);							
 						RelTolV=atof(word);
 						break;		
 					case TOLKCL:
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;	
-						Print(NORMAL,"* line %3d: Setting absolute KCL totelance to %s",line_nr, word);							
+						Print(NORMAL,"* line %3d: Setting absolute KCL tolerance to %s",line_nr, word);							
 						TolKcl=atof(word);
 						break;		
 					case RELTOLKCL:
 						begin=GetWord (begin, word);
 						if(word[0]=='\0')
 							goto premature_end;
-						Print(NORMAL,"* line %3d: Setting relative KCL totelance to %s",line_nr, word);								
+						Print(NORMAL,"* line %3d: Setting relative KCL tolerance to %s",line_nr, word);								
 						RelTolKcl=atof(word);
 						break;		
 					case SOLVE:

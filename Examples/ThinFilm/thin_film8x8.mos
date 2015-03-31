@@ -186,9 +186,13 @@ printpars minimodule pars.dat
 adaptive_solve 	minimodule 	5 	0.3 	2
 printmesh minimodule mesh1.dat
 
+tol_V 1e-9
+rel_tol_V 1e-8
+tol_kcl 1e-9
+rel_tol_kcl 1e-8
 solve minimodule 0 8 21
-refine_oc minimodule 1e-10 1e-10 5
-refine_mpp minimodule 1e-10 1e-10 10
+refine_oc minimodule 1e-8 1e-8 5
+refine_mpp minimodule 1e-8 1e-8 10
 define_solpar minimodule
 surfPplot minimodule 0 0 8 8 600 600 -1 minimoduleP_-1.dat
 surfPplot minimodule 0 0 8 8 600 600 -4 minimoduleP_-2.dat
