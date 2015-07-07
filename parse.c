@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 
@@ -419,6 +419,7 @@ void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, d
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
 }
+
 
 void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
 {
@@ -1288,6 +1289,69 @@ void Parse (char *file)
 								
 						PrintPars(args[1], M);
 						FreeArgs (args, 2);	
+						break;
+					}
+					case PRINTLOCALJV:
+					{
+						
+						mesh *M;				
+						char **args;
+						double x, y, Vstart, Vend;
+						int Nstep, el;
+						args=GetArgs (&begin, 8);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Print local JV characteristics in mesh %s to file %s",line_nr,args[0], args[1]);
+							
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
+						
+						x=atof(args[1]);
+						y=atof(args[2]);
+						el=atoi(args[3]);
+						if ((el<0)||(el>=M->Nel-1))
+							Error("* line %3d: Invalid inter electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, M->Nel-2);
+						Vstart=atof(args[4]);
+						Vend=atof(args[5]);
+						Nstep=atoi(args[6]);
+						Print(NORMAL, "* line %3d: Position (%e,%e), inter electrode indes %d",line_nr,x,y,el);
+						PrintLocalJV(args[7], *M, x, y, el, Vstart, Vend, Nstep);
+						FreeArgs (args, 8);	
+						break;
+					}
+					case SURFCOLCUR:
+					case SURFDCOLCUR:
+					{
+						meshvar *MV;
+						int el, Nx, Ny, NL;
+						double Va, x1, x2, y1, y2;					
+						char **args;
+						args=GetArgs (&begin, 11);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Export differential collected Currtent Density in mesh %s to file %s",line_nr,args[0], args[1]);
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						
+						el=atoi(args[2]);
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("* line %3d: Invalid inter electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
+						Va=atof(args[3]);
+						
+						x1=atof(args[4]);
+						y1=atof(args[5]);
+						x2=atof(args[6]);
+						y2=atof(args[7]);
+						Nx=atoi(args[8]);
+						Ny=atoi(args[9]);
+						NL=atoi(args[10]);
+
+						PrintLocallyCollectedCurrent(args[1], &(MV->M), x1, y1, x2, y2, Nx, Ny, Va, el, (key==SURFDCOLCUR), NL, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						FreeArgs (args, 11);	
 						break;
 					}
 					case SURFVPLOT:

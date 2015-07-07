@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 double TwoDiode(double V, double J01, double J02, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj);

@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 /* parse keys and keywords */
@@ -76,6 +76,9 @@ typedef enum {
 	PRINTPROBE,
 	PRINTINIPIV,
 	PRINTPARS,
+	PRINTLOCALJV,
+	SURFCOLCUR,
+	SURFDCOLCUR,
 	SURFVPLOT,
 	SURFPPLOT,
 	SURFJPLOT,
@@ -176,6 +179,9 @@ const KeyWord KeyTable[] =
 	{"print_probe", PRINTPROBE},
 	{"printInIp", PRINTINIPIV},
 	{"printpars", PRINTPARS},
+	{"printlocalJV", PRINTLOCALJV},
+	{"surfFc", SURFCOLCUR},
+	{"surffc", SURFDCOLCUR},
 	{"surfVplot", SURFVPLOT},
 	{"surfPplot", SURFPPLOT},
 	{"surfJplot", SURFJPLOT},

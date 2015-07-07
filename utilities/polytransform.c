@@ -198,6 +198,7 @@ void TransForm(POS *P, int Np, TRANS *T, ARGS *A, int Nc)
 	
 	}
 }
+
 #define MAXSTRLEN 2000
 POS * ReadPoly(char * fn, int **BR, int *Nbr, int *N)
 {
@@ -269,6 +270,47 @@ POS * ReadPoly(char * fn, int **BR, int *Nbr, int *N)
 	return P;	
 }
 
+double LengthPoly(POS *P, int Np, int *BR, int Nbr)
+{
+	int i, j=0;
+	double L=0;
+	double x,y;
+	for (i=1;i<Np;i++)
+	{
+	
+		if (i==BR[j])
+		{
+			if (j==0)
+			{
+				x=P[0].x;
+				y=P[0].y;
+			}
+			else
+			{
+				x=P[BR[j-1]].x;
+				y=P[BR[j-1]].y;
+			
+			}
+			L+=sqrt((P[i-1].x - x)*(P[i-1].x - x)+ (P[i-1].y - y)*(P[i-1].y - y));
+			j++;	
+		}
+		else
+			L+=sqrt((P[i].x - P[i-1].x)*(P[i].x - P[i-1].x)+ (P[i].y - P[i-1].y)*(P[i].y - P[i-1].y));
+	
+	}
+	if (j==0)
+	{
+		x=P[0].x;
+		y=P[0].y;
+	}
+	else
+	{
+		x=P[BR[j-1]].x;
+		y=P[BR[j-1]].y;	
+	}
+	L+=sqrt((P[i-1].x - x)*(P[i-1].x - x)+ (P[i-1].y - y)*(P[i-1].y - y));
+	return L;
+}
 
 void PrintPoly( POS *P, int Np, int *BR, int Nbr)
 {
@@ -428,6 +470,7 @@ int main(int argc, char **argv)
 	P=ReadPoly(argv[1], &BR, &Nbr, &Np);
 	TransForm(P, Np, T, A, Nc);
 	PrintPoly(P, Np, BR, Nbr);
+	fprintf(stderr,"Poly Length: %e\n", LengthPoly(P, Np, BR, Nbr));
  	free(T);
  	free(A);
  	free(P);

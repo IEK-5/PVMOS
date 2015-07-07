@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 /* Data Structures */
@@ -98,6 +98,7 @@ mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff);
 mesh JoinMeshes_H(mesh M1, mesh M2, double yoff);
 mesh JoinMeshes_V(mesh M1, mesh M2, double xoff);
 mesh DuplicateMesh(mesh M);
+void DuplicateNode(mesh M, node *d, int source_id);
 node *SearchNode(mesh M, int id);
 int FindProperties(mesh M, char *name);
 void NewProperties(mesh * M, char *name);

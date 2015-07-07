@@ -9,7 +9,7 @@ target=pvmos
 # CFLAGS=-O3
 CFLAGS=-Ofast -flto -Wall -fPIC
 # CFLAGS=-Og -g -Wall -fPIC
-LFLAGS= -flto -lcholmod -lopenblas-r0.2.13 -lm -lmatheval
+LFLAGS= -flto -lcholmod -lopenblas-r0.2.14 -lm -lmatheval
 # if linking to OpenBLAS we need to set the numthreads to 1
 # Uncomment this if you are not using OpenBLAS or believe OpenBLAS should run on more threads (at least for OpenBLAS version 0.2.13 this is a bad idea)
 OPENBLAS=""
@@ -19,9 +19,11 @@ WITH_LIBMATHEVAL=""
 # LFLAGS=-lcholmod -lopenblas-r0.2.13 -lm
 # LFLAGS= -lcholmod -L/usr/lib64/libblas.so.3 -lm
 #LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
-VERSION=0.67
-
-pvmos: $(obj)
+VERSION=0.71
+Y=$(shell date +%Y)
+OY=$(shell cat README.md |grep "Dr. Bart E. Pieters"|egrep -o '201[0-9]')
+NEWYEAR=$(shell [ "$(OY)" != "$(Y)" ] && echo true)
+pvmos: newversion newyear $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)
 install: pvmos
 	cp $(target) /usr/bin/
@@ -48,5 +50,13 @@ else
 endif	
 mkpvmosmesh: mesh2d.o utils.o list.o
 	mkoctfile -v  mkpvmosmesh.cc mesh2d.o utils.o list.o
+newversion:
+	sed -i 's/version [^\n]\+/version $(VERSION)/g' README.md
+newyear:
+ifeq ($(NEWYEAR),true)
+	sed -i 's/Dr. Bart E. Pieters 201[0-9]\+/Dr. Bart E. Pieters $(Y)/g' README.md
+	find . -maxdepth 1 -name '*.[ch]' -exec sed -i 's/Dr. Bart E. Pieters 201[0-9]\+/Dr. Bart E. Pieters $(Y)/g' {} \;
+endif
 clean:
+
 	-rm *.o *.oct $(target)

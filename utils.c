@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 
@@ -67,7 +67,7 @@ void Print(VERB_LEVEL v_level, const char *format_str, ...)
 	{
 		int numc;
 		char * s;
-		s=malloc((LINE_WIDTH+1)*sizeof(char));
+		s=malloc((LINE_WIDTH)*sizeof(char));
 		numc=vsnprintf(s, LINE_WIDTH*sizeof(char), format_str, ap);
       		/* on one particular system ap changed upon execustion of vsnprintf! 
 		   I do not know whether it is a bug or that I was wrong to assume
@@ -76,35 +76,39 @@ void Print(VERB_LEVEL v_level, const char *format_str, ...)
       		va_start (ap, format_str); 
 		if (numc>=LINE_WIDTH)
 		{
-			int br, i;
-			char *newline, c;
-			/* allocate more space and break result at last whitespace */
+			int br, i, minl=0;
+			char *newline;
+			
 			s=realloc(s,(numc+1)*sizeof(char));
 			numc=vsnprintf(s, (numc+1)*sizeof(char), format_str, ap);
       			va_start (ap, format_str);
 			newline=s;
-			while (strlen(newline)>=LINE_WIDTH)
+			while (strlen(newline)>LINE_WIDTH)
 			{
-				br=LINE_WIDTH;
-				while ((!isblank(newline[br]))&&(br>0))
+				br=LINE_WIDTH-1;
+				while ((!isblank(newline[br]))&&(br>minl))
 					br--;
-				if (br!=0)
+				if (br>minl)
 				{
 					newline[br]='\0';
 					printf("%s\n",newline);
 					for (i=0;i<LINE_SKIP;i++)
 						newline[br-i]=' ';
-					newline=newline+br-i+1;
-					
+					newline=newline+br+1-i;
 				}
 				else
 				{
-					c=newline[LINE_WIDTH-1];
-					newline[LINE_WIDTH-1]='\0';
-					printf("%s",newline);
-					newline+=LINE_WIDTH-1;
-					newline[0]=c;
+					char c;
+					br=LINE_WIDTH-1;
+					c=newline[br];
+					newline[br]='\0';
+					printf("%s\n",newline);					
+					newline[br]=c;
+					for (i=1;i<LINE_SKIP;i++)
+						newline[br-i]=' ';
+					newline=newline+br+1-i;
 				}
+				minl=LINE_SKIP;
 			}
 			printf("%s\n",newline);
 		}

@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 
@@ -260,6 +260,7 @@ double dAngle(double x1, double x2, double y1, double y2, double x, double y)
 	
 	return da;
 }
+
 
 /* to support holes in polygons we could do polygons with breaks. The polygon is split at the breaks (i.e. each part looped)
    and the integration below is summed up over all parts. we then do a modulus 4pi and figure out whether the node is in or out */
@@ -960,6 +961,7 @@ void ResolvRect(double x1, double y1, double x2, double y2, mesh *M, double D)
 	free(P.BR);
 
 }
+
 
 
 /* extendable to polygons with holes if we add the possibility to track breaks, i.e. an empty line to indicate no connection between two susequent nodes

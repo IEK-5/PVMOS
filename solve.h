@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 void BubbleSortJV(int n, double *V, double *J);
@@ -46,3 +46,4 @@ int SolPar(mesh *M, int *isc, int *imp_m, int *imp, int *imp_p, int *ioc_m, int 
 void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);
 void RefineMPP(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);
 void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);
+double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, int diff, int NL, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter);

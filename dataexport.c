@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 
@@ -1009,4 +1009,142 @@ void PrintInIp(char *fn, mesh *M, int *selected)
 	free(I);
 	free(Ip);
 	free(In);
+}
+/* select nodes along the points in a grid, i.e. select those nodes which contain the points in a grid */
+int * ListGridNodes(mesh M, double x1, double y1, double x2, double y2, int Nx, int Ny, int *list, int *index)
+{
+	int i,j, ln_y=0, ln_x=0;
+	double x,y, x_step, y_step;
+	/* scan a regular mesh */
+	x_step=(x2-x1)/((double)Nx);
+	y_step=(y2-y1)/((double)Ny);
+	
+	x=x1;
+	for (i=0;i<=Nx;i++)
+	{
+		y=y1;
+		for (j=0;j<=Ny;j++)
+		{
+			ln_y=FindPos(M, ln_y, x, y);
+			list=AddToList(list, ln_y);
+			if (j==0)
+				ln_x=ln_y;
+			y+=y_step;
+			
+		}
+		ln_y=ln_x;
+		x+=x_step;
+	}
+	x=x1;
+	for (i=0;i<=Nx;i++)
+	{
+		y=y1;
+		for (j=0;j<=Ny;j++)
+		{
+			ln_y=FindPos(M, ln_y, x, y);
+			FindInList(ln_y, list, index+i*(Ny+1)+j);
+			if (j==0)
+				ln_x=ln_y;
+			y+=y_step;
+			
+		}
+		ln_y=ln_x;
+		x+=x_step;
+	}
+	return list;
+}
+
+
+void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, double x2, double y2, int Nx, int Ny, double Va, int diode_index, int diff, int NL, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+{
+	double *J;
+	int i, j, *sel_nodes, *index;
+	double x,y, x_step, y_step;
+	
+	FILE *f;
+	if ((f=fopen(fn,"w"))==NULL)
+		Error("Cannot open %s for writing\n", fn);
+	sel_nodes=malloc(LISTBLOCK*sizeof(int));
+	sel_nodes[0]=0;
+	
+	index=malloc(((Nx+1)*(Ny+1)+1)*sizeof(int));
+	sel_nodes=ListGridNodes(*M, x1, y1, x2, y2, Nx, Ny, sel_nodes, index);
+	
+	J=LocalyCollectedCurrent(M, Va, diode_index, sel_nodes, diff, NL, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
+	
+	PrintFileHeader(f);
+	if (diff)
+		fprintf(f, "# Simulated Differential Current Collection Efficiency mapped to a regular mesh\n");
+	else
+		fprintf(f, "# Simulated Current Collection Efficiency mapped to a regular mesh\n");
+	fprintf(f, "# Inter electrode index %i\n", diode_index);
+	
+	if (diff)
+		fprintf(f, "# x [cm]\ty [cm]\tdJ_ext/dJ(x,y) [-]\n");
+	else
+		fprintf(f, "# x [cm]\ty [cm]\tJ [A cm^-2]\n");
+	/* scan a regular mesh */
+	x_step=(x2-x1)/((double)Nx);
+	y_step=(y2-y1)/((double)Ny);
+	
+	x=x1;
+	for (i=0;i<=Nx;i++)
+	{
+		y=y1;
+		for (j=0;j<=Ny;j++)
+		{
+			y+=y_step;
+			fprintf(f,"%e %e %e\n", x, y, J[index[i*(Ny+1)+j]]);
+		}
+		fprintf(f,"\n");
+		x+=x_step;
+	}
+	free(sel_nodes);
+	free(index);
+	free(J);
+	
+	fclose(f);
+
+}
+
+void PrintLocalJV(char *fn, mesh M, double x, double y, int inter_index, double Vstart, double Vend, int Nstep)
+{
+	FILE *f;
+	node N;
+	int id, i;
+	double V, dV, I, Vj;
+	if ((f=fopen(fn,"w"))==NULL)
+		Error("Cannot open %s for writing\n", fn);
+	
+	PrintFileHeader(f);
+	fprintf(f, "# Local JV characteristics for position (%e,%e) and inter electrode index %d\n", x, y, inter_index);
+	fprintf(f, "# U [V]\tJp [A/cm^2]\tUj [V]\n");
+	
+	/* find local node */
+	id=FindPos(M, 0, x, y);
+	
+	/* copy node, to edit it */
+	DuplicateNode(M, &N, id);
+	
+	/* make node 1 cm^2 so the current is equal to the current-density */
+	N.x1=0;
+	N.x2=1;
+	N.y1=0;
+	N.y2=1;
+	
+	if (Nstep==0)
+		Nstep++;
+	dV=Vend-Vstart;	
+	for (i=0;i<=Nstep;i++)
+	{
+		V=Vstart+dV*(double)i/(double)Nstep;
+		Diode(M, N, inter_index, V, &I, NULL, &Vj);
+		fprintf(f,"%e %e %e\n", V, I, Vj);
+		
+	}
+	
+	free(N.north);
+	free(N.south);
+	free(N.east);
+	free(N.west);
 }

@@ -34,7 +34,7 @@
  *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
  *****************************************************************
  *                                                               *
- *    Dr. Bart E. Pieters 2014                                   *
+ *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
  *****************************************************************/                                                                             
 
@@ -322,6 +322,7 @@ cholmod_sparse * SystemMatrix(mesh M, cholmod_common *c)
 
 
 cholmod_sparse * JacobiMatrix(mesh M, double *V, cholmod_sparse *S, cholmod_common *c)
+/* Takes the system mathix and adds the linearized (non-linear) inter-electrode connection */
 {
 	cholmod_sparse *J, *jj;
 	int n, i;
@@ -517,7 +518,8 @@ void Residual(mesh M, double *V, double Va, double *I, double *E, double *Erel, 
 
 #undef Area
 
-void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double *Ekcl, double *Ekcl_rel, double *Ev, cholmod_sparse *S, cholmod_common *c)
+void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double *Ekcl, double *Ekcl_rel, double *Ev, int N_lin_search, cholmod_sparse *S, cholmod_common *c)
+/* Do one newton iteration  */
 {
 	cholmod_sparse *J;
 	cholmod_factor *F ;
@@ -570,7 +572,7 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 		vv=Vout;
 	/* if new KCL Error is larger than the old one, do a linear seach for a voltage step with a smaller KCL error */
 	/* We simply divide the adaption by 2 repeatedly untill either the new KCL error is smaller than the old one or a (hard-coded) maximum number of 7 steps (a=0.00781250)*/
-	while (((*Ekcl)>E0)&&(i<8))
+	while (((*Ekcl)>E0)&&(i<N_lin_search))
 	{
 		for (j=0;j<M.Nel*M.Nn;j++)
 			vv[j]=Vin[j]-a*dvv[j];
@@ -590,7 +592,7 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 }
 
 int FindVa(double Va, double *list, int Nva)
-/* returns a pointer to the closest simulated node voltages */
+/* returns a pointer to the closest simulated element voltages */
 {
 	double min;
 	int i, imin;
@@ -611,6 +613,7 @@ int FindVa(double Va, double *list, int Nva)
 
 
 void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+/* Do an IV sweep */
 {
 	cholmod_common c ;
 	cholmod_sparse *S;
@@ -669,7 +672,7 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 		i=0;
 		do
 		{
-			NewtonStep(*M, V, Vout,Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,S, &c);
+			NewtonStep(*M, V, Vout,Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,8, S, &c);
 			/* swap input and output arrays */
 			vv=Vout;
 			Vout=V;
@@ -690,9 +693,11 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 	cholmod_finish(&c);
 }
 
-/* returns indexes to datapoints we need to compute/refine solar cell parameters */
-/* As we can set the applied voltage to 0 we dpo not need to refinbe Isc, thus I return just the index of the minimal voltage */
-/* To refine Voc I need one point above and one point below, thus I returnb two indexes */
+/* returns indexes to datapoints in the IV characteristics around points of interest, namely Short circuit, Open circuit and mpp */
+/* This serves either to refine those points or to determine the solar cell parameters */
+/* As we can set the applied voltage to 0 we dpo not need to refine Isc, thus I return just the index of the minimal absolute voltage */
+/* You may want to make sure it is 0 volts */
+/* To refine Voc I need one point above and one point below, thus I return two indexes */
 /* To refine Pmpp I need Pmax, one below this and one abovce it, i.e. I look for three indexes */
 int SolPar(mesh *M, int *isc, int *imp_m, int *imp, int *imp_p, int *ioc_m, int *ioc_p)
 {
@@ -768,30 +773,34 @@ int SolPar(mesh *M, int *isc, int *imp_m, int *imp, int *imp_p, int *ioc_m, int 
 			Pmax=-(M->res.I[i]*M->res.Va[i]);
 			Vmp=M->res.Va[i];
 			(*imp)=i;
-		}
-		else if ((imp_m<0)&&(Vmp>M->res.Va[i]))
+		} 
+		else if (((*imp_p)<0)&&(Vmp>M->res.Va[i]))
 		{
-				(*imp_m)=i;
-				Vmp_m=M->res.Va[i];		
-		}
-		else if ((imp_p<0)&&(Vmp<M->res.Va[i]))
+			(*imp_m)=i;
+			Vmp_m=M->res.Va[i];		
+		} 
+		else if (((*imp_p)<0)&&(Vmp<M->res.Va[i]))
 		{
-				(*imp_p)=i;
-				Vmp_p=M->res.Va[i];		
-		}
-	        else if ((Vmp<M->res.Va[i])&&(Vmp_p>M->res.Va[i]))
+			(*imp_p)=i;
+			Vmp_p=M->res.Va[i];		
+		} 
+		else if ((Vmp<M->res.Va[i])&&(Vmp_p>M->res.Va[i]))
 		{
-				(*imp_p)=i;
-				Vmp_p=M->res.Va[i];		
-		}
-	        else if ((Vmp>M->res.Va[i])&&(Vmp_m<M->res.Va[i]))
+			(*imp_p)=i;
+			Vmp_p=M->res.Va[i];		
+		} 
+		else if ((Vmp>M->res.Va[i])&&(Vmp_m<M->res.Va[i]))
 		{
-				(*imp_m)=i;
-				Vmp_m=M->res.Va[i];		
+			(*imp_m)=i;
+			Vmp_m=M->res.Va[i];		
 		}
 			
 	}
-		
+	if (M->res.Nva>0)
+	{
+		if (fabs(M->res.Va[(*isc)])>1e-3)
+			Warning("Warning: Short circuit conditions were not simulated\n\t-->Using current at %e V instead\n", M->res.Va[(*isc)]);
+	}
 	if (((*isc)<0)||((*imp_m)<0)||((*imp)<0)||((*imp_p)<0)||((*ioc_m)<0)||((*ioc_p)<0))
 		return 1;
 	return 0;
@@ -825,6 +834,9 @@ void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs
 		SolveVa(M, x3, x3, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter);
 		f3=M->res.I[M->res.Nva-1];
 		if (fabs(f3)<tol_i)
+			return;
+		iter++;
+		if (iter==Niter)
 			return;
 		x4=x3+(x3-x1)*sign(f1-f2)*f3/(sqrt(f3*f3-f2*f1));
 		SolveVa(M, x4, x4, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter);
@@ -865,7 +877,7 @@ void RefineMPP(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_ab
 	SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);
 	if ((imp_m<0)||(imp_p<0)||(imp<0))
 	{
-		Warning("Cannot refine maximum powerpoint, I need at least one three bias points\n");
+		Warning("Cannot refine maximum powerpoint, I need at least three bias points\nspanning a range around mpp\n");
 		return;
 	}
 	
@@ -1161,4 +1173,163 @@ double *CollectionEfficiency(mesh *M, int *list, double Va, double dJph, double 
 	
 }
 */
+
+#define Njv 101
+/* this routine is still somewhat experimental. If it turns out (as I suspect) that the linear and differential version is the only one we need we can simplify the thing a bit,
+ e.g., in case it is linear we do not need the whole IV for that as we do not do anything NL. */
+ 
+double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, int diff, int NL, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+{
+	cholmod_common c ;
+	cholmod_sparse *S;
+	int i, j, Na_old;
+	double Ev=0;
+	double Ekcl, Ekcl_rel;
+	double *res;
+	double *V, *Vnew, *Vref, *vv;
+	int pc, pcl=0;
+	clock_t start, end;
+	
+	if (!nodes[0])
+		return NULL;
+		
+	res=malloc((nodes[0]+1)*sizeof(double));
+	Print(NORMAL, "Simulating the Locally Collected Current");
+	Print(NORMAL, "Doing reference calculation");
+	/* solva system */
+	SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
+	
+	/* for each area definition, create a new area with diode removed */
+	Na_old=M->Na;
+	for (i=0;i<Na_old;i++)
+	{
+		M->Na++;
+		M->P=realloc(M->P, (M->Na+1)*sizeof(local_prop));
+		DuplicateProperties(M, M->P+M->Na-1, M->P+i);
+		
+		if (M->P[Na_old+i].conn[diode_index].V)
+			free(M->P[Na_old+i].conn[diode_index].V);
+		if (M->P[Na_old+i].conn[diode_index].J)
+			free(M->P[Na_old+i].conn[diode_index].J);
+		
+		M->P[Na_old+i].conn[diode_index].V=calloc((Njv+1),sizeof(double));
+		M->P[Na_old+i].conn[diode_index].J=calloc((Njv+1),sizeof(double));
+		M->P[Na_old+i].conn[diode_index].N=Njv;
+		M->P[Na_old+i].conn[diode_index].model=JVD;	
+	}
+	
+	
+	Print(NORMAL, "Running through selected elements");
+	cholmod_start (&c);
+	c.nmethods = 2 ;
+	c.postorder = 1 ; 
+     	start = clock();
+	S=SystemMatrix(*M, &c);	
+     	end = clock();
+	cpu_time_system+=((double) (end - start)) / CLOCKS_PER_SEC;
+	
+	
+	V=calloc((M->Nel*M->Nn+1),sizeof(double));
+	Vref=calloc((M->Nel*M->Nn+1),sizeof(double));
+	Vnew=calloc((M->Nel*M->Nn+1),sizeof(double));
+	
+	for (j=0;j<M->Nel*M->Nn;j++)	
+	{		
+		Vref[j]=M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn];
+		V[j]=Vref[j];
+	}
+		
+	
+	Print(NORMAL, "Simulating Current Collection Efficiency");
+	
+	/* for each element in the mesh, move it into the new area copy, simulate the current and move it back */
+	printf("\n");
+	for (i=1;i<=nodes[0];i++)
+	{
+		double Ilocal, Inew, A;
+		node *N;
+		N=SearchNode(*M, nodes[i]);
+		/* store local current */
+		A=((N->x2-N->x1)*(N->y2-N->y1));
+		if (!diff)
+			Diode(*M, *N, diode_index, 0, &Ilocal, NULL, NULL);
+		else
+		{
+			Diode(*M, *N, diode_index, Vref[N->id+diode_index*M->Nn]-Vref[N->id+(diode_index+1)*M->Nn], &Ilocal, NULL, NULL);
+			Ilocal=fabs(Ilocal)+1000*tol_kcl_abs;
+		}
+			
+			
+		
+		for (j=0;j<M->Nel*M->Nn;j++)	
+			V[j]=Vref[j];
+		for (j=0;j<Njv;j++)
+		{
+			double Vstart, Vend;
+			Vstart=Vref[N->id+diode_index*M->Nn]-Vref[N->id+(diode_index+1)*M->Nn]-0.5;
+			Vend=Vref[N->id+diode_index*M->Nn]-Vref[N->id+(diode_index+1)*M->Nn]+0.5;
+			M->P[N->P+Na_old].conn[diode_index].V[j]=Vstart+j*(Vend-Vstart)/(Njv-1);
+			Diode(*M, *N, diode_index, M->P[N->P+Na_old].conn[diode_index].V[j], M->P[N->P+Na_old].conn[diode_index].J+j, NULL, NULL);
+			M->P[N->P+Na_old].conn[diode_index].J[j]-=Ilocal;
+			M->P[N->P+Na_old].conn[diode_index].J[j]/=A;
+		}
+		/* move node into modified area */
+		N->P+=Na_old;
+		
+		/* simulate */
+		if (!NL)
+		{
+			NewtonStep(*M, V, Vnew,Va, &Inew, &Ekcl, &Ekcl_rel, &Ev,1, S, &c);
+			/* swap input and output arrays */
+			vv=Vnew;
+			Vnew=V;
+			V=vv;
+			Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, j+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
+		}
+		else
+		{
+			j=0;
+			do
+			{
+				NewtonStep(*M, V, Vnew,Va, &Inew, &Ekcl, &Ekcl_rel, &Ev,8, S, &c);
+				/* swap input and output arrays */
+				vv=Vnew;
+				Vnew=V;
+				V=vv;
+				Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, j+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
+			} while ((j<max_iter)&&(((Ekcl>tol_kcl_abs)&&(Ekcl_rel>tol_kcl_rel))||((Ev>tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>tol_v_rel))));
+		}
+		
+		
+		if (diff)
+			res[i]=(M->res.I[M->res.Nva-1]-Inew)/Ilocal;
+		else
+			res[i]=(Inew-M->res.I[M->res.Nva-1])/A;
+		
+		/* move node back */
+		N->P-=Na_old;
+		pc=floor(1000*(double)i/((double)nodes[0])+0.5);
+		if (pcl<pc)
+		{
+			printf("\r%.1f %% completed   ", 100*(double)i/((double)nodes[0]));
+			pcl=pc;
+		}
+		fflush(stdout);
+		
+	}
+	printf("\n");
+
+	Print(NORMAL, "----------------------------------------------------------------");
+	/* clean up modifications to the mesh */
+	for (i=Na_old;i<M->Na;i++)
+		FreeProperties(M->P+i, M->Nel);
+	M->Na=Na_old;
+	
+	free(V);
+	free(Vnew);
+	free(Vref);
+	cholmod_free_sparse(&S, &c);	
+	cholmod_finish(&c);
+	return res;
+}
 

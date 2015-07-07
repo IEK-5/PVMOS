@@ -497,6 +497,18 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{printlocalJV}	& Print a JV characteristics for one particular location and one inter-electrode index.This is useful to check the PVMOS diod3e model. That command takes 8 parameters:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x}, x-coodinate
+\item \texttt{y}, y-coordinate
+\item \texttt{i}, inter-electrode index
+\item \texttt{Vstart}, Start voltage for the JV characteristics
+\item \texttt{Vend}, End voltage for the JV characteristics
+\item \texttt{Nstep}, Number of voltage steps in the JV characteristics
+\item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{surfVplot}		& Export the electrode voltages for a specific solution. Unlike the \texttt{print}-commands like \texttt{printV} the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
@@ -559,6 +571,36 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
 \item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
 \item \texttt{file-name}, filename to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surfFc}		& Export the locally collected photocurrent. The locally collected current is the portion of the local photocurrent which is collected at the terminals. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes 11 arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\item \texttt{connection-index}, Index of the connection for which the photocurrent collection is computed. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{Va}, applied voltage
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{NL}, if NL is 0 the calculation is performed in the linearized system, if it is 1 the non-linear system is used. I intend to remove this parameter in later versions as I do not believe the non-liner version adds anything but calculation time and other problems. For now it is here for testing purposes.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surffc}		& Export the differential local photocurrent collection efficiency. The differential photocurrent collection efficiency is the portion of a change in photocurrent that is collected at the terminals. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes 11 arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{file-name}, filename to save the data in.
+\item \texttt{connection-index}, Index of the connection for which the photocurrent collection is computed. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{Va}, applied voltage
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{NL}, if NL is 0 the calculation is performed in the linearized system, if it is 1 the non-linear system is used. I intend to remove this parameter in later versions as I do not believe the non-liner version adds anything but calculation time and other problems. For now it is here for testing purposes.
 \end{enumerate}\\
 \multicolumn{2}{l}{\textsc{Manipulating local properties}} \\*
 \hline
