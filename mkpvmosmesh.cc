@@ -54,24 +54,40 @@ char * Getstring(charMatrix string)
 	res[string.cols()]='\0';
 	return res;
 }
+octave_value VectorIndex(Matrix v, int i)
+{
+	octave_value tmp;
+	if (v.cols()==1)
+	{
+		if ((i<0)||(i>=v.rows()))
+			i=v.rows()-1;
+		tmp=v(i,0);
+	}
+	else
+	{
+		if ((i<0)||(i>=v.cols()))
+			i=v.cols()-1;
+		tmp=v(0,i);
+	}
+	return tmp;
+}
+
 
 DEFUN_DLD (mkpvmosmesh, args, nargout,"\
-mkpvmosmesh(Na, Nel, Area_Index, Area_Def, x1, y1, x2, y2, filename)\n\
+mkpvmosmesh(Na, Nel, Area_Index, Area_Def, x, y, filename)\n\
 Generate a regular mesh for PVMOS from octave data structures and write it to a file.\n\
 Na          - The number or area's in the mesh\n\
 Nel         - The number or area's in the mesh\n\
 Area_Index  - A matrix with index number reffering to areas\n\
 Area_Def    - The area definition struct array describing the properties of each area\n\
-x1          - x-coordinate of the lower left corner\n\
-y1          - y-coordinate of the lower left corner\n\
-x2          - x-coordinate of the upper right corner\n\
-y2          - y-coordinate of the upper right corner\n\
+x           - vector with x coordinates of node boundaries\n\
+y           - vector with y coordinates of node boundaries\n\
 filename    - filename of the file to dump the resulting PVMOS mesh in")
 {
 	mesh M;
 	int i, j, k, N;
   	int nargin = args.length ();
-  	if (nargin != 9)
+  	if (nargin != 7)
 	{
     		print_usage ();
 		return octave_value_list ();
@@ -80,14 +96,10 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 	int Nel = args(1).int_value();
 	Matrix Area_Index = args(2).matrix_value();
         Octave_map Area_Def = args(3).map_value ();
-	double x1=args(4).double_value();
-	double x2=args(5).double_value();
-	double y1=args(6).double_value();
-	double y2=args(7).double_value();
+	Matrix x=args(4).matrix_value();
+	Matrix y=args(5).matrix_value();
 	char * string;
- 	charMatrix fn = args(8).char_matrix_value ();
-	
-	M=InitMesh("PVMOS_mesh", x1, x2, y1, y2, Area_Index.cols(), Area_Index.rows());
+ 	charMatrix fn = args(6).char_matrix_value ();
 	
 	if (Nel<2)
 	{
@@ -95,6 +107,11 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 		FreeMesh(&M);
 		return octave_value_list ();
 	}
+	
+    	printf("Init mesh\n");
+	M=InitMesh("PVMOS_mesh", 0,  1, 0, 1, Area_Index.cols(), Area_Index.rows());
+
+	
 	
     	printf("Setting the number of electrodes to %d\n", Nel);
 	/* set the right number of electrodes */
@@ -307,14 +324,29 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 		}
 		M.P[i+1].SplitY=res.int_value();
 	}
-    	printf("Assigning nodes to areas\n");
+    	printf("Sett8ng element properties (assigning to areas and coordinates)\n");
 	int Nn=0;
+	double x1=0;
+	double x2=0;
+	double y1=0;
+	double y2=0;
 	for (i=0;i<Area_Index.cols();i++)
+	{
+		x1=VectorIndex(x, i).double_value();
+		x2=VectorIndex(x, i+1).double_value();
 		for (j=0;j<Area_Index.rows();j++)
 		{
+			y1=VectorIndex(y, j).double_value();
+			y2=VectorIndex(y, j+1).double_value();
 			M.nodes[Nn].P=(int)Area_Index(j,i);
+			
+			M.nodes[Nn].x1=x1;
+			M.nodes[Nn].x2=x2;
+			M.nodes[Nn].y1=y1;
+			M.nodes[Nn].y2=y2;
 			Nn++;
 		}
+	}
 	string=Getstring(fn);
     	printf("Writing mesh to file %s\n", string);
 	WriteMesh(string, &M);	

@@ -486,6 +486,8 @@ void Parse (char *file)
 	int line_nr=1;
 	int MaxIter=25;
 	double TolV=1e-5, RelTolV=1e-5, TolKcl=1e-5, RelTolKcl=1e-5;
+	int GminStep=8, N_lin_search=10;
+	double GminMax=1e-3, GminFac=10;
 	clock_t tic, toc;
 	PRSDEF key;
 	polygon P;
@@ -1350,7 +1352,7 @@ void Parse (char *file)
 						Ny=atoi(args[9]);
 						NL=atoi(args[10]);
 
-						PrintLocallyCollectedCurrent(args[1], &(MV->M), x1, y1, x2, y2, Nx, Ny, Va, el, (key==SURFDCOLCUR), NL, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						PrintLocallyCollectedCurrent(args[1], &(MV->M), x1, y1, x2, y2, Nx, Ny, Va, el, (key==SURFDCOLCUR), NL, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter, N_lin_search, GminStep, GminMax, GminFac);
 						FreeArgs (args, 11);	
 						break;
 					}
@@ -3164,6 +3166,34 @@ void Parse (char *file)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting relative KCL tolerance to %s",line_nr, word);								
 						RelTolKcl=atof(word);
+						break;
+					case NLINSEARCH:
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Setting number of steps for a linear search in the Newton direction to %s",line_nr, word);								
+						N_lin_search=atoi(word);
+						break;	
+					case GMINSTEP:
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Setting number of Gmin steps to %s (Gmin stepping is triggered at convergence problems)",line_nr, word);								
+						GminStep=atoi(word);
+						break;	
+					case GMINMAX:
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Setting maximum Gmin value to %s",line_nr, word);								
+						GminMax=atof(word);
+						break;	
+					case GMINFAC:
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Setting Gmin stepping factor to %s",line_nr, word);								
+						GminFac=atof(word);
 						break;		
 					case SOLVE:
 					{
@@ -3185,7 +3215,7 @@ void Parse (char *file)
 						Vend=atof(args[2]);
 						Nstep=atoi(args[3]);
 						
-						SolveVa(M, Vstart, Vend, Nstep, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						SolveVa(M, Vstart, Vend, Nstep, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter, N_lin_search, GminStep, GminMax, GminFac);
 						FreeArgs (args, 4);
 						break;
 					}	
@@ -3208,7 +3238,7 @@ void Parse (char *file)
 						tol_v=atof(args[2]);
 						Niter=atoi(args[3]);
 						
-						RefineOC(M, tol_i, tol_v, Niter, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						RefineOC(M, tol_i, tol_v, Niter, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter, N_lin_search, GminStep, GminMax, GminFac);
 						FreeArgs (args, 4);
 						
 						break;
@@ -3232,7 +3262,7 @@ void Parse (char *file)
 						tol_i=atof(args[1]);
 						tol_v=atof(args[2]);
 						Niter=atoi(args[3]);
-						RefineMPP(M, tol_i, tol_v, Niter, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						RefineMPP(M, tol_i, tol_v, Niter, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter, N_lin_search, GminStep, GminMax, GminFac);
 						FreeArgs (args, 4);
 						break;
 					}
@@ -3255,7 +3285,7 @@ void Parse (char *file)
 						rel_th=atof(args[2]);
 						Na=atoi(args[3]);
 						MV->nodes[0]=0;
-						AdaptiveSolveVa(&(MV->M), Va, rel_th, Na, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter);
+						AdaptiveSolveVa(&(MV->M), Va, rel_th, Na, TolKcl, RelTolKcl, TolV, RelTolV, MaxIter, N_lin_search, GminStep, GminMax, GminFac);
 						FreeArgs (args, 4);
 						break;
 					

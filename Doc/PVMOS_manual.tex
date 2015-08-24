@@ -386,10 +386,11 @@ Keyword & Description \\
 \item \texttt{r}, radius of the selected circle
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{resolve\_poly}	& Split elements along the contour of a polygon untill all element edges are smaller than a given length. This command can be used to ensure a particular polygon fits accurately in the mesh. The command requires a polygon to be defined with either \texttt{define\_poly} or \texttt{load\_poly}. Breaks in the polygon are not resolved, i.e. the routine only resolves the line segments within the polygon. The command takes two arguments 
+\texttt{resolve\_poly}	& Split elements along the contour of a polygon untill all element edges are smaller than a given length. This command can be used to ensure a particular polygon fits accurately in the mesh. The command requires a polygon to be defined with either \texttt{define\_poly} or \texttt{load\_poly}. Breaks in the polygon are not resolved, i.e. the routine only resolves the line segments within the polygon. The command takes three arguments 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{l}, Maximum edge length
+\item \texttt{c}, Loop the polygon or not (1, loop, i.e. resolve the line segment between the start and end coordinates, 0 do not loop)
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{simplify}	&  Attempt to simplify a mesh. If elements are selected they are un-selected as the topology of the mesh changed. The command takes one argument 
@@ -762,6 +763,22 @@ Keyword & Description \\
 \begin{enumerate}
 \item \texttt{tol\_kcl}, Relative KCL tolerance $-$ (default: $10^{-5}$)
 \end{enumerate}\\
+\texttt{N\_Lin\_Search}	&  Number of steps for a linear search in the Newton-Raphson direction. If an iterative adaption of the potentials would lead to increase of the error in the Kirchhoff Current Laws, we perform a linear search in the Newton-Raphson direction. If a better solution is not found withind the number of steps specified, Gmin stepping is initiated (see the settings \texttt{GminSteps}, \texttt{GminMax}, and \texttt{GminFac}. The command takes one argument:
+\begin{enumerate}
+\item \texttt{N}, Number of steps $-$ (default: $10$)
+\end{enumerate}\\
+\texttt{GminStep} &  Number of Gmin stepping steps. In case of convergence problems Gmin stepping is triggered. In Gmin stepping a minimum conductance is placed in parallel with all non-linear devices. The value of the minimum conductance is then step wise reduced to 0. This parameter is used in conjunction with \texttt{GminMax} and \texttt{GminFac}. The command takes one argument:
+\begin{enumerate}
+\item \texttt{N}, Number of steps $-$ (default: $8$)
+\end{enumerate}\\	
+\texttt{GminMax} &  Maximum value of the minimum conductance. In case of convergence problems Gmin stepping is triggered. In Gmin stepping a minimum conductance is placed in parallel with all non-linear devices. The value of the minimum conductance is then step wise reduced to 0. This value sets the initial minimum conductance after Gmin stepping is triggered. This parameter is used in conjunction with \texttt{GminSteps} and \texttt{GminFac}. The command takes one argument:
+\begin{enumerate}
+\item \texttt{Gmin}, Minimum conductance $\Omega^{-1}$ (default: $10^{-3}$)
+\end{enumerate}\\
+\texttt{GminFac} &  Factor to stepwise reduce Gmin during Gmin stepping. In case of convergence problems Gmin stepping is triggered. In Gmin stepping a minimum conductance is placed in parallel with all non-linear devices. The value of the minimum conductance is then step wise reduced to 0. This value controls the rate with wich the Gmin value is reduced (higher is faster). This parameter is used in conjunction with \texttt{GminSteps} and \texttt{GminMax}. The command takes one argument:
+\begin{enumerate}
+\item \texttt{f}, Factor to reduce Gmin $-$ (default: $10$)
+\end{enumerate}\\		
 \multicolumn{2}{l}{\textsc{Solving}} \\*
 \hline
 Keyword & Description \\

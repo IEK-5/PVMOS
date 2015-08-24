@@ -732,6 +732,7 @@ void PrintConn(char *fn, mesh *M, int *selected)
 			N=SearchNode(*M, selected[i]);
 			xn=(N->x1+N->x2)/2;
 			yn=(N->y2+N->y1)/2;
+			fprintf(f, "# north of %d\n", N->id);
 			for (j=1;j<=N->north[0];j++)
 			{
 				N=SearchNode(*M, N->north[j]);
@@ -740,6 +741,7 @@ void PrintConn(char *fn, mesh *M, int *selected)
 				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, N->north[j],N->id);
 			
 			} 
+			fprintf(f, "# south of %d\n", N->id);
 			for (j=1;j<=N->south[0];j++)
 			{
 				N=SearchNode(*M, N->south[j]);
@@ -748,6 +750,7 @@ void PrintConn(char *fn, mesh *M, int *selected)
 				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, N->south[j],N->id);
 			
 			}
+			fprintf(f, "# east of %d\n", N->id);
 			for (j=1;j<=N->east[0];j++)
 			{
 				N=SearchNode(*M, N->east[j]);
@@ -756,6 +759,7 @@ void PrintConn(char *fn, mesh *M, int *selected)
 				fprintf(f,"%e %e %e %e %i %i\n", xn,yn,xnn-xn, ynn-yn, N->east[j],N->id);
 			
 			}
+			fprintf(f, "# west of %d\n", N->id);
 			for (j=1;j<=N->west[0];j++)
 			{
 				N=SearchNode(*M, N->west[j]);
@@ -1055,7 +1059,7 @@ int * ListGridNodes(mesh M, double x1, double y1, double x2, double y2, int Nx, 
 }
 
 
-void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, double x2, double y2, int Nx, int Ny, double Va, int diode_index, int diff, int NL, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, double x2, double y2, int Nx, int Ny, double Va, int diode_index, int diff, int NL, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter, int N_lin_search, int GminStep, double GminMax, double GminFac)
 {
 	double *J;
 	int i, j, *sel_nodes, *index;
@@ -1070,7 +1074,7 @@ void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, doubl
 	index=malloc(((Nx+1)*(Ny+1)+1)*sizeof(int));
 	sel_nodes=ListGridNodes(*M, x1, y1, x2, y2, Nx, Ny, sel_nodes, index);
 	
-	J=LocalyCollectedCurrent(M, Va, diode_index, sel_nodes, diff, NL, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
+	J=LocalyCollectedCurrent(M, Va, diode_index, sel_nodes, diff, NL, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter, N_lin_search, GminStep, GminMax, GminFac);
 	
 	PrintFileHeader(f);
 	if (diff)

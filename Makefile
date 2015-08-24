@@ -19,7 +19,7 @@ WITH_LIBMATHEVAL=""
 # LFLAGS=-lcholmod -lopenblas-r0.2.13 -lm
 # LFLAGS= -lcholmod -L/usr/lib64/libblas.so.3 -lm
 #LFLAGS= -lcholmod -L"/usr/local/cuda-5.5/targets/x86_64-linux/lib/" -L"/usr/lib64/nvidia-bumblebee/" -lcuda -lcudart -lcublas -lcufft -lm
-VERSION=0.71
+VERSION=0.72
 Y=$(shell date +%Y)
 OY=$(shell cat README.md |grep "Dr. Bart E. Pieters"|egrep -o '201[0-9]')
 NEWYEAR=$(shell [ "$(OY)" != "$(Y)" ] && echo true)
@@ -57,6 +57,12 @@ ifeq ($(NEWYEAR),true)
 	sed -i 's/Dr. Bart E. Pieters 201[0-9]\+/Dr. Bart E. Pieters $(Y)/g' README.md
 	find . -maxdepth 1 -name '*.[ch]' -exec sed -i 's/Dr. Bart E. Pieters 201[0-9]\+/Dr. Bart E. Pieters $(Y)/g' {} \;
 endif
+cleancopy:
+	mkdir -p CleanCopy
+	cp $(src) CleanCopy
+	cp $(hdr) CleanCopy
+	cp README.md CleanCopy
+	cp Makefile CleanCopy
 clean:
 
 	-rm *.o *.oct $(target)

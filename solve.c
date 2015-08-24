@@ -321,7 +321,7 @@ cholmod_sparse * SystemMatrix(mesh M, cholmod_common *c)
 
 
 
-cholmod_sparse * JacobiMatrix(mesh M, double *V, cholmod_sparse *S, cholmod_common *c)
+cholmod_sparse * JacobiMatrix(mesh M, double *V, double Gmin, cholmod_sparse *S, cholmod_common *c)
 /* Takes the system mathix and adds the linearized (non-linear) inter-electrode connection */
 {
 	cholmod_sparse *J, *jj;
@@ -366,6 +366,7 @@ cholmod_sparse * JacobiMatrix(mesh M, double *V, cholmod_sparse *S, cholmod_comm
 			
 			Diode(M, *SearchNode(M, i%M.Nn), i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV, NULL);
 			/* diagonal */
+			dIdV+=Gmin;
 			xx[pp[i]+1]+=dIdV;
 			/* off diagonal */
 			xx[pp[i]]-=dIdV;
@@ -394,6 +395,7 @@ cholmod_sparse * JacobiMatrix(mesh M, double *V, cholmod_sparse *S, cholmod_comm
 			pp[i+1]=pp[i]+2;
 			
 			Diode(M, *SearchNode(M, i%M.Nn), i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV, NULL);
+			dIdV+=Gmin;
 			/* diagonal */
 			xx[pp[i]+1]+=dIdV;
 			/* off diagonal */
@@ -518,7 +520,7 @@ void Residual(mesh M, double *V, double Va, double *I, double *E, double *Erel, 
 
 #undef Area
 
-void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double *Ekcl, double *Ekcl_rel, double *Ev, int N_lin_search, cholmod_sparse *S, cholmod_common *c)
+int NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double *Ekcl, double *Ekcl_rel, double *Ev, int N_lin_search, double Gmin, cholmod_sparse *S, cholmod_common *c)
 /* Do one newton iteration  */
 {
 	cholmod_sparse *J;
@@ -527,7 +529,7 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 	cholmod_dense *dv;
 	double *dvv, a=1.0, E0;
 	double *vv;
-	int i=0, j;
+	int i=0, j, conv=0;
 	clock_t start, end;
 	
 	res=cholmod_allocate_dense(M.Nel*M.Nn,1,M.Nel*M.Nn,CHOLMOD_REAL, c);
@@ -537,7 +539,7 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 	
      	start = clock();	
 	/* Determine Jacobi matrix */
-	J=JacobiMatrix(M, Vin, S, c);
+	J=JacobiMatrix(M, Vin, Gmin, S, c);
      	end = clock();
 	cpu_time_jacobi+=((double) (end - start)) / CLOCKS_PER_SEC;
 	
@@ -555,6 +557,12 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
      	end = clock();
 	cpu_time_cholmod+=((double) (end - start)) / CLOCKS_PER_SEC;
 	
+	
+	if (c->status==CHOLMOD_NOT_POSDEF)
+	{
+		Print(NORMAL, "Please check for floating nodes");
+		conv=1;
+	}
 	/* Process voltage step */
 	/* determine magnitude of voltage step */
 	dvv=(double *)dv->x;
@@ -562,7 +570,11 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 	for (j=0;j<M.Nel*M.Nn;j++)
 		(*Ev)+=dvv[j]*dvv[j];
 	(*Ev)=sqrt((*Ev)/((double)(M.Nel*M.Nn)));
-	
+	if (!isfinite(*Ev))
+	{
+		conv=1;
+		Print(VERBOSE, "Voltage error not finite.");
+	}
 	/* compute new KCL Error */
 	(*Ekcl)=E0+1;
 	
@@ -572,15 +584,36 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 		vv=Vout;
 	/* if new KCL Error is larger than the old one, do a linear seach for a voltage step with a smaller KCL error */
 	/* We simply divide the adaption by 2 repeatedly untill either the new KCL error is smaller than the old one or a (hard-coded) maximum number of 7 steps (a=0.00781250)*/
-	while (((*Ekcl)>E0)&&(i<N_lin_search))
+	for (j=0;j<M.Nel*M.Nn;j++)
+		vv[j]=Vin[j];
+	
+	while (((*Ekcl)>E0)&&(i<N_lin_search)&&(!conv))
 	{
 		for (j=0;j<M.Nel*M.Nn;j++)
+		{
 			vv[j]=Vin[j]-a*dvv[j];
+			if (isfinite(vv[j])==0)
+			{
+				/*do note step voltage, trigger gmin stepping */
+				for (j=0;j<M.Nel*M.Nn;j++)
+					vv[j]=Vin[j];
+				conv=1;
+				Print(VERBOSE, "Voltage vector not finite.");
+					
+			}
+		}
 		Residual(M, vv, Va, I, Ekcl, Ekcl_rel, S, res, c);
 		a/=2;	
 		i++;	
 	}
-	if (i>1)
+	if (!conv&&(i>=N_lin_search))
+	{
+		conv=1;	
+		for (j=0;j<M.Nel*M.Nn;j++)
+			vv[j]=Vin[j];
+		Print(VERBOSE, "Linear search in Newton direction failed.");
+	}
+	if ((i>1)&&(!conv))
 		Print(NORMAL,"Step size reduced by a factor of %e",a*2);
 	if (!Vout)
 		free(vv);
@@ -588,6 +621,7 @@ void NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double 
 	cholmod_free_dense(&dv, c);
 	cholmod_free_sparse(&J, c);
 	cholmod_free_factor(&F, c);
+	return conv;
 	
 }
 
@@ -612,14 +646,14 @@ int FindVa(double Va, double *list, int Nva)
 
 
 
-void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter, int N_lin_search, int GminStep, double GminMax, double GminFac)
 /* Do an IV sweep */
 {
 	cholmod_common c ;
 	cholmod_sparse *S;
-	double Ekcl, Ekcl_rel, Ev, Va, Vaf=1;
+	double Ekcl, Ekcl_rel, Ev, Va, Vaf=1, Gmin=0;
 	double *V, *Vout, *vv;
-	int i, j, k;
+	int i, j, k, GminSteps=0;
 	clock_t start, end;
 	Print(NORMAL, "________________________________________________________________");
 	Print(NORMAL, "Mesh with %d layers, each with %d elements", M->Nel, M->Nn);
@@ -641,6 +675,7 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 	M->res.Vn=realloc(M->res.Vn, (M->res.Nva+Nstep+1)*sizeof(double **));	
 	for (k=0;k<Nstep;k++)
 	{
+		int conv;
 		if (Nstep>1)
 			Va=Vstart+(double)k*(Vend-Vstart)/((double)Nstep-1.0);
 		else
@@ -672,14 +707,42 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep, double tol_kcl_abs,
 		i=0;
 		do
 		{
-			NewtonStep(*M, V, Vout,Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,8, S, &c);
-			/* swap input and output arrays */
-			vv=Vout;
-			Vout=V;
-			V=vv;
+			conv=NewtonStep(*M, V, Vout,Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,N_lin_search, Gmin, S, &c);
 			Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
+			if (conv)
+			{
+				/* do gmin stepping */
+				if (!GminSteps)
+				{
+					GminSteps=GminStep+1;
+					Gmin=GminMax*GminFac;
+					Print(VERBOSE, "Start Gmin Stepping");
+					Print(VERBOSE, "----------------------------------------------------------------");
+				}
+				else
+					Gmin*=(1.5*GminFac);
+			}
+			else
+			{
+				/* swap input and output arrays */
+				vv=Vout;
+				Vout=V;
+				V=vv;
+			}
 			i++;
-		} while ((i<max_iter)&&(((Ekcl>tol_kcl_abs)&&(Ekcl_rel>tol_kcl_rel))||((Ev>tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>tol_v_rel))));
+			if (GminSteps)
+			{
+				Gmin/=GminFac;
+				GminSteps--;
+				if (GminSteps==0)
+				{
+					Print(VERBOSE, "End Gmin Stepping");
+					Print(VERBOSE, "----------------------------------------------------------------");
+				}
+				if (GminSteps==1)
+					Gmin=0;
+			}
+		} while (((i<max_iter)||(GminSteps))&&(((Ekcl>tol_kcl_abs)&&(Ekcl_rel>tol_kcl_rel))||((Ev>tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>tol_v_rel))));
 		if (verbose<VERBOSE)
 			Print(NORMAL, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, i,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
 	
@@ -808,7 +871,7 @@ int SolPar(mesh *M, int *isc, int *imp_m, int *imp, int *imp_p, int *ioc_m, int 
 
 #define rat_bisect 1e-2
 #define sign(a) (((a)>=0)?(1.0):(-1.0))
-void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter, int N_lin_search,  int GminStep, double GminMax, double GminFac)
 {
 	double x1,x2,x3,x4;
 	double f1,f2,f3,f4;
@@ -831,7 +894,7 @@ void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs
 	while ((fabs(x2-x1)>tol_v)&&(iter<Niter))
 	{
 		x3=(x1+x2)/2;
-		SolveVa(M, x3, x3, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter);
+		SolveVa(M, x3, x3, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter, N_lin_search, GminStep, GminMax, GminFac);
 		f3=M->res.I[M->res.Nva-1];
 		if (fabs(f3)<tol_i)
 			return;
@@ -839,7 +902,7 @@ void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs
 		if (iter==Niter)
 			return;
 		x4=x3+(x3-x1)*sign(f1-f2)*f3/(sqrt(f3*f3-f2*f1));
-		SolveVa(M, x4, x4, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter);
+		SolveVa(M, x4, x4, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter, N_lin_search, GminStep, GminMax, GminFac);
 		f4=M->res.I[M->res.Nva-1];
 		if (fabs(f4)<tol_i)
 			return;
@@ -868,7 +931,7 @@ void RefineOC(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs
 		iter++;	
 	}
 }
-void RefineMPP(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+void RefineMPP(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter, int N_lin_search, int GminStep, double GminMax, double GminFac)
 {
 	double Pm,Pmin,Pmax;
 	double Vm,Vmin,Vmax;
@@ -915,7 +978,7 @@ void RefineMPP(mesh *M, double tol_i, double tol_v, int Niter, double tol_kcl_ab
 		}
 				
 		
-		SolveVa(M, vv, vv, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter);
+		SolveVa(M, vv, vv, 1, tol_kcl_abs, tol_kcl_rel,tol_v_abs, tol_v_rel, max_iter, N_lin_search, GminStep, GminMax, GminFac);
 
 		pp=vv*M->res.I[M->res.Nva-1];
 		if (pp<Pm)
@@ -1042,11 +1105,11 @@ void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 }
 
 
-void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter, int N_lin_search, int GminStep, double GminMax, double GminFac)
 {
 	int i, j;
 	double Ev=0, Ei=0;
-	SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
+	SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter, N_lin_search, GminStep, GminMax, GminFac);
 	
 	/* clean up old data */
 	
@@ -1069,7 +1132,7 @@ void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N, double tol
 		AdaptMesh(M, M->res.Nva-1, rel_threshold);
 		Print(NORMAL, "Solving System");
 		fflush(stdout);
-		SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
+		SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter, N_lin_search,  GminStep, GminMax, GminFac);
 		Ev=0;
 		for (j=0;j<M->Nel*M->Nn;j++)
 			Ev+=(M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]-M->res.Vn[M->res.Nva-2][j/M->Nn][j%M->Nn])*(M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn]-M->res.Vn[M->res.Nva-2][j/M->Nn][j%M->Nn]);
@@ -1178,7 +1241,7 @@ double *CollectionEfficiency(mesh *M, int *list, double Va, double dJph, double 
 /* this routine is still somewhat experimental. If it turns out (as I suspect) that the linear and differential version is the only one we need we can simplify the thing a bit,
  e.g., in case it is linear we do not need the whole IV for that as we do not do anything NL. */
  
-double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, int diff, int NL, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
+double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, int diff, int NL, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter, int N_lin_search, int GminStep, double GminMax, double GminFac)
 {
 	cholmod_common c ;
 	cholmod_sparse *S;
@@ -1197,7 +1260,7 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 	Print(NORMAL, "Simulating the Locally Collected Current");
 	Print(NORMAL, "Doing reference calculation");
 	/* solva system */
-	SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter);
+	SolveVa(M, Va, Va, 1, tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel, max_iter, N_lin_search, GminStep, GminMax, GminFac);
 	
 	/* for each area definition, create a new area with diode removed */
 	Na_old=M->Na;
@@ -1279,7 +1342,7 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 		/* simulate */
 		if (!NL)
 		{
-			NewtonStep(*M, V, Vnew,Va, &Inew, &Ekcl, &Ekcl_rel, &Ev,1, S, &c);
+			NewtonStep(*M, V, Vnew,Va, &Inew, &Ekcl, &Ekcl_rel, &Ev,1, 0, S, &c);
 			/* swap input and output arrays */
 			vv=Vnew;
 			Vnew=V;
@@ -1291,7 +1354,7 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 			j=0;
 			do
 			{
-				NewtonStep(*M, V, Vnew,Va, &Inew, &Ekcl, &Ekcl_rel, &Ev,8, S, &c);
+				NewtonStep(*M, V, Vnew,Va, &Inew, &Ekcl, &Ekcl_rel, &Ev,N_lin_search, 0, S, &c);
 				/* swap input and output arrays */
 				vv=Vnew;
 				Vnew=V;

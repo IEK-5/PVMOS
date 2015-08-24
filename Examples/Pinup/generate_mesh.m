@@ -1,5 +1,13 @@
 #!/usr/bin/octave -q
 
+function img=ReadImageIntensity(fn)
+	img=imread(fn);
+	if (ndims(img)>2)
+		img = rgb2ind (img);
+	endif
+	img=double(img);
+endfunction
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Functions %%%%%%%%%%
 function AreaDef=DefaultAreaDef(Nel)
@@ -59,7 +67,7 @@ function [Area_Index, AreaDef]=AddImage(Area_Index,AreaDef, img, modlist, name)
 		Area_Index.+=img;
 		
 	endif
-	Na=max(max(Area_Index));
+	Na=max(max(Area_Index))
 	for i=m+1:Na
 		AreaDef(i)=AreaDef(i-m);
 		AreaDef(i).name=[AreaDef(i-m).name,name];
@@ -95,9 +103,7 @@ AreaDef.conn(2).Rsh=1e5;			% Set the shunt resistance for connection 2
 % the default parameters we just defined apply everywhere, we will however locally change the properties
 % To this end we load a series of images which we use to select elements in the mesh.
 % We load the first image, which represents the front melatization pattern:
-img=imread("pinup_frontmetal.png");
-% We convert the data to a matrix with doubles
-img=double(img);
+img=ReadImageIntensity("pinup_frontmetal.png");
 % The parts in the image that are black are the areas where we have a front metal contact. These elemnts 
 % in the matrix are 0. This command will change the matrix to a matrix with 0 where there is no metal and
 % 1 where there is metal:
@@ -111,45 +117,39 @@ modlist={"Rel(3)=0.01"; "conn(2).Jph=0"};
 [Area_Index, AreaDef]=AddImage([],AreaDef, img, modlist, "front_metal");
 
 % the next image marks the areas where the back metalization is removed around the metal-wrap-through-holes
-img=imread("pinup_backisolation.png");
-img=double(img);
+img=ReadImageIntensity("pinup_backisolation.png");
 img=(img==0);
 modlist={"Rel(2)=1e10"};	% make electrode 2 isolating
 [Area_Index, AreaDef]=AddImage(Area_Index, AreaDef, img, modlist, "no_backmetal");
 
 % Marks the vias
-img=imread("pinup_vias.png");
-img=double(img);
+img=ReadImageIntensity("pinup_vias.png");
 img=(img==0);
 % At the vias we do not only connect the front to the back contact but also connect to the contacting foil (electrode 1)
 modlist={"Rel(2)=0.01"; "conn(2).model=\"JVD\""; "conn(2).VJ=[-1,-1e8;1,1e8]"; "conn(1).model=\"JVD\""; "conn(1).VJ=[-1,-1e8;1,1e8]"};
 [Area_Index, AreaDef]=AddImage(Area_Index, AreaDef, img, modlist, "vias_p-contact"); 
 
 % This marks the spots where the back contact is connected to the contact foil
-img=imread("pinup_back2contactfoil.png");
-img=double(img);
+img=ReadImageIntensity("pinup_back2contactfoil.png");
 img=(img==0);
 modlist={"conn(1).model=\"JVD\""; "conn(1).VJ=[-1,-1e8;1,1e8]"};
 [Area_Index, AreaDef]=AddImage(Area_Index, AreaDef, img, modlist, "p-contact");
 
 
 % This marks areas where the contact foil is isolating to separate the positive and negative contacts
-img=imread("pinup_foilisolation.png");
-img=double(img);
+img=ReadImageIntensity("pinup_foilisolation.png");
 img=(img==0);
 modlist={"Rel(1)=1e15"};
 [Area_Index, AreaDef]=AddImage(Area_Index, AreaDef, img, modlist, "contact_foil_isolation");
 
 % This marks areas where the contact foil contacted to the positive electrode
-img=imread("pinup_contactfoil_vp.png");
-img=double(img);
+img=ReadImageIntensity("pinup_contactfoil_vp.png");
 img=(img==0);
 modlist={"Rvn(1)=1e-8"};
 [Area_Index, AreaDef]=AddImage(Area_Index, AreaDef, img, modlist, "contact_foil_vp");
 
 % This marks areas where the contact foil contacted to the negative electrode
-img=imread("pinup_contactfoil_vn.png");
-img=double(img);
+img=ReadImageIntensity("pinup_contactfoil_vn.png");
 img=(img==0);
 modlist={"Rvp(1)=1e-8"};
 [Area_Index, AreaDef]=AddImage(Area_Index, AreaDef, img, modlist, "contact_foil_vn");
@@ -157,6 +157,10 @@ modlist={"Rvp(1)=1e-8"};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Generate the mesh %%%%
 Na=max(max(Area_Index));
+Nx=length(Area_Index(1,:))
+Ny=length(Area_Index(:,1))
+x=0:10/Nx:10;
+y=0:10/Ny:10;
 % make a 10x10 cm^2 mesh
-mkpvmosmesh(Na, Nel, Area_Index, AreaDef, 0, 10, 0, 10, "pinupmesh.bin")
+mkpvmosmesh(Na, Nel, Area_Index, AreaDef, x, y, "pinupmesh2.bin")
 
