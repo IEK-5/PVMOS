@@ -63,14 +63,15 @@
 NumSet Numeric_Settings={
 	1e-5, 1e-5, 1e-5, 1e-5,
 	25, 10,
-	6,
-	1e-3,
-	10
+	6,0,
+	1e-2,
+	10,
+	0.0
 };                                                                          
 
 void Resistance(mesh M, node N1, node N2, double *R)
 {
-	/* computes the resistance in the back and front electrode between two nodes */
+	/* computes the resistance in the electrodes between two elements */
 	int n,s,w,e, i;
 	double L1,L2, W;
 	n=IsInList(N1.north, N2.id);
@@ -355,6 +356,7 @@ cholmod_sparse * JacobiMatrix(mesh M, double *V, double Gmin, cholmod_sparse *S,
 	pp[0]=0;
 	for (i=0;i<n;i++)
 	{
+		node *N;
 		double dIdV;
 		if (i<M.Nn)
 		{
@@ -372,10 +374,10 @@ cholmod_sparse * JacobiMatrix(mesh M, double *V, double Gmin, cholmod_sparse *S,
 			ii[pp[i]+1]=i;	
 			ii[pp[i]+2]=i+M.Nn;
 			pp[i+1]=pp[i]+3;
-			
-			Diode(M, *SearchNode(M, i%M.Nn), i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV, NULL);
+			N=SearchNode(M, i%M.Nn);
+			Diode(M, *N, i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV, NULL);
+			dIdV+=(N->x2-N->x1)*(N->y2-N->y1)*Gmin;
 			/* diagonal */
-			dIdV+=Gmin;
 			xx[pp[i]+1]+=dIdV;
 			/* off diagonal */
 			xx[pp[i]]-=dIdV;
@@ -403,8 +405,9 @@ cholmod_sparse * JacobiMatrix(mesh M, double *V, double Gmin, cholmod_sparse *S,
 			ii[pp[i]+1]=i;	
 			pp[i+1]=pp[i]+2;
 			
-			Diode(M, *SearchNode(M, i%M.Nn), i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV, NULL);
-			dIdV+=Gmin;
+			N=SearchNode(M, i%M.Nn);
+			Diode(M, *N, i/M.Nn -1, V[i-M.Nn]-V[i], NULL, &dIdV, NULL);
+			dIdV+=(N->x2-N->x1)*(N->y2-N->y1)*Gmin;
 			/* diagonal */
 			xx[pp[i]+1]+=dIdV;
 			/* off diagonal */
@@ -661,10 +664,12 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep)
 {
 	cholmod_common c ;
 	cholmod_sparse *S;
-	double Ekcl, Ekcl_rel, Ev, Va, Vaf=1, Gmin=0;
+	double Ekcl, Ekcl_rel, Ev, Va, Vaf=1, Gmin;
 	double *V, *Vout, *vv;
 	int i, j, k, GminSteps=0;
 	clock_t start, end;
+	
+	Gmin=Numeric_Settings.Gmin;
 	Print(NORMAL, "________________________________________________________________");
 	Print(NORMAL, "Mesh with %d layers, each with %d elements", M->Nel, M->Nn);
 	cholmod_start (&c);
@@ -715,14 +720,13 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep)
 		M->res.Nva++;
 				
 		i=0;
-		GminSteps=2;
 		do
 		{
-			if (i==0)
-				conv=NewtonStep(*M, V, Vout,Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,Numeric_Settings.N_lin_search, 1e-5, S, &c);
+			if (i<Numeric_Settings.GminStart)
+				conv=NewtonStep(*M, V, Vout,Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,Numeric_Settings.N_lin_search, Numeric_Settings.GminMax, S, &c);
 			else
 				conv=NewtonStep(*M, V, Vout,Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,Numeric_Settings.N_lin_search, Gmin, S, &c);
-			if (GminSteps>1)
+			if ((GminSteps>1)||(i<Numeric_Settings.GminStart))
 				Print(VERBOSE, "%-12.2e*%-7d%-12.2e%-12.2e%-12.2e%-8.2e",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
 			else
 				Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
@@ -752,9 +756,9 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep)
 				Gmin/=Numeric_Settings.GminFac;
 				GminSteps--;
 				if (GminSteps==1)
-					Gmin=0;
+					Gmin=Numeric_Settings.Gmin;
 			}
-		} while (GminSteps||((i<Numeric_Settings.max_iter)&&(((Ekcl>Numeric_Settings.tol_kcl_abs)&&(Ekcl_rel>Numeric_Settings.tol_kcl_rel))||((Ev>Numeric_Settings.tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>Numeric_Settings.tol_v_rel)))));
+		} while ((GminSteps||(i<=Numeric_Settings.GminStart))||((i<Numeric_Settings.max_iter)&&(((Ekcl>Numeric_Settings.tol_kcl_abs)&&(Ekcl_rel>Numeric_Settings.tol_kcl_rel))||((Ev>Numeric_Settings.tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>Numeric_Settings.tol_v_rel)))));
 		if (verbose<VERBOSE)
 			Print(NORMAL, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, i,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
 	

@@ -3134,6 +3134,11 @@ void Parse (char *file)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting maximum number of iterations to %s",line_nr, word);							
 						Numeric_Settings.max_iter=atoi(word);
+						if (Numeric_Settings.max_iter<=0)
+						{
+							Error("* line %3d: Invalid maxiter value %d\n", line_nr,Numeric_Settings.max_iter);
+							exit(1);
+						}
 						break;		
 					case TOLV:
 						begin=GetWord (begin, word);
@@ -3141,6 +3146,11 @@ void Parse (char *file)
 							goto premature_end;	
 						Print(NORMAL,"* line %3d: Setting absolute voltage tolerance to %s",line_nr, word);							
 						Numeric_Settings.tol_v_abs=atof(word);
+						if (Numeric_Settings.tol_v_abs<=1e-16)
+						{
+							Error("* line %3d: Invalid absolute voltage tolerance value %e\n", line_nr,Numeric_Settings.tol_v_abs);
+							exit(1);
+						}
 						break;		
 					case RELTOLV:
 						begin=GetWord (begin, word);
@@ -3148,6 +3158,11 @@ void Parse (char *file)
 							goto premature_end;	
 						Print(NORMAL,"* line %3d: Setting relative voltage tolerance to %s",line_nr, word);							
 						Numeric_Settings.tol_v_rel=atof(word);
+						if (Numeric_Settings.tol_v_rel<=1e-16)
+						{
+							Error("* line %3d: Invalid relative voltage tolerance value %e\n", line_nr,Numeric_Settings.tol_v_rel);
+							exit(1);
+						}
 						break;		
 					case TOLKCL:
 						begin=GetWord (begin, word);
@@ -3155,6 +3170,11 @@ void Parse (char *file)
 							goto premature_end;	
 						Print(NORMAL,"* line %3d: Setting absolute KCL tolerance to %s",line_nr, word);							
 						Numeric_Settings.tol_kcl_abs=atof(word);
+						if (Numeric_Settings.tol_kcl_abs<=1e-16)
+						{
+							Error("* line %3d: Invalid absolute KCL tolerance value %e\n", line_nr,Numeric_Settings.tol_kcl_abs);
+							exit(1);
+						}
 						break;		
 					case RELTOLKCL:
 						begin=GetWord (begin, word);
@@ -3162,6 +3182,11 @@ void Parse (char *file)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting relative KCL tolerance to %s",line_nr, word);								
 						Numeric_Settings.tol_kcl_rel=atof(word);
+						if (Numeric_Settings.tol_kcl_rel<=1e-16)
+						{
+							Error("* line %3d: Invalid relative KCL tolerance value %e\n", line_nr,Numeric_Settings.tol_kcl_rel);
+							exit(1);
+						}
 						break;
 					case NLINSEARCH:
 						begin=GetWord (begin, word);
@@ -3169,6 +3194,11 @@ void Parse (char *file)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting number of steps for a linear search in the Newton direction to %s",line_nr, word);								
 						Numeric_Settings.N_lin_search=atoi(word);
+						if (Numeric_Settings.N_lin_search<0)
+						{
+							Error("* line %3d: Invalid N_lin_search value %d\n", line_nr,Numeric_Settings.N_lin_search);
+							exit(1);
+						}
 						break;	
 					case GMINSTEP:
 						begin=GetWord (begin, word);
@@ -3176,6 +3206,23 @@ void Parse (char *file)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting number of Gmin steps to %s (Gmin stepping is triggered at convergence problems)",line_nr, word);								
 						Numeric_Settings.GminStep=atoi(word);
+						if (Numeric_Settings.GminStep<0)
+						{
+							Error("* line %3d: Invalid GminStep value %d\n", line_nr,Numeric_Settings.GminStep);
+							exit(1);
+						}
+						break;		
+					case GMINSTART:
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Setting number of Gmin start iterations to %s",line_nr, word);								
+						Numeric_Settings.GminStart=atoi(word);
+						if (Numeric_Settings.GminStart<0)
+						{
+							Error("* line %3d: Invalid GminStart value %d\n", line_nr,Numeric_Settings.GminStart);
+							exit(1);
+						}
 						break;	
 					case GMINMAX:
 						begin=GetWord (begin, word);
@@ -3183,6 +3230,11 @@ void Parse (char *file)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting maximum Gmin value to %s",line_nr, word);								
 						Numeric_Settings.GminMax=atof(word);
+						if (Numeric_Settings.GminMax<=1e-16)
+						{
+							Error("* line %3d: Invalid maximum Gmin value %e\n", line_nr,Numeric_Settings.GminMax);
+							exit(1);
+						}
 						break;	
 					case GMINFAC:
 						begin=GetWord (begin, word);
@@ -3190,6 +3242,23 @@ void Parse (char *file)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting Gmin stepping factor to %s",line_nr, word);								
 						Numeric_Settings.GminFac=atof(word);
+						if (Numeric_Settings.GminFac<=1)
+						{
+							Error("* line %3d: Invalid maximum GminFac value %e\n", line_nr,Numeric_Settings.GminFac);
+							exit(1);
+						}
+						break;	
+					case GMIN:
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Setting Gmin to %s",line_nr, word);								
+						Numeric_Settings.Gmin=atof(word);
+						if (Numeric_Settings.Gmin<=0.0)
+						{
+							Error("* line %3d: Invalid maximum Gmin value %e\n", line_nr,Numeric_Settings.Gmin);
+							exit(1);
+						}
 						break;		
 					case SOLVE:
 					{

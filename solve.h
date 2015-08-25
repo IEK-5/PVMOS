@@ -41,8 +41,10 @@ typedef struct NumSet {
 	double tol_kcl_abs, tol_kcl_rel, tol_v_abs, tol_v_rel;
 	int max_iter, N_lin_search; 
 	int GminStep;
+	int GminStart;
 	double GminMax;
 	double GminFac;
+	double Gmin;
 } NumSet; 
 
 extern NumSet Numeric_Settings; /* initialized in solve.c */

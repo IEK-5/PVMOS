@@ -769,16 +769,28 @@ Keyword & Description \\
 \end{enumerate}\\
 \texttt{GminStep} &  Number of Gmin stepping steps. In case of convergence problems Gmin stepping is triggered. In Gmin stepping a minimum conductance is placed in parallel with all non-linear devices. The value of the minimum conductance is then step wise reduced to 0. This parameter is used in conjunction with \texttt{GminMax} and \texttt{GminFac}. The command takes one argument:
 \begin{enumerate}
-\item \texttt{N}, Number of steps $-$ (default: $8$)
+\item \texttt{N}, Number of steps $-$ (default: $6$)
 \end{enumerate}\\	
 \texttt{GminMax} &  Maximum value of the minimum conductance. In case of convergence problems Gmin stepping is triggered. In Gmin stepping a minimum conductance is placed in parallel with all non-linear devices. The value of the minimum conductance is then step wise reduced to 0. This value sets the initial minimum conductance after Gmin stepping is triggered. This parameter is used in conjunction with \texttt{GminSteps} and \texttt{GminFac}. The command takes one argument:
 \begin{enumerate}
-\item \texttt{Gmin}, Minimum conductance $\Omega^{-1}$ (default: $10^{-3}$)
+\item \texttt{Gmin}, Minimum conductance $\Omega^{-1}\text{cm}^{-2}$ (default: $10^{-2}$)
 \end{enumerate}\\
 \texttt{GminFac} &  Factor to stepwise reduce Gmin during Gmin stepping. In case of convergence problems Gmin stepping is triggered. In Gmin stepping a minimum conductance is placed in parallel with all non-linear devices. The value of the minimum conductance is then step wise reduced to 0. This value controls the rate with wich the Gmin value is reduced (higher is faster). This parameter is used in conjunction with \texttt{GminSteps} and \texttt{GminMax}. The command takes one argument:
 \begin{enumerate}
 \item \texttt{f}, Factor to reduce Gmin $-$ (default: $10$)
 \end{enumerate}\\		
+\texttt{GminStart} &  In poorly convergeant cases it may be beneficial to start with one or more itarations with a minimum conductance. This parameter allows you to specify a number of iterations run with a Gmin value set by \texttt{GminMax}. Note that this procedure is different from Gmin stepping as the Gmin value is not changed during these iterations and abruptly changes from the \texttt{GminMax} value to Gmin after the set number of iterations. A typiocal setting would be 1. 
+\begin{enumerate}
+\item \texttt{GminStart}, Number of GminStart iterations $-$ (default: $0$)
+\end{enumerate}\\
+\texttt{Gmin} &  Set the overall Gmin value. This value is \emph{always} used and should therefore be small as otherwise it affects the results. 
+\begin{enumerate}
+\item \texttt{Gmin}, Minimum conductance $\Omega^{-1}\text{cm}^{-2}$ (default: $0.0$)
+\end{enumerate}\\
+\texttt{GminStart} &  In poorly convergeant cases it may be beneficial to start with one or more itarations with a minimum conductance. This parameter allows you to specify a number of iterations run with a Gmin value set by \texttt{GminMax}. Note that this procedure is different from Gmin stepping as the Gmin value is not changed during these iterations and abruptly changes from the \texttt{GminMax} value to Gmin after the set number of iterations. A typiocal setting would be 1. 
+\begin{enumerate}
+\item \texttt{GminStart}, Number of GminStart iterations $-$ (default: $0$)
+\end{enumerate}\\
 \multicolumn{2}{l}{\textsc{Solving}} \\*
 \hline
 Keyword & Description \\
