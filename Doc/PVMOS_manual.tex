@@ -574,7 +574,7 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{file-name}, filename to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{surfFc}		& Export the locally collected photocurrent. The locally collected current is the portion of the local photocurrent which is collected at the terminals. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes 11 arguments:
+\texttt{surfFc}		& Export the locally collected photocurrent. The locally collected current is the portion of the local photocurrent which is collected at the terminals. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command sets the short circuit current density to 0 for specific points and computes the difference in terminal current. Note that the full non-linear response of the system is considered (you ask why?, why not!). The command takes 11 arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
@@ -586,10 +586,10 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{NL}, if NL is 0 the calculation is performed in the linearized system, if it is 1 the non-linear system is used. I intend to remove this parameter in later versions as I do not believe the non-liner version adds anything but calculation time and other problems. For now it is here for testing purposes.
+\item \texttt{RI}, Boolean, if true the internal series resistance is consideres (i.e., consider bias dependent collection of the diode due to an internal series resistance)
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{surffc}		& Export the differential local photocurrent collection efficiency. The differential photocurrent collection efficiency is the portion of a change in photocurrent that is collected at the terminals. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes 11 arguments:
+\texttt{surffc}		& Export the differential local photocurrent collection efficiency. The differential photocurrent collection efficiency is the portion of a change in photocurrent that is collected at the terminals. This is a differential value, i.e. it computes the change in terminal current for an infinitesmal small change in photocurrent. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes 11 arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
@@ -601,7 +601,7 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{NL}, if NL is 0 the calculation is performed in the linearized system, if it is 1 the non-linear system is used. I intend to remove this parameter in later versions as I do not believe the non-liner version adds anything but calculation time and other problems. For now it is here for testing purposes.
+\item \texttt{RI}, Boolean, if true the internal series resistance is consideres (i.e., consider bias dependent collection of the diode due to an internal series resistance)
 \end{enumerate}\\
 \multicolumn{2}{l}{\textsc{Manipulating local properties}} \\*
 \hline

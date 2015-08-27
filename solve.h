@@ -58,4 +58,4 @@ int SolPar(mesh *M, int *isc, int *imp_m, int *imp, int *imp_p, int *ioc_m, int 
 void RefineOC(mesh *M, double tol_i, double tol_v, int Niter);
 void RefineMPP(mesh *M, double tol_i, double tol_v, int Niter);
 void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N);
-double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, int diff, int NL);
+double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, int diff, int Ri);

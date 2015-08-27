@@ -1323,7 +1323,7 @@ void Parse (char *file)
 					case SURFDCOLCUR:
 					{
 						meshvar *MV;
-						int el, Nx, Ny, NL;
+						int el, Nx, Ny, RI;
 						double Va, x1, x2, y1, y2;					
 						char **args;
 						args=GetArgs (&begin, 11);
@@ -1346,9 +1346,9 @@ void Parse (char *file)
 						y2=atof(args[7]);
 						Nx=atoi(args[8]);
 						Ny=atoi(args[9]);
-						NL=atoi(args[10]);
+						RI=atoi(args[10]);
 
-						PrintLocallyCollectedCurrent(args[1], &(MV->M), x1, y1, x2, y2, Nx, Ny, Va, el, (key==SURFDCOLCUR), NL);
+						PrintLocallyCollectedCurrent(args[1], &(MV->M), x1, y1, x2, y2, Nx, Ny, Va, el, (key==SURFDCOLCUR), RI);
 						FreeArgs (args, 11);	
 						break;
 					}

@@ -53,5 +53,5 @@ void SurfVjPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, dou
 void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny);
 void SurfJPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny);
 void SurfEPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny);
-void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, double x2, double y2, int Nx, int Ny, double Va, int diode_index, int diff, int NL);
+void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, double x2, double y2, int Nx, int Ny, double Va, int diode_index, int diff, int Ri);
 void PrintLocalJV(char *fn, mesh M, double x, double y, int inter_index, double Vstart, double Vend, int Nstep);

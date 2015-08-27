@@ -129,32 +129,28 @@ void BubbleSortJV(int n, double *V, double *J)
 }
 
 
-#define vv M.P[N.P].conn[inter_index].V
-#define jj M.P[N.P].conn[inter_index].J
-#define Area (N.x2-N.x1)*(N.y2-N.y1)
-void Diode_JVD(mesh M, node N, int inter_index, double V, double *I, double *dIdV)
-/* returns diode current (I) or the derivative of current versus voltage (dIdV)
-   for a given node (n) and voltage (V).
-   It takes the JV characteristics stored in the mesh for thie given node.
-   As the JV characteritics are ordered with increasing voltage
-   we try to search the requested voltage efficiently */
+#define vv M.P[P].conn[inter_index].V
+#define jj M.P[P].conn[inter_index].J
+void Diode_JVD(mesh M, int P, int inter_index, double V, double *J, double *dJdV)
+/* returns diode current density (J) or the derivative of current versus voltage (dJdV)
+   for a given area (indexed with P) and voltage (V). */
 {
 	int min=0, max, i;
-	max=M.P[N.P].conn[inter_index].N-1;
+	max=M.P[P].conn[inter_index].N-1;
 	if (V<vv[min])
 	{
-		if (I)
-			(*I)=Area*(jj[min]+(V-vv[min])*(jj[min+1]-jj[min])/(vv[min+1]-vv[min]));
-		if (dIdV)
-			(*dIdV)=Area*(jj[min+1]-jj[min])/(vv[min+1]-vv[min]);
+		if (J)
+			(*J)=(jj[min]+(V-vv[min])*(jj[min+1]-jj[min])/(vv[min+1]-vv[min]));
+		if (dJdV)
+			(*dJdV)=(jj[min+1]-jj[min])/(vv[min+1]-vv[min]);
 		return;
 	}
 	if (V>vv[max])
 	{
-		if (I)
-			(*I)=Area*(jj[max]+(V-vv[max])*(jj[max]-jj[max-1])/(vv[max]-vv[max-1]));
-		if (dIdV)
-			(*dIdV)=Area*(jj[max]-jj[max-1])/(vv[max]-vv[max-1]);
+		if (J)
+			(*J)=(jj[max]+(V-vv[max])*(jj[max]-jj[max-1])/(vv[max]-vv[max-1]));
+		if (dJdV)
+			(*dJdV)=(jj[max]-jj[max-1])/(vv[max]-vv[max-1]);
 		return;
 	}
 	while(max-min>1)
@@ -166,41 +162,43 @@ void Diode_JVD(mesh M, node N, int inter_index, double V, double *I, double *dId
 			min=i;
 	}
 	
-	if (I)
-		(*I)=Area*((V-vv[min])*jj[max]+(vv[max]-V)*jj[min])/(vv[max]-vv[min]);
-	if (dIdV)
-		(*dIdV)=Area*(jj[max]-jj[min])/(vv[max]-vv[min]);
+	if (J)
+		(*J)=((V-vv[min])*jj[max]+(vv[max]-V)*jj[min])/(vv[max]-vv[min]);
+	if (dJdV)
+		(*dJdV)=(jj[max]-jj[min])/(vv[max]-vv[min]);
 }
 #undef vv
 #undef jj
-
-void Diode(mesh M, node N, int inter_index, double V, double *I, double *dIdV, double *Vj)
+void Diode_J(mesh M, int P, int inter_index, double V, double *J, double *dJdV, double *Vj)
 {
-	switch (M.P[N.P].conn[inter_index].model)
+	switch (M.P[P].conn[inter_index].model)
 	{
 		case JVD:
-			Diode_JVD(M, N, inter_index, V, I, dIdV);
+			Diode_JVD(M, P, inter_index, V, J, dJdV);
 			if (Vj)
 				(*Vj)=0; /* unknown junction voltage */
 
 			break;
 		case ONED:
-			OneDiode(V, M.P[N.P].conn[inter_index].J01, M.P[N.P].conn[inter_index].nid1, M.P[N.P].conn[inter_index].Eg, M.P[N.P].T, M.P[N.P].conn[inter_index].Jph, M.P[N.P].conn[inter_index].Rs, M.P[N.P].conn[inter_index].Rsh, I, dIdV, Vj);
-			if (I)
-				(*I)*=Area;
-			if (dIdV)
-				(*dIdV)*=Area;
+			OneDiode(V, M.P[P].conn[inter_index].J01, M.P[P].conn[inter_index].nid1, M.P[P].conn[inter_index].Eg, M.P[P].T, M.P[P].conn[inter_index].Jph, M.P[P].conn[inter_index].Rs, M.P[P].conn[inter_index].Rsh, J, dJdV, Vj);
 			break;
 		case TWOD:
-			TwoDiode(V, M.P[N.P].conn[inter_index].J01, M.P[N.P].conn[inter_index].J02, M.P[N.P].conn[inter_index].Eg, M.P[N.P].T, M.P[N.P].conn[inter_index].Jph, M.P[N.P].conn[inter_index].Rs, M.P[N.P].conn[inter_index].Rsh, I, dIdV, Vj);
-			if (I)
-				(*I)*=Area;
-			if (dIdV)
-				(*dIdV)*=Area;
+			TwoDiode(V, M.P[P].conn[inter_index].J01, M.P[P].conn[inter_index].J02, M.P[P].conn[inter_index].Eg, M.P[P].T, M.P[P].conn[inter_index].Jph, M.P[P].conn[inter_index].Rs, M.P[P].conn[inter_index].Rsh, J, dJdV, Vj);
 			break;
 		default:
-			Error("Unknown diode model in function Diode\n");
+			Error("Unknown diode model in function Diode_J\n");
 	}
+}
+
+
+#define Area (N.x2-N.x1)*(N.y2-N.y1)
+void Diode(mesh M, node N, int inter_index, double V, double *I, double *dIdV, double *Vj)
+{
+	Diode_J(M, N.P, inter_index, V, I, dIdV, Vj);
+	if (I)
+		(*I)*=Area;
+	if (dIdV)
+		(*dIdV)*=Area;
 }
 
 int *CollectColumn(int *list, node N)
@@ -618,7 +616,7 @@ int NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double *
 		a/=2;	
 		i++;	
 	}
-	if (!conv&&(i>=N_lin_search))
+	if (!conv&&(i>=N_lin_search)&&(N_lin_search>1))
 	{
 		conv=1;	
 		for (j=0;j<M.Nel*M.Nn;j++)
@@ -627,7 +625,7 @@ int NewtonStep(mesh M, double *Vin, double *Vout, double Va, double *I, double *
 		Print(VERBOSE, "Linear search in Newton direction failed.");
 	}
 	if ((i>1)&&(!conv))
-		Print(NORMAL,"Step size reduced by a factor of %e",a*2);
+		Print(VERBOSE,"Step size reduced by a factor of %e",a*2);
 	if (!Vout)
 		free(vv);
 	cholmod_free_dense(&res, c);
@@ -1168,96 +1166,11 @@ void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N)
 	}
 }
 
-/*
-double *CollectionEfficiency(mesh *M, int *list, double Va, double dJph, double tol_kcl_abs, double tol_kcl_rel, double tol_v_abs, double tol_v_rel, int max_iter)
-{
-	cholmod_common c ;
-	cholmod_sparse *S;
-	double Ekcl, Ekcl_rel, Ev, Va, I, *V;
-	int i, j, Na;
-	
-
-	Print(NORMAL, "________________________________________________________________");
-	Print(NORMAL, "Solving operating point using a Mesh with %d elements\n", M->Nn);
-	cholmod_start (&c);
-	S=SystemMatrix(*M, &c);	
-	
-	Print(NORMAL, "Va          iter    Ev          Ev_rel      Ekcl        Ekcl_rel");
-	Print(NORMAL, "----------------------------------------------------------------");
-	
-	i=FindVa(Va, M->res.Va, M->res.Nva);
-		
-	M->res.Va=realloc(M->res.Va, (M->res.Nva+1)*sizeof(double));
-	M->res.I=realloc(M->res.I, (M->res.Nva+1)*sizeof(double));
-	M->res.Va[M->res.Nva]=Va;
-	M->res.Vn=realloc(M->res.Vn, (M->res.Nva+1)*sizeof(double *));		
-	M->res.Vn[M->res.Nva]=calloc(2*M->Nn,sizeof(double));
-		
-	if (i>=0)
-		for (j=0;j<2*M->Nn;j++)
-			M->res.Vn[M->res.Nva][j]=M->res.Vn[i][j];
-	M->res.Nva++;
-			
-	i=0;
-	do
-	{
-		NewtonStep(*M, M->res.Vn[M->res.Nva-1], M->res.Vn[M->res.Nva-1],Va, &(M->res.I[M->res.Nva-1]), &Ekcl, &Ekcl_rel, &Ev,S, &c);
-		Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
-		i++;
-	} while ((i<max_iter)&&(((Ekcl>tol_kcl_abs)&&(Ekcl_rel>tol_kcl_rel))||((Ev>tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>tol_v_rel))));
-	if (verbose<VERBOSE)
-		Print(NORMAL, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e",Va, i,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
-	
-	Print(NORMAL, "----------------------------------------------------------------");
-
-
-
-	Print(NORMAL, "Computing collection efficiency\n");
-	
-	M->P=realloc(M->P, (2*M->Na+1)*sizeof(local_prop));
-	for (i=0;i<M->Na;i++)
-		DuplicateProperties(M, M->P+i+M->Na, M->P+i);
-	Na=M->Na;
-	M->Na*=2;
-	
-	// change photocurrent here
-	
-	V=malloc((2*M->Nn+1)*sizeof(double));
-	if (lost[0]==0)
-		for (i=0;i<M->Nn;i++)
-		{
-			M->nodes[i].P+=Na;
-			
-			do
-			{
-				NewtonStep(*M, M->res.Vn[M->res.Nva-1], V, Va, &I, &Ekcl, &Ekcl_rel, &Ev,S, &c);
-				Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-12.2e\n",Va, i+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
-				i++;
-			} while ((i<max_iter)&&(((Ekcl>tol_kcl_abs)&&(Ekcl_rel>tol_kcl_rel))||((Ev>tol_v_abs)&&(Ev/(fabs(Va)+1e-10)>tol_v_rel))));
-			
-			M->nodes[i].P-=Na;
-		}
-	else
-		for (i=1;i<=list[0];i++)
-		{
-			node *N;
-			N=SearchNode(M, list[i]);
-			N->P+=Na;
-			
-			N->P-=Na;
-		}
-		
-	cholmod_free_sparse(&S, &c);	
-	cholmod_finish(&c);
-	
-}
-*/
-
 #define Njv 101
-/* this routine is still somewhat experimental. If it turns out (as I suspect) that the linear and differential version is the only one we need we can simplify the thing a bit,
- e.g., in case it is linear we do not need the whole IV for that as we do not do anything NL. */
- 
-double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, int diff, int NL)
+/* the locally collected current is purely for lateral transport, i.e. it is assumed that the current flows out of the diode, hence it does not consider the internal series resistance */ 
+/* differential mode: compute small signal current collection efficiency
+   non-differential mode: large signal response, take local short circuit current and monitor the non-linear response to removing that current. This produces the locally collected currentdensity */
+double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, int diff, int Ri)
 {
 	cholmod_common c ;
 	cholmod_sparse *S;
@@ -1266,6 +1179,7 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 	double Ekcl, Ekcl_rel;
 	double *res;
 	double *V, *Vnew, *Vref, *vv;
+	double Ilocal, Vstart=0, Vend=0;
 	int pc, pcl=0;
 	clock_t start, end;
 	
@@ -1277,6 +1191,29 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 	Print(NORMAL, "Doing reference calculation");
 	/* solva system */
 	SolveVa(M, Va, Va, 1);
+	V=calloc((M->Nel*M->Nn+1),sizeof(double));
+	Vref=calloc((M->Nel*M->Nn+1),sizeof(double));
+	Vnew=calloc((M->Nel*M->Nn+1),sizeof(double));
+	
+	for (j=0;j<M->Nel*M->Nn;j++)	
+	{		
+		Vref[j]=M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn];
+		V[j]=Vref[j];
+	}
+	for (j=0;j<M->Nn;j++)	
+	{	
+		double v;	
+		if (IsInList(nodes, M->nodes[j].id))
+		{
+			v=V[M->nodes[j].id+diode_index*M->Nn]-V[M->nodes[j].id+(diode_index+1)*M->Nn];		
+			if (Vstart>v)
+				Vstart=v;
+			if (Vend<v)
+				Vend=v;
+		}
+	}
+	Vstart-=0.5;
+	Vend+=0.5;
 	
 	/* for each area definition, create a new area with diode removed */
 	Na_old=M->Na;
@@ -1285,16 +1222,79 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 		M->Na++;
 		M->P=realloc(M->P, (M->Na+1)*sizeof(local_prop));
 		DuplicateProperties(M, M->P+M->Na-1, M->P+i);
+				
+		if (!Ri)
+		{
+			if (M->P[Na_old+i].conn[diode_index].V)
+				free(M->P[Na_old+i].conn[diode_index].V);
+			if (M->P[Na_old+i].conn[diode_index].J)
+				free(M->P[Na_old+i].conn[diode_index].J);
+			if (diff)
+			{	
+				/* only need to force one operating point to be shifted, i.e. put in one current value at thge operating point */
+				/* this means we need to know the operating point of each individual element in this area before we can fill in the table */				
+				M->P[Na_old+i].conn[diode_index].V=calloc((3),sizeof(double));
+				M->P[Na_old+i].conn[diode_index].J=calloc((3),sizeof(double));
+				M->P[Na_old+i].conn[diode_index].N=2;
+				M->P[Na_old+i].conn[diode_index].model=JVD;
+			
+			}
+			else
+			{
+				double J;
+				/* need a complete JV for the non-linear response. As I only want the lateral collection I force superposition to hold 
+				   i.e. I shift the entire JV characteristics over the short circuit current */
+				Diode_J(*M, i, diode_index, 0, &Ilocal,NULL,NULL);
+				
+				M->P[Na_old+i].conn[diode_index].V=calloc((Njv+1),sizeof(double));
+				M->P[Na_old+i].conn[diode_index].J=calloc((Njv+1),sizeof(double));
+				M->P[Na_old+i].conn[diode_index].N=Njv;
+				M->P[Na_old+i].conn[diode_index].model=JVD;
+				/* voltage range 1 V more than the maximum voltage difference found for the selected nodes */
+				for (j=0;j<Njv;j++)
+				{
+					M->P[Na_old+i].conn[diode_index].V[j]=Vstart+j*(Vend-Vstart)/(Njv-1);
+					Diode_J(*M, i, diode_index, M->P[Na_old+i].conn[diode_index].V[j], &J,NULL,NULL);
+					M->P[Na_old+i].conn[diode_index].J[j]=J-Ilocal;
+				}
+				
+			}
+		}
+		else
+		{
+			if (!diff)
+			{
+				switch(M->P[Na_old+i].conn[diode_index].model)
+				{
+					case JVD:
+						{
+							Diode_J(*M, i, diode_index, 0, &Ilocal,NULL,NULL);								
+							for (j=0;j<M->P[Na_old+i].conn[diode_index].N;j++)
+								M->P[Na_old+i].conn[diode_index].J[j]=M->P[i].conn[diode_index].J[j]-Ilocal;					
+						}
+						break;
+					case ONED:
+					case TWOD:
+						M->P[Na_old+i].conn[diode_index].Jph=0;
+						break;
+					default:
+						Warning("Unknown diode model in function LocallyCollectedCurrent\n");
+				}
+			}
+			else
+			{
+				if (M->P[Na_old+i].conn[diode_index].V)
+					free(M->P[Na_old+i].conn[diode_index].V);
+				if (M->P[Na_old+i].conn[diode_index].J)
+					free(M->P[Na_old+i].conn[diode_index].J);			
+				M->P[Na_old+i].conn[diode_index].V=calloc((3),sizeof(double));
+				M->P[Na_old+i].conn[diode_index].J=calloc((3),sizeof(double));
+				M->P[Na_old+i].conn[diode_index].N=2;
+				M->P[Na_old+i].conn[diode_index].model=JVD;
+			}
+			
+		}
 		
-		if (M->P[Na_old+i].conn[diode_index].V)
-			free(M->P[Na_old+i].conn[diode_index].V);
-		if (M->P[Na_old+i].conn[diode_index].J)
-			free(M->P[Na_old+i].conn[diode_index].J);
-		
-		M->P[Na_old+i].conn[diode_index].V=calloc((Njv+1),sizeof(double));
-		M->P[Na_old+i].conn[diode_index].J=calloc((Njv+1),sizeof(double));
-		M->P[Na_old+i].conn[diode_index].N=Njv;
-		M->P[Na_old+i].conn[diode_index].model=JVD;	
 	}
 	
 	
@@ -1307,57 +1307,86 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
      	end = clock();
 	cpu_time_system+=((double) (end - start)) / CLOCKS_PER_SEC;
 	
-	
-	V=calloc((M->Nel*M->Nn+1),sizeof(double));
-	Vref=calloc((M->Nel*M->Nn+1),sizeof(double));
-	Vnew=calloc((M->Nel*M->Nn+1),sizeof(double));
-	
-	for (j=0;j<M->Nel*M->Nn;j++)	
-	{		
-		Vref[j]=M->res.Vn[M->res.Nva-1][j/M->Nn][j%M->Nn];
-		V[j]=Vref[j];
-	}
-		
-	
 	Print(NORMAL, "Simulating Current Collection Efficiency");
 	
 	/* for each element in the mesh, move it into the new area copy, simulate the current and move it back */
 	printf("\n");
 	for (i=1;i<=nodes[0];i++)
 	{
-		double Ilocal, Inew, A;
+		double Inew, A;
 		node *N;
 		N=SearchNode(*M, nodes[i]);
 		/* store local current */
 		A=((N->x2-N->x1)*(N->y2-N->y1));
-		if (!diff)
-			Diode(*M, *N, diode_index, 0, &Ilocal, NULL, NULL);
-		else
+		
+		if (diff)
 		{
-			Diode(*M, *N, diode_index, Vref[N->id+diode_index*M->Nn]-Vref[N->id+(diode_index+1)*M->Nn], &Ilocal, NULL, NULL);
-			Ilocal=fabs(Ilocal)+1000*Numeric_Settings.tol_kcl_abs;
+			double dIdV, v;
+			v=Vref[N->id+diode_index*M->Nn]-Vref[N->id+(diode_index+1)*M->Nn];
+			/* linearize and shift the operating point */
+			Diode(*M, *N, diode_index, v, &Ilocal, &dIdV, NULL); /* current operating point */
+			
+			if (!Ri)
+			{
+				M->P[N->P+Na_old].conn[diode_index].V[0]=v-1;
+				M->P[N->P+Na_old].conn[diode_index].J[0]=(Ilocal-fabs(Ilocal)-1000*Numeric_Settings.tol_kcl_abs-dIdV)/A;
+				M->P[N->P+Na_old].conn[diode_index].V[1]=v+1;
+				M->P[N->P+Na_old].conn[diode_index].J[1]=(Ilocal-fabs(Ilocal)-1000*Numeric_Settings.tol_kcl_abs+dIdV)/A;				
+				Ilocal=fabs(Ilocal)+1000*Numeric_Settings.tol_kcl_abs;
+			}
+			else
+			{
+				switch(M->P[N->P].conn[diode_index].model)
+				{
+					case JVD:
+						M->P[N->P+Na_old].conn[diode_index].V[0]=v-1;
+						M->P[N->P+Na_old].conn[diode_index].J[0]=(Ilocal-fabs(Ilocal)-1000*Numeric_Settings.tol_kcl_abs-dIdV)/A;
+						M->P[N->P+Na_old].conn[diode_index].V[1]=v+1;
+						M->P[N->P+Na_old].conn[diode_index].J[1]=(Ilocal-fabs(Ilocal)-1000*Numeric_Settings.tol_kcl_abs+dIdV)/A;				
+						Ilocal=fabs(Ilocal)+1000*Numeric_Settings.tol_kcl_abs;
+					case ONED:
+					case TWOD:
+					{
+						double rj, is;
+					/* here we have to be careful, it must be a differential value. The jaccobian makes that if we take tabular data it does not make any difference whether we 
+					take a small or large change in current as we have the linearized system. However, in this case we want to compute the impact of the series resistance
+					this means we must truely work with small values otherwise the diode model goes wrong! as it is not included in the Jacobian so to say */
+						/*
+						Ilocal=MAX(M->P[N->P].conn[diode_index].Jph/20,0.001);
+						Ilocal*=A;
+						M->P[Na_old+N->P].conn[diode_index].Jph=M->P[N->P].conn[diode_index].Jph+Ilocal/A;
+						*/
+						/* for the one and two diode models we know 1/dIdV-Rs=differential resistance of parallel diodes and shunt */	
+									
+						Ilocal=fabs(Ilocal)+1000*Numeric_Settings.tol_kcl_abs;
+						rj=1/dIdV-M->P[N->P].conn[diode_index].Rs/A;
+						is=-rj*dIdV*Ilocal;
+						M->P[N->P+Na_old].conn[diode_index].V[0]=v-1;
+						M->P[N->P+Na_old].conn[diode_index].J[0]=(is-dIdV)/A;
+						M->P[N->P+Na_old].conn[diode_index].V[1]=v+1;
+						M->P[N->P+Na_old].conn[diode_index].J[1]=(is+dIdV)/A;	
+						
+						/*Print(NORMAL,"Jph %e %e %e %e",M->P[Na_old+N->P].conn[diode_index].Jph, M->P[N->P].conn[diode_index].Jph, Ilocal, A);*/
+						break;
+					}
+					default:
+						Warning("Unknown diode model in function LocallyCollectedCurrent\n");
+				}
+			}
+		
 		}
 			
 			
-		
 		for (j=0;j<M->Nel*M->Nn;j++)	
 			V[j]=Vref[j];
-		for (j=0;j<Njv;j++)
-		{
-			double Vstart, Vend;
-			Vstart=Vref[N->id+diode_index*M->Nn]-Vref[N->id+(diode_index+1)*M->Nn]-0.5;
-			Vend=Vref[N->id+diode_index*M->Nn]-Vref[N->id+(diode_index+1)*M->Nn]+0.5;
-			M->P[N->P+Na_old].conn[diode_index].V[j]=Vstart+j*(Vend-Vstart)/(Njv-1);
-			Diode(*M, *N, diode_index, M->P[N->P+Na_old].conn[diode_index].V[j], M->P[N->P+Na_old].conn[diode_index].J+j, NULL, NULL);
-			M->P[N->P+Na_old].conn[diode_index].J[j]-=Ilocal;
-			M->P[N->P+Na_old].conn[diode_index].J[j]/=A;
-		}
+		
 		/* move node into modified area */
 		N->P+=Na_old;
 		
 		/* simulate */
-		if (!NL)
+		if (diff)
 		{
+			/* small signal, only need one iteration with the current jaccobnian */
 			NewtonStep(*M, V, Vnew,Va, &Inew, &Ekcl, &Ekcl_rel, &Ev,1, 0, S, &c);
 			/* swap input and output arrays */
 			vv=Vnew;
@@ -1366,7 +1395,7 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 			Print(VERBOSE, "%-12.2e%-8d%-12.2e%-12.2e%-12.2e%-8.2e",Va, j+1,Ev, Ev/(fabs(Va)+1e-10), Ekcl, Ekcl_rel);
 		}
 		else
-		{
+		{ 
 			j=0;
 			do
 			{
@@ -1384,7 +1413,6 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 			res[i]=(M->res.I[M->res.Nva-1]-Inew)/Ilocal;
 		else
 			res[i]=(Inew-M->res.I[M->res.Nva-1])/A;
-		
 		/* move node back */
 		N->P-=Na_old;
 		pc=floor(1000*(double)i/((double)nodes[0])+0.5);
@@ -1411,4 +1439,3 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 	cholmod_finish(&c);
 	return res;
 }
-

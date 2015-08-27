@@ -1059,7 +1059,7 @@ int * ListGridNodes(mesh M, double x1, double y1, double x2, double y2, int Nx, 
 }
 
 
-void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, double x2, double y2, int Nx, int Ny, double Va, int diode_index, int diff, int NL)
+void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, double x2, double y2, int Nx, int Ny, double Va, int diode_index, int diff, int Ri)
 {
 	double *J;
 	int i, j, *sel_nodes, *index;
@@ -1074,7 +1074,7 @@ void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, doubl
 	index=malloc(((Nx+1)*(Ny+1)+1)*sizeof(int));
 	sel_nodes=ListGridNodes(*M, x1, y1, x2, y2, Nx, Ny, sel_nodes, index);
 	
-	J=LocalyCollectedCurrent(M, Va, diode_index, sel_nodes, diff, NL);
+	J=LocalyCollectedCurrent(M, Va, diode_index, sel_nodes, diff, Ri);
 	
 	PrintFileHeader(f);
 	if (diff)
