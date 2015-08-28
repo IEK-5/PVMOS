@@ -1307,7 +1307,33 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
      	end = clock();
 	cpu_time_system+=((double) (end - start)) / CLOCKS_PER_SEC;
 	
-	Print(NORMAL, "Simulating Current Collection Efficiency");
+	
+	if (diff)
+		diff=1;
+	else
+		diff=0;
+	if (Ri)
+		Ri=1;
+	else 
+		Ri=0;
+	
+	switch (diff+(Ri<<1))
+	{
+		case 0:
+			Print(NORMAL, "Simulating Lateral Current Density Collection");
+			break;
+		case 1:
+			Print(NORMAL, "Simulating Differential Lateral Current Collection Efficiency");
+			break;	
+		case 2:
+			Print(NORMAL, "Simulating Photo-Current Density Collection (including internal series resistance)");
+			break;
+		case 3:
+			Print(NORMAL, "Simulating Differential Photo-Current Collection Efficiency (including internal series resistance)");
+			break;
+		default:
+			Warning("Bit's are a flippin %d'\n",diff+(Ri<<1));
+	}
 	
 	/* for each element in the mesh, move it into the new area copy, simulate the current and move it back */
 	printf("\n");

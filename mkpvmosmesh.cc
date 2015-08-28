@@ -24,11 +24,11 @@ const ElModel ElModelTable[] =
       	{NULL, JVD}
 };
 
-octave_value GetValue(Octave_map Area_Def, int i,  char * name)
+octave_value GetValue(octave_map Area_Def, int i,  char const * name)
 {
 	if (! error_state && Area_Def.contains (name))
 	{
-		Octave_map::const_iterator index = Area_Def.seek (name);
+		octave_map::const_iterator index = Area_Def.seek (name);
 		if (i>=Area_Def.contents(index).numel ())
 		{
 			fprintf(stderr, "Error: index %i out of bound %i in GetValue\n", i+1, Area_Def.contents(index).numel ());
@@ -95,7 +95,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 	int Na = args(0).int_value();
 	int Nel = args(1).int_value();
 	Matrix Area_Index = args(2).matrix_value();
-        Octave_map Area_Def = args(3).map_value ();
+        octave_map Area_Def = args(3).map_value ();
 	Matrix x=args(4).matrix_value();
 	Matrix y=args(5).matrix_value();
 	char * string;
@@ -109,7 +109,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 	}
 	
     	printf("Init mesh\n");
-	M=InitMesh("PVMOS_mesh", 0,  1, 0, 1, Area_Index.cols(), Area_Index.rows());
+	M=InitMesh((char *)"PVMOS_mesh", 0,  1, 0, 1, Area_Index.cols(), Area_Index.rows());
 
 	
 	
@@ -192,7 +192,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 			FreeMesh(&M);
 			return octave_value();
 		}
-		Octave_map elcon=res.map_value();
+		octave_map elcon=res.map_value();
 		if (Nel-1!=elcon.numel ())
 		{
 			fprintf(stderr, "Error: length of the connection struct is unequal to the number of electrodes - 1\nNel=%i and connection struct is %i long\n", Nel, elcon.numel ());
@@ -324,7 +324,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 		}
 		M.P[i+1].SplitY=res.int_value();
 	}
-    	printf("Sett8ng element properties (assigning to areas and coordinates)\n");
+    	printf("Setting element properties (assigning to areas and coordinates)\n");
 	int Nn=0;
 	double x1=0;
 	double x2=0;
