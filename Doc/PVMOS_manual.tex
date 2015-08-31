@@ -76,10 +76,18 @@ The input file is parsed by PVMOS, which sequentially processes the file. PVMOS 
 \section{Installation Instructions}	
 PVMOS is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \texttt{cholmod}, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to either compile the source, for which a Makefile is provided, or you need to download precompiled binaries for your system (I only provide pre-compiled versions for windows). 
 
-\subsection{Pre-compiled binaries (Windows)}
-A word of warning: I rarely use windows systems. As such the here provided information about getting PVMOS to work on windows systems is a description of how I got PVMOS to work on one particular system on one particular Wednesday afternoon in December. I make no claims regarding the correctness of the provided information as generally I know very little about what I am doing, certainly if it involes a computer with Microsoft Windows. Please bear that in mind before you accuse me of providing false information of even damaging your system. This text is meant to provide some pointers in the hope it helps, I am in no way responsible for what you do on your system.  
+\subsection{Compiling from source}
+Here are the instructions to compile the PVMOS executable:
+\begin{enumerate}
+\item{} Install PVMOS's dependencies (\texttt{BLAS} and \texttt{CHOLMOD}). These libraries should be readily available in most linux distributions. Take care to install the development files (i.e. headers) for these libraries too 
+\item{} Optionally edit the Makefile, in particular you can change the BLAS library to link to (which may be relevant for performance, see below) or change the install directory
+\item{} type ``make'', and ``make install''
+\end{enumerate}
 
-There are two pre-compiled versions, 32 and 64 bit. If your system supports it I strongly suggest to use 64 bit as 32bit applications are rather limited in the maximum allocatable memory space. The Pinup example will most likely not run with the 32bit version due to this memory limitation. The binary distribution consists of an executable with several dll's. The installation procedure for PVMOS is rather manual and no installer is provided. So here is the procedure for a binary install:
+The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \texttt{OpenBLAS}, which gives a very good performance (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}). Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the makefiles are set up to use \texttt{OpenBLAS} as it provides a good performance and is freely available.
+
+\subsection{Pre-compiled binaries (Windows)}
+There are two pre-compiled versions, 32 and 64 bit. If your system supports it I strongly suggest to use 64 bit as 32bit applications are rather limited in the maximum allocatable memory space. The Pinup example will not run with the 32bit version due to this memory limitation. The binary distribution consists of an executable with several dll's. The installation procedure for PVMOS is rather manual and no installer is provided. So here is the procedure for a binary install:
 \begin{enumerate}
 \item{} Download the binary 
 \item{} Unpack the files in a directory of your choise
@@ -100,50 +108,39 @@ Here I describe how to edit your path variable in Windows 7. First another word 
 
 If you properly edited your path variable you should be able to call PVMOS from the command prompt, from any directory, just by typing ``pvmos'', i.e. you do not need to include the path to your PVMOS executable.
 
-\subsubsection{Installing mkpvmosmesh}
-The ``mkpvmosmesh'' library is a dynamic library for GNU Octave which allows one to save PVMOS meshes from within Octave. Its use is demonstrated in the ``Pinup'' example. Again you can choose between precompiled binaries or compile it yourself. The precompiled version will not work with all versions of Octave, thus to use the precompiled version you need to install the correct version of Octave. The version of Octave I used is provided by ``octave-forge''. Octave-forge provides several version of Octave. I used the version 3.6.4 of Octave that was compiled with the MinGW compiler suite version gcc4.6.2 (Octave3.6.3\_gcc4.6.2). The provided libryry will not work with the version of Octave that is compiled with Visual Studio. The precompiled library is 32bit as the used version of Octave is too. As of this writing no pre-compiled 64bit version of Octave is available (at least not compiled with the MinGW suite). For this reason there is no 64 bit version of mkpvmosmesh.
+\subsection{Installing mkpvmosmesh}
+The ``mkpvmosmesh'' library is a dynamic library for GNU Octave which allows one to create and save binary PVMOS meshes from within Octave. Its use is demonstrated in the ``Pinup'' example. It is recommended to install mkpvmosmesh as an Octave package. To create a package from source for installing in Octave you can type ``make mkpvmosmesh.pkg'' which should create a package ``mkpvmosmesh-<version>.tar.gz''. Alternatively, you may download a prepared package. The package can be installed form the Octave commandline using the ``pkg'' command, see the Octave documentation. After installing and loading the mkpvmosmesh library you should have the mkpvmosmesh command available within Octave.
 
-Two notes on using GNU Octave under windows. 
-\begin{enumerate}
-\item{} You can add Octave to your path variable, that way you can easily call octave from anywhere on the commandline.
-\item{} you may find that on windows Octave always starts in the same directory, this is to me unexpected and undesired. I got Octave to start there where I call it (so I can execute an octave script by typing \texttt{octave <path to octave script>}. To this end I edited the file \texttt{<Octave-installation-dir>\textbackslash share\textbackslash site\textbackslash m\textbackslash startup\textbackslash octaverc} by commenting out the line 
-\begin{verbatim}
-cd (getenv('USERPROFILE'))
-\end{verbatim}
-\end{enumerate}
+% Again you can choose between precompiled binaries or compile it yourself. The precompiled version will not work with all versions of Octave, thus to use the precompiled version you need to install the correct version of Octave. The version of Octave I used is provided by ``octave-forge''. Octave-forge provides several version of Octave. I used the version 3.6.4 of Octave that was compiled with the MinGW compiler suite version gcc4.6.2 (Octave3.6.3\_gcc4.6.2). The provided libryry will not work with the version of Octave that is compiled with Visual Studio. The precompiled library is 32bit as the used version of Octave is too. As of this writing no pre-compiled 64bit version of Octave is available (at least not compiled with the MinGW suite). For this reason there is no 64 bit version of mkpvmosmesh.
 
-
-\subsection{Compiling from source}
-\begin{enumerate}
-\item{} Install PVMOS's dependencies (\texttt{BLAS} and \texttt{CHOLMOD}). These libraries should be readily available in most linux distributions. Take care to install the development files (i.e. headers) for these libraries too 
-\item{} Optionally edit the Makefile, in particular you can change the BLAS library to link to (which may be relevant for performance, see below) or change the install directory
-\item{} type ``make'', and ``make install''
-\item{} Optionally type ``make mkpvmosmesh'' to compile the mkpvmosmesh library for GNU Octave (this requires a GNU Octave install with a working mkoctfile command).
-\end{enumerate}
-
-The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \texttt{OpenBLAS}, which gives a very good performance (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}). Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the makefiles are set up to use \texttt{OpenBLAS} as it provides a good performance and is freely available.
+%Two notes on using GNU Octave under windows. 
+%\begin{enumerate}
+%\item{} You can add Octave to your path variable, that way you can easily call octave from anywhere on the commandline.
+%\item{} you may find that on windows Octave always starts in the same directory, this is to me unexpected and undesired. I got Octave to start there where I call it (so I can execute an octave script by typing \texttt{octave <path to octave script>}. To this end I edited the file \texttt{<Octave-installation-dir>\textbackslash share\textbackslash site\textbackslash m\textbackslash startup\textbackslash octaverc} by commenting out the line 
+%\begin{verbatim}
+%cd (getenv('USERPROFILE'))
+%\end{verbatim}
+%\end{enumerate}
 
 \section{\label{getting started}Getting started}
 In this section we give some pointers to get you started. 
 
 \subsection{Recommended software}
-We recommend the use of several pieces of software as we use those ourselves and as such PVMOS was partly structures to be compatible with specific tools. Most notable of this is Gnuplot. Some of PVMOS output formats are specifically designed to be compatable with Gnuplot. Specifically the format used to make map plots of data on the irregular meshes, I suspect other plotting tools do not work well with this output format (I do not know for sure as I do not use other tools for plotting). The use of Gnuplot is recommended especially for inspecting the mesh definitions to see if the defined geometry is correct (the output of the \texttt{printarea} command, combined with the \texttt{printpar} command).
+Obviously you are free to use whatever software you want. However, to process data from PVMOS or to get data into PVMOS I often use file formats which will not be supported by all software packages. I thus here detail my software setup in the hope it helps you to get started. All software here is free and open source software.
 
+\subsection{Get data into PVMOS: GNU Octave \& Inkscape}
 If you want to define complex geometries there are basically three ways:
 \begin{enumerate}
 \item{} Use the PVMOS scripting language. The advantages of this method is that it can be very accurate and fast and is independent of any other software, the downside is that it quickly becomes tedious
-\item{} Use a set of bitmap "masks" in combination with GNU octave and the mkpvmosmesh library for GNU octave. This is a powerful way to define complicated geometries. For this you need to set up and install GNU Octave and the mkpvmos library. For high resolutions memory usage and performance may become an issue.
+\item{} mkpvmosmesh with GNU Octave. This allows you to use all the data and image processing power of Octave to generate meshes.
 \item{} Define geometries using polygons. PVMOS has good support for polygons to select and specify various areas in your device. Complicated shapes may be created in a graphics program such as inkscape and exported to PVMOS. For this I have an extension to export data from inkscape for use in PVMOS. In combination with the trace bitmap feature of inkscape you can quickly define appropriate polygons for complicated geometries if you provide a bitmap image, e.g. you can create a polygon for the metalization pattern of a device by tracing a picture. This method potentially has a lower memory footprint compared to the GNU Octave option. 
 \end{enumerate}   
 
-\subsection{Gnuplot}
-The data-format that PVMOS uses for element-wise data export is laid out such that Gnuplot can make sense out of the data. Other plotting tools may not support this format. The element-wise data export allows you to export data from the mesh on a per-element basis and is particularly useful for inspecting meshes to ensure a correct mesh definition. For this reason I recommend the use of Gnuplot. Other data formats thet PVMOS should not be a problem for other plotting tools.
-
-\subsection{GNU Octave}
-This is only relevant if you want to define meshes using bitmap masks. 
-
-\subsection{Inkscape}
 Inkscape is a powerfull vector graphics tool. One of the graphics objects Inkscape supports are ``paths''. In its simplest form a path is simply a polygon. As PVMOS can use polygons when defining a mesh it makes sense to use a tool such as Inkscape to create the polygons as Inkscape provides a powerfull, graphical, means to do so. In order to get the polygon data out of inkscape I created a simple extension which extracts the data out of a polygon. To use this extention select a path with polygon data and select the ExportXY extension, a popup window will come up with coordinates you can select and paste in a polygon data file. Note however that Inkscape paths may also be bezier curves, which PVMOS does not support. To use the extension is is thus required that the path data is forced to be a polygon. For this you can use the flatten Bezier extention in Inkscape. I have not fully dug into Inkscape's internal units. This can be tricky as Inkscape may use all sorts of transforms on objects. This means that the polygon data may need to be scaled, rotated, mirrored and shifted to get the data in the correct unit. For this I provide a small CLI program ``transformpolygon''. 
+
+
+\subsection{Analyse simulated data: Gnuplot}
+The data-format that PVMOS uses for element-wise data export is laid out such that Gnuplot can make sense out of the data. Other plotting tools may not support this format. The element-wise data export allows you to export data from the mesh on a per-element basis and is particularly useful for inspecting meshes to ensure a correct mesh definition. For this reason I recommend the use of Gnuplot. Other data formats thet PVMOS should not be a problem for other plotting tools.
 
 \section{\label{syntax}PVMOS input file format}
 \subsection{\label{commref}Command Reference}
@@ -401,7 +398,7 @@ Keyword & Description \\
 \multicolumn{2}{l}{\textsc{Saving and loading meshes}} \\*
 \hline
 Keyword & Description \\
-\texttt{savemesh}	& Save a mesh to file in the PVMOS binary format, so it can be loaded again at a later time (see the \texttt{loadmesh} command). The command takes two arguments.
+\texttt{savemesh}	& Save a mesh to file in the PVMOS binary format, so it can be loaded again at a later time (see the \texttt{loadmesh} command). Compatibility of the saved meshes with past or future versions of PVMOS is \emph{not} guaranteed. The command takes two arguments.
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of themesh to be saved.
 \item \texttt{file-name}, filename to save the mesh to.

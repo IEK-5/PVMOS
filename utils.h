@@ -40,6 +40,7 @@
 
 #define MAXSTRLEN 256
 void Print(VERB_LEVEL  v_level,  const char *format_str, ...);
+void Print_nlb(VERB_LEVEL v_level, const char *format_str, ...);
 void Error( const char *format_str, ...);
 void Warning( const char *format_str, ...);
 

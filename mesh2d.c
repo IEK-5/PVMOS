@@ -54,6 +54,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <math.h>
+#include "meshhash.h"
 #include "mesh2d.h"
 #include "main.h"
 #include "list.h"
@@ -2278,8 +2279,16 @@ void ReadResults(FILE *f, mesh *M)
 void WriteMesh(char *fn, mesh *M)
 {
 	FILE *f;
+	int i;
+	Print_nlb(NORMAL,"Current PVMOS mesh data stucture signature:\n");
+	for(i = 0; i < NMESHHASH; i++)
+		Print_nlb(NORMAL, "%02x", MESHHASH[i]);
+	Print_nlb(NORMAL,"\n");
+	
 	if ((f=fopen(fn,"wb"))==NULL)
 		Error("Cannot open %s for writing\n", fn);
+	for (i=0;i<NMESHHASH;i++)
+		fwrite(MESHHASH+i, sizeof(char), 1, f); /* hash for compatibility verification */
 	WriteNodeArray(f, M);
 	WritePropertiesArray(f, M);
 	WriteResults(f, M);
@@ -2289,9 +2298,26 @@ void WriteMesh(char *fn, mesh *M)
 /* read a complete mesh from a file */
 void ReadMesh(char *fn, mesh *M)
 {
+	int i;
+	unsigned char c;
 	FILE *f;
+	
+	Print_nlb(NORMAL,"Current PVMOS mesh data structure signature:\n");
+	for(i = 0; i < NMESHHASH; i++)
+		Print_nlb(NORMAL,"%02x", MESHHASH[i]);
+	Print_nlb(NORMAL,"\n");
+	
+	
 	if ((f=fopen(fn,"rb"))==NULL)
 		Error("Cannot open %s for reading\n", fn);
+		
+	for (i=0;i<NMESHHASH;i++) /* hash for compatibility verification */
+	{
+		if (!fread(&c, sizeof(char), 1, f))
+			Error("File shorter than %d bytes!\n", NMESHHASH);
+		if (c!=MESHHASH[i])
+			Error("Meshfile %s incompatible with current PVMOS version\n", fn);	
+	}	
 	ReadNodeArray(f, M);
 	ReadPropertiesArray(f, M);
 	ReadResults(f, M);

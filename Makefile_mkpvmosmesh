@@ -1,0 +1,9 @@
+VERSION=0.72
+CC=gcc
+CFLAGS=-Ofast -flto -Wall -fPIC
+mkpvmosmesh: mesh2d.o utils.o list.o main.h
+	mkoctfile -v  mkpvmosmesh.cc mesh2d.o utils.o list.o
+utils.o: utils.c mesh2d.h utils.h
+	$(CC) $(CFLAGS)   -c -o utils.o -DVERSION=\"$(VERSION)\" utils.c
+mesh2d.o: mesh2d.h mesh2d.c utils.h
+list.o: list.c utils.h

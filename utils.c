@@ -119,6 +119,13 @@ void Print(VERB_LEVEL v_level, const char *format_str, ...)
 	}
 }
 
+void Print_nlb(VERB_LEVEL v_level, const char *format_str, ...)
+{
+      	va_list ap;
+      	va_start (ap, format_str);
+	if (v_level<=verbose)
+		vprintf(format_str, ap); 
+}
 void Error( const char *format_str, ...)
 {
       	va_list ap;

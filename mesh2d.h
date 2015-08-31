@@ -89,6 +89,10 @@ typedef struct mesh {
 	results res;			/* struct with calculated data for the mesh */
 } mesh;
 
+#ifndef _HAS_MESHHASH
+extern int NMESHHASH;
+extern unsigned const char MESHHASH[];
+#endif
 local_prop InitProperties (char *name, int Nel);
 mesh InitMesh(char *name, double x1, double x2, double y1, double y2, int Nx, int Ny);
 void FreeProperties(local_prop *P, int Nel);

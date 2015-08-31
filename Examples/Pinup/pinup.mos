@@ -10,7 +10,7 @@
 ################################################################################################
 # To load the mesh generated within octave we use the loadmesh command
 # It takes 2 arguments: 1: the binary mesh file 2: name of the mesh
-loadmesh pinupmesh.bin pinup
+loadmesh pinupmesh2.bin pinup
 
 ################################################################################################
 # The mesh created within Octave is a regular mesh. In general regular meshes have redundant 
