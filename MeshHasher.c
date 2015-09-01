@@ -143,7 +143,7 @@ int main (int argc, char **argv)
 	mesh M;
 	
 	/* temporary filename */
-	fn=malloc(sizeof(char));
+	fn=malloc((L_tmpnam+1)*sizeof(char));
 	fn=tmpnam (fn);
 	
 	/* create and save mesh */

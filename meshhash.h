@@ -18,26 +18,26 @@
  * Current PVMOS mesh data structure signature:                        *
  *---------------------------------------------------------------------*
  *                                                                     *
- *                  b9e0e7b8e0a588845f1e68a957e9acb2                   *
+ *                  608b0588687d5cba2ee13fc6c25063d2                   *
  *                                                                     *
  * *********************************************************************/
 #define _HAS_MESHHASH
 int NMESHHASH=16;
 unsigned char MESHHASH[] = {
-	0xb9,
-	0xe0,
-	0xe7,
-	0xb8,
-	0xe0,
-	0xa5,
+	0x60,
+	0x8b,
+	0x05,
 	0x88,
-	0x84,
-	0x5f,
-	0x1e,
 	0x68,
-	0xa9,
-	0x57,
-	0xe9,
-	0xac,
-	0xb2
+	0x7d,
+	0x5c,
+	0xba,
+	0x2e,
+	0xe1,
+	0x3f,
+	0xc6,
+	0xc2,
+	0x50,
+	0x63,
+	0xd2
 };

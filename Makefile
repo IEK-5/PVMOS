@@ -37,15 +37,15 @@ else
 endif	
 parse.o: utils.h parsedef.h parse.h parse.c mesh2d.h solve.h list.h select_nodes.h dataexport.h expr.h
 mesh2d.o: mesh2d.h mesh2d.c utils.h meshhash.h
-meshhash.h: mesh2d.h MeshHasher.c list.o utils.o 
+meshhash.h: mesh2d.h mesh2d.c MeshHasher.c list.o utils.o 
 	# this part is only executed if the mesh data structures are changed
 	# First create a dummy meshhash.h file to make a dummy mesh2d.o file
 	echo "#define _HAS_MESHHASH" > meshhash.h
 	echo "int NMESHHASH=1;" >> meshhash.h
 	echo "unsigned char MESHHASH[] = { 0 };" >> meshhash.h 
-	$(CC) $(CFLAGS)   -c -o mesh2d.o mesh2d.c
+	$(CC) -Og -g -Wall -fPIC -lm   -c -o mesh2d.o mesh2d.c
 	# Build the mesh hasher
-	$(CC) $(CFLAGS) -lssl -lcrypto -g -Wall  -o MeshHasher mesh2d.o  utils.o list.o MeshHasher.c
+	$(CC) -Og -g -Wall -fPIC -lm -lssl -lcrypto -g -Wall  -o MeshHasher mesh2d.o  utils.o list.o MeshHasher.c
 	# generate the hash
 	./MeshHasher meshhash.h
 	# remove the dummy mesh2d.o so it is properly compiled after this.

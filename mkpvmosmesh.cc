@@ -100,6 +100,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 	Matrix y=args(5).matrix_value();
 	char * string;
  	charMatrix fn = args(6).char_matrix_value ();
+	octave_value res;
 	
 	if (Nel<2)
 	{
@@ -109,7 +110,17 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 	}
 	
     	printf("Init mesh\n");
-	M=InitMesh((char *)"PVMOS_mesh", 0,  1, 0, 1, Area_Index.cols(), Area_Index.rows());
+	
+	
+	/* the default area for the newly created mesh is equal to the name of the first defined area */
+	res=GetValue(Area_Def, 0,  "name");
+	if (error_state)
+	{
+		FreeMesh(&M);
+		return octave_value();
+	}
+	string=Getstring(res.char_matrix_value());
+	M=InitMesh(string, 0,  1, 0, 1, Area_Index.cols(), Area_Index.rows());
 
 	
 	
@@ -126,7 +137,6 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 	{
 		/* allow user intterupts to shut things down */
     		OCTAVE_QUIT;
-		octave_value res;
     		printf("Area %i of %i: ", i, Na);
 		fflush(stdout);
 		
@@ -154,7 +164,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 			exit(1);
 		}
 		for (j=0;j<Nel;j++)
-			M.P[i+1].Rel[j]=Rel(j);
+			M.P[i].Rel[j]=Rel(j);
 			
 		res=GetValue(Area_Def, i,  "Rvp");
 		if (error_state)
@@ -169,7 +179,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 			exit(1);
 		}
 		for (j=0;j<Nel;j++)
-			M.P[i+1].Rvp[j]=Rvp(j);
+			M.P[i].Rvp[j]=Rvp(j);
 			
 		res=GetValue(Area_Def, i,  "Rvn");
 		if (error_state)
@@ -184,7 +194,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 			exit(1);
 		}
 		for (j=0;j<Nel;j++)
-			M.P[i+1].Rvn[j]=Rvn(j);
+			M.P[i].Rvn[j]=Rvn(j);
 			
 		res=GetValue(Area_Def, i,  "conn");
 		if (error_state)
@@ -213,7 +223,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 			{
 				fflush(stdout);
 				if (strncmp (res.char_matrix_value().fortran_vec(), model->name, 4) == 0)
-					M.P[i+1].conn[j].model=model->D;
+					M.P[i].conn[j].model=model->D;
 				model++;
 			}
 			
@@ -223,56 +233,56 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 				FreeMesh(&M);
 				return octave_value();
 			}
-			M.P[i+1].conn[j].J01=res.double_value();
+			M.P[i].conn[j].J01=res.double_value();
 			res=GetValue(elcon, j,  "J02");
 			if (error_state)
 			{
 				FreeMesh(&M);
 				return octave_value();
 			}
-			M.P[i+1].conn[j].J02=res.double_value();
+			M.P[i].conn[j].J02=res.double_value();
 			res=GetValue(elcon, j,  "Jph");
 			if (error_state)
 			{
 				FreeMesh(&M);
 				return octave_value();
 			}
-			M.P[i+1].conn[j].Jph=res.double_value();
+			M.P[i].conn[j].Jph=res.double_value();
 			res=GetValue(elcon, j,  "nid1");
 			if (error_state)
 			{
 				FreeMesh(&M);
 				return octave_value();
 			}
-			M.P[i+1].conn[j].nid1=res.double_value();
+			M.P[i].conn[j].nid1=res.double_value();
 			res=GetValue(elcon, j,  "nid2");
 			if (error_state)
 			{
 				FreeMesh(&M);
 				return octave_value();
 			}
-			M.P[i+1].conn[j].nid2=res.double_value();
+			M.P[i].conn[j].nid2=res.double_value();
 			res=GetValue(elcon, j,  "Eg");
 			if (error_state)
 			{
 				FreeMesh(&M);
 				return octave_value();
 			}
-			M.P[i+1].conn[j].Eg=res.double_value();
+			M.P[i].conn[j].Eg=res.double_value();
 			res=GetValue(elcon, j,  "Rs");
 			if (error_state)
 			{
 				FreeMesh(&M);
 				return octave_value();
 			}
-			M.P[i+1].conn[j].Rs=res.double_value();
+			M.P[i].conn[j].Rs=res.double_value();
 			res=GetValue(elcon, j,  "Rsh");
 			if (error_state)
 			{
 				FreeMesh(&M);
 				return octave_value();
 			}
-			M.P[i+1].conn[j].Rsh=res.double_value();
+			M.P[i].conn[j].Rsh=res.double_value();
 			
 			res=GetValue(elcon, j,  "VJ");
 			if (error_state)
@@ -281,7 +291,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 				return octave_value();
 			}
 			Matrix JV=res.matrix_value();
-			M.P[i+1].conn[j].N=JV.rows();
+			M.P[i].conn[j].N=JV.rows();
 			
 			N=JV.rows();
 			if ((N<2)||(JV.cols()!=2))
@@ -289,14 +299,14 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 				fprintf(stderr, "JV table should be a 2 columns and N rows with N>1\n");
 				exit(1);
 			}
-			M.P[i+1].conn[j].V=(double *)realloc(M.P[i+1].conn[j].V, (N+1)*sizeof(double));
-			M.P[i+1].conn[j].J=(double *)realloc(M.P[i+1].conn[j].J, (N+1)*sizeof(double));
+			M.P[i].conn[j].V=(double *)realloc(M.P[i].conn[j].V, (N+1)*sizeof(double));
+			M.P[i].conn[j].J=(double *)realloc(M.P[i].conn[j].J, (N+1)*sizeof(double));
 
-			M.P[i+1].conn[j].N=N;
+			M.P[i].conn[j].N=N;
 			for (k=0;k<N;k++)
 			{
-				M.P[i+1].conn[j].V[k]=JV(k,0);
-				M.P[i+1].conn[j].J[k]=JV(k,1);
+				M.P[i].conn[j].V[k]=JV(k,0);
+				M.P[i].conn[j].J[k]=JV(k,1);
 			}
 			
 		}
@@ -307,7 +317,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 			FreeMesh(&M);
 			return octave_value();
 		}
-		M.P[i+1].T=res.double_value();
+		M.P[i].T=res.double_value();
 		
 		res=GetValue(Area_Def, i,  "SplitX");
 		if (error_state)
@@ -315,14 +325,14 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 			FreeMesh(&M);
 			return octave_value();
 		}
-		M.P[i+1].SplitX=res.int_value();
+		M.P[i].SplitX=res.int_value();
 		res=GetValue(Area_Def, i,  "SplitY");
 		if (error_state)
 		{
 			FreeMesh(&M);
 			return octave_value();
 		}
-		M.P[i+1].SplitY=res.int_value();
+		M.P[i].SplitY=res.int_value();
 	}
     	printf("Setting element properties (assigning to areas and coordinates)\n");
 	int Nn=0;
@@ -338,7 +348,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 		{
 			y1=VectorIndex(y, j).double_value();
 			y2=VectorIndex(y, j+1).double_value();
-			M.nodes[Nn].P=(int)Area_Index(j,i);
+			M.nodes[Nn].P=(int)Area_Index(j,i)-1;
 			
 			M.nodes[Nn].x1=x1;
 			M.nodes[Nn].x2=x2;
