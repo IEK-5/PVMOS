@@ -15,17 +15,17 @@
 	 *   http://www.fz-juelich.de/iek/iek-5/DE/Home/home_node.html   *              
 	 *****************************************************************
 	 *                                                               *
-	 *    Dr. Bart E. Pieters 2015                                   *
+	 *    Dr. Bart E. Pieters 2014                                   *
 	 *                                                               *             
 	 *****************************************************************/              
  
 PhotoVoltaic MOdule Simulator (PVMOS) version 0.73
-=================================================
+==================================================
 
 PVMOS is an ordinary differential equation solver using finite-differences specifically
 designed to electrically model solar modules. A paper about PVMOS has been submitted to 
 IEEE Journal of photovoltaics [1]. Untill that paper is out I refer the user to [2], 
-which is an older version 0.73
+which is an older version of the first paper about an older version of PVMOS. An even 
 older reference which is still relevant is an paper from 2011 which discusse the same 
 method as PVMOS uses (Network Simulation Method with a variable and daptive mesh) [3].
 There is a first drafdt of a manual which at the moment not much more than a function 

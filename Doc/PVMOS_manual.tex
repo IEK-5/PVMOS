@@ -48,46 +48,44 @@
 \section{Introduction}
 This is (or rather will be as the current state of this document is far from finished) the manual for the Photo-Voltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{pvmos:2014}. The purpose of this document is to document how PVMOS is operated and installed. In the following sections I discuss in order, the installation, basic usage and operating principles and finally a detailed discussion of all available functions.
 
-Before we continue, here are some legalities:\\\\
+\section{Disclaimer}
+If this software ever does anything you think I claim it does or should do, consider yourself lucky.\\ \\
 \texttt{
-DISCLAMER:\\
 PVMOS  Copyright (C) 2014  B. E. Pieters\\
 This program comes with ABSOLUTELY NO WARRANTY. This is free software, and you are welcome to\\
 redistribute under certain conditions. You should have received a copy of the GNU General \\
 Public License along with this program. If not, see <http://www.gnu.org/licenses/>.\\
 }\\
-In order to stress the ABSOLUTELY NO WARRANTY bit, here a quote from R. Freund:\\\\
-\texttt{
-For all intent and purpose, any description of what the codes are doing should be construed as being a note of what we thought the codes did on our machine on a particular Tuesday of last year. If you're really lucky, they might do the same for you someday. Then again, do you really feel *that* lucky?\\
-}
+
+
 \section{Basic Usage and operating principles}
-The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the filename describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this%\footnote{Many BLAS versisons seem to suffer from a bug which makes that \texttt{cholmod} performance deteriorates when multi-threading is enabled \cite{Davis:2007:Online}. If your BLAS library has multi-threading enabled, performance may improve if you set environment variables such that BLAS will use only one thread. In case of \texttt{OpenBLAS} with OpenMP you need to set \texttt{OMP\_NUM\_THREADS=1}, e.g. \texttt{export OMP\_NUM\_THREADS=1} in bash or \texttt{SET OMP\_NUM\_THREADS=1} in DOS}:
+The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the file name describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this
 \begin{verbatim}
 pvmos [verbose-option] <input-file>
 \end{verbatim}
-where \texttt{[verbose-option]} is an option which how much information PVMOS outputs to stdout, and \texttt{<input-file>} is the plain text input file. We first describe the mesh data structure in more detail in the next section. 
+where \texttt{[verbose-option]} is an option which how much information PVMOS outputs to stdout, and \texttt{<input-file>} is the plain text input file. We first describe the mesh data structure in more detail. 
 
-In its essence PVMOS is a Poisson solver. The Poisson equation is solved for several stacked, 2D ``electrodes'', where each electrode is coupled to the electrodes above and below (note that a stack of 2D electrodes makes a 3D structure). The electrodes itself simply conductors and behave linearly (Ohmic). However, the connection between the electrodes can be non-linear (e.g. a diode). Now ther are several limitations of the structures that PVMOS handles. The main limitation is that the meshes are 2D as in PVMOS all electrodes share the same 2D mesh. This means that PVMOS is specifically designed for flat layered structures, a less than optimal performance is to be expected for different that flat layered geometries. PVMOS uses straight forward finite-differences to solve the coupled Poisson equations. As such the 2D meshes in PVMOS divide the 2D surface in rectangular elements. Now every element in the mesh must be associated with certain properties. Storing properties on a per element basis woul put a heavy burdon on the memory resources. For that reason elements are grouped into ``area's'' where each ares constitures a certain combination of properties. A mesh therfore also contains a list of all area's and every element is a member of one of the area's in the mesh (note that an element is always assigned to one area, i.e. you need at least one area for every unique combination of local properties).
+In its essence PVMOS is a Poisson solver. The Poisson equation is solved for several stacked, 2D ``electrodes'', where each electrode is coupled to the electrodes above and below (note that a stack of 2D electrodes makes a 3D structure). The electrodes itself are simply conductors and behave linearly (Ohmic). However, the connection between the electrodes can be non-linear (e.g. a diode). Now, there are several limitations of the structures that PVMOS handles. The main limitation is that the meshes are 2D as in PVMOS all electrodes share the same 2D mesh. This means that PVMOS is specifically designed for flat layered structures. PVMOS uses straight forward finite-differences to solve the coupled Poisson equations. As such the 2D meshes in PVMOS divide the 2D surface in rectangular elements. Now every element in the mesh must be associated with certain properties. Storing properties on a per element basis would put a heavy burden on the memory resources. For that reason elements are grouped into ``areas'' where each area constitutes a certain combination of properties. A mesh therefore also contains a list of all areas and every element is a member of one of the areas in the mesh (note that an element is always assigned to one area, i.e. you need at least one area for every unique combination of local properties). Also note that as all electrodes share the same 2D mesh, one area contains the properties for all electrodes and connections between them.
 
-In PVMOS we can define more than one mesh at the same time (this is useful as you can build meshes from several meshes, e.g. join two meshes for single cells to one mesh with two series connected cells). In order to reference one particular mesh, each mesh has a name. To reference an area within a mesh you can refer to \texttt{<mesh-name>.<area-name>}, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis. 
+The PVMOS input file is processed sequentially and contains commands that create or modify meshes, perform a simulation, or export data to a file. A complete list of commands is presented in Section \ref{commref}. In PVMOS we can define more than one mesh at the same time. This is useful as it allows you to create new meshes by joining two meshes, e.g., to create several series connected cells in a thin-film module. In order to reference one particular mesh, each mesh has a name. This name must thus be provided to any command that operates on a mesh. Likewise, some commands operate on an area within a mesh and thus areas also have a name. To reference an area within a mesh we use the following syntax \texttt{<mesh-name>.<area-name>}, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis.
 
-The input file is parsed by PVMOS, which sequentially processes the file. PVMOS provides functions to generate and manipulate meshes such that you can generate meshes describing the problem by a sequence of commands. To this end each mesh you define has a name to reference it by. The following section provides a command-reference.
+It may be useful to store intermediate results, especially as sometimes creating the mesh may take some time and you want to do many different calculations based on the same mesh. For such cases PVMOS has a binary file format to store complete meshes with all elements, areas, properties and simulation results. This mesh may be loaded later to continue where you left of. The primary focus is to store intermediate results and as such not much value is put on compatibility between different PVMOS versions, i.e. compatibility between the file format of different PVMOS versions is not guaranteed (in general compatibility will break if a new version makes any change in the mesh data structures). The binary format is also used for a dynamic library for GNU Octave (an open source tool largely compatible with Matlab), which allows you to generate a mesh for PVMOS within octave and store it in binary form for use in PVMOS. 
 
 \section{Installation Instructions}	
-PVMOS is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \texttt{cholmod}, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to either compile the source, for which a Makefile is provided, or you need to download precompiled binaries for your system (I only provide pre-compiled versions for windows). 
+PVMOS is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \texttt{cholmod}, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to either compile the source, for which a Makefile is provided, or you need to download pre-compiled binaries for your system (if available). 
 
 \subsection{Compiling from source}
 Here are the instructions to compile the PVMOS executable:
 \begin{enumerate}
 \item{} Install PVMOS's dependencies (\texttt{BLAS} and \texttt{CHOLMOD}). These libraries should be readily available in most linux distributions. Take care to install the development files (i.e. headers) for these libraries too 
-\item{} Optionally edit the Makefile, in particular you can change the BLAS library to link to (which may be relevant for performance, see below) or change the install directory
+\item{} Edit the Makefile, in particular you may have to change the BLAS library to link to (the used BLAS library has a relatively large impact on performance, see below) or change the install directory
 \item{} type ``make'', and ``make install''
 \end{enumerate}
 
-The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a very decent performance. On some architectures you can use \texttt{OpenBLAS}, which gives a very good performance (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}). Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the makefiles are set up to use \texttt{OpenBLAS} as it provides a good performance and is freely available.
+The performance of PVMOS is typically strongly dependent on the performance of the sparse linear solver (i.e. \texttt{cholmod}). For an optimal performance an optimized \texttt{BLAS} library must be used (the reference \texttt{BLAS} is comparatively slow). For an optimized \texttt{BLAS} there are several options. One option is to use ATLAS which is available for all common CPU architectures and gives a decent performance. On some architectures you can use \texttt{OpenBLAS} (\texttt{OpenBLAS} is an actively developed fork of the now unmaintained \texttt{GoTo BLAS}), which generally performs better than ATLAS. Some CPU manufacturers also publish their own optimized \texttt{BLAS} libraries for their CPU's (e.g. Intel and AMD). Per default the make-files are set up to use \texttt{OpenBLAS} as it provides a good performance on the most common desktop CPU architectures and is freely available.
 
 \subsection{Pre-compiled binaries (Windows)}
-There are two pre-compiled versions, 32 and 64 bit. If your system supports it I strongly suggest to use 64 bit as 32bit applications are rather limited in the maximum allocatable memory space. The Pinup example will not run with the 32bit version due to this memory limitation. The binary distribution consists of an executable with several dll's. The installation procedure for PVMOS is rather manual and no installer is provided. So here is the procedure for a binary install:
+There are two pre-compiled versions for windows, 32 and 64 bit. If your system supports it I suggest to use 64 bit as 32 bit applications are rather limited in the maximum allocatable memory space (< 2Gb), you may run into this limit for larger problems. The binary distribution consists of an executable with several dll's. The installation procedure for PVMOS manual as no installer is provided (you can help PVMOS by making one). So here is the procedure for a binary install:
 \begin{enumerate}
 \item{} Download the binary 
 \item{} Unpack the files in a directory of your choise
@@ -95,10 +93,10 @@ There are two pre-compiled versions, 32 and 64 bit. If your system supports it I
 \end{enumerate}
 
 \subsubsection{Setting the ``PATH'' variable}
-Here I describe how to edit your path variable in Windows 7. First another word of warning. Adding things to the path variable is mostly harmless, however, if you break your path string (e.g. delete a part) you may seriously impair the functioning of programs that need the path variable. Follow these instructions on your own risk!
+A properly set PATH variable will allow you to execute PVMOS from the command line without typing the full path to the PVMOS executable. Here I describe how to edit your path variable in Windows 7. First another word of warning. Adding things to the path variable is mostly harmless, however, if you break your path string (e.g. delete a part) you may seriously impair the functioning of programs that need the path variable. Follow these instructions on your own risk!
 \begin{enumerate}
 \item{} Click on the start menu 
-\item{} type ''PATH´´ in the ''search programs and files´´, you should now find options to edit the path variable for the system of for the current user, select to edit it for the current user
+\item{} type ``PATH'' in the ``search programs and files'' field, you should now find options to edit the path variable for the system of for the current user, select to edit it for the current user
 \item{} Select the path variable
 \item{} Click on Edit
 \item{} Scroll to the end of the string and add \texttt{;<installation directory>}, where \texttt{<installation directory>} points to the location of your PVMOS executable
@@ -106,41 +104,26 @@ Here I describe how to edit your path variable in Windows 7. First another word 
 \item{} Click on OK
 \end{enumerate}
 
-If you properly edited your path variable you should be able to call PVMOS from the command prompt, from any directory, just by typing ``pvmos'', i.e. you do not need to include the path to your PVMOS executable.
-
 \subsection{Installing mkpvmosmesh}
-The ``mkpvmosmesh'' library is a dynamic library for GNU Octave which allows one to create and save binary PVMOS meshes from within Octave. Its use is demonstrated in the ``Pinup'' example. It is recommended to install mkpvmosmesh as an Octave package. To create a package from source for installing in Octave you can type ``make mkpvmosmesh.pkg'' which should create a package ``mkpvmosmesh-<version>.tar.gz''. Alternatively, you may download a prepared package. The package can be installed form the Octave commandline using the ``pkg'' command, see the Octave documentation. After installing and loading the mkpvmosmesh library you should have the mkpvmosmesh command available within Octave.
+The ``mkpvmosmesh'' library is a dynamic library for GNU Octave which allows one to create and save binary PVMOS meshes from within Octave. Its use is demonstrated in the ``Pinup'' example. It is recommended to install mkpvmosmesh as an Octave package. To create a package from source for installing in Octave you can type ``make mkpvmosmesh.pkg'' which should create a package ``mkpvmosmesh-<version>.tar.gz''. Alternatively, you may download a prepared package. The package can be installed form the Octave command-line using the ``pkg'' command, see the Octave documentation. After installing and loading the mkpvmosmesh library you should have the mkpvmosmesh command available within Octave. 
 
-% Again you can choose between precompiled binaries or compile it yourself. The precompiled version will not work with all versions of Octave, thus to use the precompiled version you need to install the correct version of Octave. The version of Octave I used is provided by ``octave-forge''. Octave-forge provides several version of Octave. I used the version 3.6.4 of Octave that was compiled with the MinGW compiler suite version gcc4.6.2 (Octave3.6.3\_gcc4.6.2). The provided libryry will not work with the version of Octave that is compiled with Visual Studio. The precompiled library is 32bit as the used version of Octave is too. As of this writing no pre-compiled 64bit version of Octave is available (at least not compiled with the MinGW suite). For this reason there is no 64 bit version of mkpvmosmesh.
 
-%Two notes on using GNU Octave under windows. 
-%\begin{enumerate}
-%\item{} You can add Octave to your path variable, that way you can easily call octave from anywhere on the commandline.
-%\item{} you may find that on windows Octave always starts in the same directory, this is to me unexpected and undesired. I got Octave to start there where I call it (so I can execute an octave script by typing \texttt{octave <path to octave script>}. To this end I edited the file \texttt{<Octave-installation-dir>\textbackslash share\textbackslash site\textbackslash m\textbackslash startup\textbackslash octaverc} by commenting out the line 
-%\begin{verbatim}
-%cd (getenv('USERPROFILE'))
-%\end{verbatim}
-%\end{enumerate}
-
-\section{\label{getting started}Getting started}
-In this section we give some pointers to get you started. 
-
-\subsection{Recommended software}
-Obviously you are free to use whatever software you want. However, to process data from PVMOS or to get data into PVMOS I often use file formats which will not be supported by all software packages. I thus here detail my software setup in the hope it helps you to get started. All software here is free and open source software.
+\section{Recommended software}
+Obviously you are free to use whatever software you want. However, to process data from PVMOS or to get data into PVMOS I often use file formats which will not be supported by all software packages. I thus here detail my software setup in the hope it helps you. All software here is free and open source software.
 
 \subsection{Get data into PVMOS: GNU Octave \& Inkscape}
-If you want to define complex geometries there are basically three ways:
+These programs are useful when defining complex geometries. If you want to define complex geometries in PVMOS there are basically three ways:
 \begin{enumerate}
 \item{} Use the PVMOS scripting language. The advantages of this method is that it can be very accurate and fast and is independent of any other software, the downside is that it quickly becomes tedious
-\item{} mkpvmosmesh with GNU Octave. This allows you to use all the data and image processing power of Octave to generate meshes.
+\item{} mkpvmosmesh with GNU Octave. This allows you to use all the data and image processing power of Octave to generate meshes. However, this library only allows you to create mesh topologies consisting of rows and columns (i.e. meshes easily defined with a matrix
 \item{} Define geometries using polygons. PVMOS has good support for polygons to select and specify various areas in your device. Complicated shapes may be created in a graphics program such as inkscape and exported to PVMOS. For this I have an extension to export data from inkscape for use in PVMOS. In combination with the trace bitmap feature of inkscape you can quickly define appropriate polygons for complicated geometries if you provide a bitmap image, e.g. you can create a polygon for the metalization pattern of a device by tracing a picture. This method potentially has a lower memory footprint compared to the GNU Octave option. 
 \end{enumerate}   
 
-Inkscape is a powerfull vector graphics tool. One of the graphics objects Inkscape supports are ``paths''. In its simplest form a path is simply a polygon. As PVMOS can use polygons when defining a mesh it makes sense to use a tool such as Inkscape to create the polygons as Inkscape provides a powerfull, graphical, means to do so. In order to get the polygon data out of inkscape I created a simple extension which extracts the data out of a polygon. To use this extention select a path with polygon data and select the ExportXY extension, a popup window will come up with coordinates you can select and paste in a polygon data file. Note however that Inkscape paths may also be bezier curves, which PVMOS does not support. To use the extension is is thus required that the path data is forced to be a polygon. For this you can use the flatten Bezier extention in Inkscape. I have not fully dug into Inkscape's internal units. This can be tricky as Inkscape may use all sorts of transforms on objects. This means that the polygon data may need to be scaled, rotated, mirrored and shifted to get the data in the correct unit. For this I provide a small CLI program ``transformpolygon''. 
+Inkscape is a powerful vector graphics tool. One of the graphics objects Inkscape supports are ``paths''. In its simplest form a path is simply a polygon. As PVMOS can use polygons when defining a mesh it makes sense to use a tool such as Inkscape to create the polygons as Inkscape provides a powerful, graphical, means to do so. In order to get the polygon data out of inkscape I created a simple extension which extracts the data out of a polygon. To use this extension select a path with polygon data and select the ExportXY extension, a popup window will come up with coordinates you can select and paste in a polygon data file. Note however that Inkscape paths may also be bezier curves, which PVMOS does not support. To use the extension is is thus required that the path data is forced to be a polygon. For this you can use the flatten Bezier extension in Inkscape. I have not fully dug into Inkscape's internal units. This can be tricky as Inkscape may use all sorts of transforms on objects. This means that the polygon data may need to be scaled, rotated, mirrored and shifted to get the data in the correct unit. For this I provide a small CLI program ``transformpolygon''. 
 
 
 \subsection{Analyse simulated data: Gnuplot}
-The data-format that PVMOS uses for element-wise data export is laid out such that Gnuplot can make sense out of the data. Other plotting tools may not support this format. The element-wise data export allows you to export data from the mesh on a per-element basis and is particularly useful for inspecting meshes to ensure a correct mesh definition. For this reason I recommend the use of Gnuplot. Other data formats thet PVMOS should not be a problem for other plotting tools.
+The data-format that PVMOS uses for element-wise data export is laid out such that Gnuplot can make sense out of the data. Other plotting tools may not support this format. The element-wise data export allows you to export data from the mesh on a per-element basis and is particularly useful for inspecting meshes to ensure a correct mesh definition. For this reason I recommend the use of Gnuplot. Other data formats that PVMOS should not be a problem for other plotting tools.
 
 \section{\label{syntax}PVMOS input file format}
 \subsection{\label{commref}Command Reference}
@@ -353,7 +336,7 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{split\_long}	& Split selected elements in thier longest direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
+\texttt{split\_long}	& Split selected elements in their longest direction. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes one argument 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
@@ -364,7 +347,7 @@ Keyword & Description \\
 \item \texttt{l}, Maximum edge length
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{resolve\_rect}	& Split elements along the edges of a rectangle untill all element edges are smaller than a given length. This command can be used to ensure a particular rectangle fits accurately in the mesh. The command takes six arguments 
+\texttt{resolve\_rect}	& Split elements along the edges of a rectangle until all element edges are smaller than a given length. This command can be used to ensure a particular rectangle fits accurately in the mesh. The command takes six arguments 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{l}, Maximum edge length
@@ -374,7 +357,7 @@ Keyword & Description \\
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{resolve\_circ}	& Split elements along the circumference of a circle untill all element edges are smaller than a given length. This command can be used to ensure a particular circle fits accurately in the mesh. The command takes five arguments 
+\texttt{resolve\_circ}	& Split elements along the circumference of a circle until all element edges are smaller than a given length. This command can be used to ensure a particular circle fits accurately in the mesh. The command takes five arguments 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{l}, Maximum edge length
@@ -383,7 +366,7 @@ Keyword & Description \\
 \item \texttt{r}, radius of the selected circle
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{resolve\_poly}	& Split elements along the contour of a polygon untill all element edges are smaller than a given length. This command can be used to ensure a particular polygon fits accurately in the mesh. The command requires a polygon to be defined with either \texttt{define\_poly} or \texttt{load\_poly}. Breaks in the polygon are not resolved, i.e. the routine only resolves the line segments within the polygon. The command takes three arguments 
+\texttt{resolve\_poly}	& Split elements along the contour of a polygon until all element edges are smaller than a given length. This command can be used to ensure a particular polygon fits accurately in the mesh. The command requires a polygon to be defined with either \texttt{define\_poly} or \texttt{load\_poly}. Breaks in the polygon are not resolved, i.e. the routine only resolves the line segments within the polygon. The command takes three arguments 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{l}, Maximum edge length
@@ -400,23 +383,23 @@ Keyword & Description \\
 Keyword & Description \\
 \texttt{savemesh}	& Save a mesh to file in the PVMOS binary format, so it can be loaded again at a later time (see the \texttt{loadmesh} command). Compatibility of the saved meshes with past or future versions of PVMOS is \emph{not} guaranteed. The command takes two arguments.
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of themesh to be saved.
-\item \texttt{file-name}, filename to save the mesh to.
+\item \texttt{mesh-name}, Name of the mesh to be saved.
+\item \texttt{file-name}, file name to save the mesh to.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{loadmesh}	& Load a mesh saved to file in the PVMOS binary format (see the \texttt{savemesh} command). The command takes two arguments.
 \begin{enumerate}
-\item \texttt{file-name}, filename of the file containing the mesh data.
+\item \texttt{file-name}, file name of the file containing the mesh data.
 \item \texttt{mesh-name}, Name to assign to the loaded mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \multicolumn{2}{l}{\textsc{Element-wise export of data}} \\*
 \hline
 Keyword & Description \\
-\texttt{printmesh}	& Export the mesh in a manner that is plottable with the gnuplot program (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
+\texttt{printmesh}	& Export the mesh in a manner that is compatible with (probably only) Gnuplot (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}
 The output file will contain coordinates in columns. For each element the file contains the coordinates of the lower left- and the upper right corners empty line:\newline 
 \begin{tabular}{cc}
@@ -427,7 +410,7 @@ The output file will contain coordinates in columns. For each element the file c
 	\multicolumn{2}{l}{\texttt{<empty line>}}\\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printconn}	& Print lateral connections in the electrodes in a format plottable with gnuplot (www.gnuplot.info/). When plotting the file (with vectors) a vector is drawn between the center of each element to the center of the adjacent elements to which it is connected. If a selection of elements is made for the mesh, only the selected nodes are plotted. This routine may be useful when inspecting generated meshes. The command takes two arguments:
+\texttt{printconn}	& Print lateral connections in the electrodes in a format compatible with Gnuplot (www.gnuplot.info/). When plotting the file (with vectors) a vector is drawn between the center of each element to the center of the adjacent elements to which it is connected. If a selection of elements is made for the mesh, only the selected nodes are plotted. This routine may be useful when inspecting generated meshes. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{file-name}, filename to save the data in.
@@ -439,12 +422,12 @@ The output is coordinates in columns. For each element the file contains the fol
 	... \\
 \end{tabular}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printarea}	& Print the geometry of the mesh which identifies each element and the area it belongs to. The fileformat is laid out such that it is plottable with a surface plot in gnuplot (www.gnuplot.info/).  If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
+\texttt{printarea}	& Print the geometry of the mesh which identifies each element and the area it belongs to. The file-format is laid out such that it is compatible with a surface plot in Gnuplot (www.gnuplot.info/).  If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}
-The output file will contain data in columns. The file contains coordinates, the element ID and the corresponding area ID. Note that the parameters for each area can be exported with  the \texttt{printpars} command. For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each element in the mesh, which allows you to see the areas in the defined geometry. For each element the folowing data is printed to the file:\newline 
+The output file will contain data in columns. The file contains coordinates, the element ID and the corresponding area ID. Note that the parameters for each area can be exported with  the \texttt{printpars} command. For each element it plots 2 times 2 data lines with an empty line in-between. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each element in the mesh, which allows you to see the areas in the defined geometry. For each element the following data is printed to the file:\newline 
 \begin{tabular}{cccc}
 	\texttt{x1} & \texttt{y1} & element-ID & area-ID\\
 	\texttt{x1} & \texttt{y2} & element-ID & area-ID \\
@@ -458,9 +441,9 @@ The output file will contain data in columns. The file contains coordinates, the
 \texttt{printV}		& Print the electrode potentials per element for each stored solution. The output is formatted for gnuplot's splot command, such that a surface plot plots each element individually. If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}
-The output file will contain data in columns. The file contains coordinates followed by the potential in each electrode for each solution. For each element it plots 2 times 2 data lines with an empty line inbetween. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each electrode in each element in the mesh. For each element the folowing data is printed to the file, where the subscripts indicate the electrode index and the superscript the solution index:\newline 
+The output file will contain data in columns. The file contains coordinates followed by the potential in each electrode for each solution. For each element it plots 2 times 2 data lines with an empty line in-between. Between the data of two elements are two empty lines. This file is formatted such that when plotted with "splot" in gnuplot you can plot a surface for each electrode in each element in the mesh. For each element the following data is printed to the file, where the subscripts indicate the electrode index and the superscript the solution index:\newline 
 \begin{tabular}{ccccccccccc}
 	\texttt{x1} & \texttt{y1} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
 	\texttt{x1} & \texttt{y2} & $V_0^1$ & $V_1^1$ & $V_{...}^1$ & $V_N^1$ & $V_0^2$ & $V_1^2$ & $V_{...}^2$ & $V_N^2$& ...\\
@@ -474,40 +457,40 @@ The output file will contain data in columns. The file contains coordinates foll
 \texttt{printpar}	& Print a summary of the parameters per area, including both area-name and area-ID. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{print\_solpar}		& Export the solar cell parameters. Exports a file with $I_{sc}$, $V_{oc}$, $I_{mpp}$, $V_{mpp}$, $FF$ and $P_{max}$. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{printIV}		& Export the IV characteristics of the device. Exports a file with two columns, the first contains the applied voltage and the second the corresponding simulated total current. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printInIp}		& Integrate external currents over selected elements. Exports a file with four columns, the applied voltage, the integrated current injected from the positive node, the integrated current emitted to the negative node, and the total current over the whole device. This may be used for sanity checking or, if your device has mre than one connection to the applied bias, to distingush between the connections (e.g. extract the current injected through the middle busbar). The command takes two arguments:
+\texttt{printInIp}		& Integrate external currents over selected elements. Exports a file with four columns, the applied voltage, the integrated current injected from the positive node, the integrated current emitted to the negative node, and the total current over the whole device. This may be used for sanity checking of the solution or, if your device has more than one connection to the applied bias, to distinguish between the connections (e.g. extract the current injected through one particular bus-bar). The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printlocalJV}	& Print a JV characteristics for one particular location and one inter-electrode index.This is useful to check the PVMOS diod3e model. That command takes 8 parameters:
+\texttt{printlocalJV}	& Print a JV characteristics for one particular location and one inter-electrode index.This is useful to check the PVMOS diode model. That command takes 8 parameters:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{x}, x-coodinate
+\item \texttt{x}, x-coordinate
 \item \texttt{y}, y-coordinate
 \item \texttt{i}, inter-electrode index
 \item \texttt{Vstart}, Start voltage for the JV characteristics
 \item \texttt{Vend}, End voltage for the JV characteristics
 \item \texttt{Nstep}, Number of voltage steps in the JV characteristics
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{surfVplot}		& Export the electrode voltages for a specific solution. Unlike the \texttt{print}-commands like \texttt{printV} the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
+\texttt{surfVplot}		& Export the electrode voltages for a specific solution. Unlike the \texttt{print}-commands like \texttt{printV} the data is interpolated and mapped on a regular mesh. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
@@ -516,11 +499,11 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{Va}, Applied voltage (if the specified voltage is not available the closest value will be taken
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{surfVjplot}		& Export the junction voltages for a specific solution. Just like in the \texttt{surfVplot} command the data is interpollated and mapped on a regular mesh. The junction voltage is defined for the one and two diode models. For other models the junction voltage may not be available, in which case it is set to 0. The command takes eight arguments:
+\texttt{surfVjplot}		& Export the junction voltages for a specific solution. Just like in the \texttt{surfVplot} command the data is interpolated and mapped on a regular mesh. The junction voltage is defined for the one and two diode models. For other models the junction voltage may not be available, in which case it is set to 0. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
@@ -529,11 +512,11 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{Va}, Applied voltage (if the specified voltage is not available the closest value will be taken
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{surfPplot}		& Export the local power density for a specific solution. Just like in the \texttt{surfVplot} command the data is interpollated and mapped on a regular mesh. The command takes eight arguments:
+\texttt{surfPplot}		& Export the local power density for a specific solution. Just like in the \texttt{surfVplot} command the data is interpolated and mapped on a regular mesh. The command takes eight arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
@@ -542,8 +525,8 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{Va}, Applied voltage (if the specified voltage is not available the closest value will be taken
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 \texttt{surfJplot}		& Export the current densities in the electrodes and through the solar cells. Unlike the \texttt{print}-commands like \texttt{printV} the data is mapped on a regular mesh. The command takes eight arguments:
 \begin{enumerate}
@@ -554,8 +537,8 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{Va}, Applied voltage (if the specified voltage is not available the closest value will be taken
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{surfEplot}		& Export the local electric field in x- and y- direction in the electrodes. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes eight arguments:
@@ -567,15 +550,15 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{Va}, Applied voltage (if the sepcified voltage is not available the closest value will be taken
-\item \texttt{file-name}, filename to save the data in.
+\item \texttt{Va}, Applied voltage (if the specified voltage is not available the closest value will be taken
+\item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{surfFc}		& Export the locally collected photocurrent. The locally collected current is the portion of the local photocurrent which is collected at the terminals. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command sets the short circuit current density to 0 for specific points and computes the difference in terminal current. Note that the full non-linear response of the system is considered (you ask why?, why not!). The command takes 11 arguments:
+\texttt{surfFc}		& Export the locally collected photo-current. The locally collected current is the portion of the local photo-current which is collected at the terminals. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command sets the short circuit current density to 0 for specific points and computes the difference in terminal current. Note that the full non-linear response of the system is considered (you ask why?, why not!). The command takes 11 arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
-\item \texttt{connection-index}, Index of the connection for which the photocurrent collection is computed. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{file-name}, file-name to save the data in.
+\item \texttt{connection-index}, Index of the connection for which the photo-current collection is computed. The first connection, between electrode 0 and 1,  has index 0
 \item \texttt{Va}, applied voltage
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
@@ -583,14 +566,14 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{RI}, Boolean, if true the internal series resistance is consideres (i.e., consider bias dependent collection of the diode due to an internal series resistance)
+\item \texttt{RI}, Boolean, if true the internal series resistance is considers (i.e., consider bias dependent collection of the diode due to an internal series resistance)
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{surffc}		& Export the differential local photocurrent collection efficiency. The differential photocurrent collection efficiency is the portion of a change in photocurrent that is collected at the terminals. This is a differential value, i.e. it computes the change in terminal current for an infinitesmal small change in photocurrent. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes 11 arguments:
+\texttt{surffc}		& Export the differential local photo-current collection efficiency. The differential photo-current collection efficiency is the portion of a change in photo-current that is collected at the terminals. This is a differential value, i.e. it computes the change in terminal current for an infinitesimal small change in photo-current. Just like in the \texttt{surfVplot} command the data is mapped on a regular mesh. The command takes 11 arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{file-name}, filename to save the data in.
-\item \texttt{connection-index}, Index of the connection for which the photocurrent collection is computed. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{file-name}, file-name to save the data in.
+\item \texttt{connection-index}, Index of the connection for which the photo-current collection is computed. The first connection, between electrode 0 and 1,  has index 0
 \item \texttt{Va}, applied voltage
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
@@ -598,7 +581,7 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
-\item \texttt{RI}, Boolean, if true the internal series resistance is consideres (i.e., consider bias dependent collection of the diode due to an internal series resistance)
+\item \texttt{RI}, Boolean, if true the internal series resistance is considers (i.e., consider bias dependent collection of the diode due to an internal series resistance)
 \end{enumerate}\\
 \multicolumn{2}{l}{\textsc{Manipulating local properties}} \\*
 \hline
@@ -760,7 +743,7 @@ Keyword & Description \\
 \begin{enumerate}
 \item \texttt{tol\_kcl}, Relative KCL tolerance $-$ (default: $10^{-5}$)
 \end{enumerate}\\
-\texttt{N\_Lin\_Search}	&  Number of steps for a linear search in the Newton-Raphson direction. If an iterative adaption of the potentials would lead to increase of the error in the Kirchhoff Current Laws, we perform a linear search in the Newton-Raphson direction. If a better solution is not found withind the number of steps specified, Gmin stepping is initiated (see the settings \texttt{GminSteps}, \texttt{GminMax}, and \texttt{GminFac}. The command takes one argument:
+\texttt{N\_Lin\_Search}	&  Number of steps for a linear search in the Newton-Raphson direction. If an iterative adaption of the potentials would lead to increase of the error in the Kirchhoff Current Laws, we perform a linear search in the Newton-Raphson direction. If a better solution is not found within the number of steps specified, Gmin stepping is initiated (see the settings \texttt{GminSteps}, \texttt{GminMax}, and \texttt{GminFac}. The command takes one argument:
 \begin{enumerate}
 \item \texttt{N}, Number of steps $-$ (default: $10$)
 \end{enumerate}\\
@@ -772,21 +755,17 @@ Keyword & Description \\
 \begin{enumerate}
 \item \texttt{Gmin}, Minimum conductance $\Omega^{-1}\text{cm}^{-2}$ (default: $10^{-2}$)
 \end{enumerate}\\
-\texttt{GminFac} &  Factor to stepwise reduce Gmin during Gmin stepping. In case of convergence problems Gmin stepping is triggered. In Gmin stepping a minimum conductance is placed in parallel with all non-linear devices. The value of the minimum conductance is then step wise reduced to 0. This value controls the rate with wich the Gmin value is reduced (higher is faster). This parameter is used in conjunction with \texttt{GminSteps} and \texttt{GminMax}. The command takes one argument:
+\texttt{GminFac} &  Factor to step-wise reduce Gmin during Gmin stepping. In case of convergence problems Gmin stepping is triggered. In Gmin stepping a minimum conductance is placed in parallel with all non-linear devices. The value of the minimum conductance is then step wise reduced to 0. This value controls the rate with which the Gmin value is reduced (higher is faster). This parameter is used in conjunction with \texttt{GminSteps} and \texttt{GminMax}. The command takes one argument:
 \begin{enumerate}
 \item \texttt{f}, Factor to reduce Gmin $-$ (default: $10$)
 \end{enumerate}\\		
-\texttt{GminStart} &  In poorly convergeant cases it may be beneficial to start with one or more itarations with a minimum conductance. This parameter allows you to specify a number of iterations run with a Gmin value set by \texttt{GminMax}. Note that this procedure is different from Gmin stepping as the Gmin value is not changed during these iterations and abruptly changes from the \texttt{GminMax} value to Gmin after the set number of iterations. A typiocal setting would be 1. 
+\texttt{GminStart} &  In poorly converging cases it may be beneficial to start with one or more iterations with a minimum conductance. This parameter allows you to specify a number of iterations run with a Gmin value set by \texttt{GminMax}. Note that this procedure is different from Gmin stepping as the Gmin value is not changed during these iterations and abruptly changes from the \texttt{GminMax} value to Gmin after the set number of iterations. A typical setting would be 1. 
 \begin{enumerate}
 \item \texttt{GminStart}, Number of GminStart iterations $-$ (default: $0$)
 \end{enumerate}\\
 \texttt{Gmin} &  Set the overall Gmin value. This value is \emph{always} used and should therefore be small as otherwise it affects the results. 
 \begin{enumerate}
 \item \texttt{Gmin}, Minimum conductance $\Omega^{-1}\text{cm}^{-2}$ (default: $0.0$)
-\end{enumerate}\\
-\texttt{GminStart} &  In poorly convergeant cases it may be beneficial to start with one or more itarations with a minimum conductance. This parameter allows you to specify a number of iterations run with a Gmin value set by \texttt{GminMax}. Note that this procedure is different from Gmin stepping as the Gmin value is not changed during these iterations and abruptly changes from the \texttt{GminMax} value to Gmin after the set number of iterations. A typiocal setting would be 1. 
-\begin{enumerate}
-\item \texttt{GminStart}, Number of GminStart iterations $-$ (default: $0$)
 \end{enumerate}\\
 \multicolumn{2}{l}{\textsc{Solving}} \\*
 \hline
@@ -816,7 +795,7 @@ Keyword & Description \\
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{V\_a}, Applied voltage
-\item \texttt{threshold}, Ralative threshold for node splitting, a parameter between 0 and 1 that controls how agressive the mesh is adapted, where lower values lead to a more agressive mesh adaption (typical values betwwen 0.3 and 0.5).
+\item \texttt{threshold}, Relative threshold for node splitting, a parameter between 0 and 1 that controls how aggressive the mesh is adapted, where lower values lead to a more aggressive mesh adaption (typical values between 0.3 and 0.5).
 \item \texttt{N\_step}, Number adaptive meshing iterations
 \end{enumerate}\\
 \multicolumn{2}{l}{\textsc{Verbosity levels}} \\*
@@ -932,7 +911,7 @@ This example is located in \texttt{Examples/Pinup}. The example entails the file
 \end{itemize}
 This example demonstrates how a PVMOS mesh can be generated from images using GNU octave where the images are used as selection masks to select elements and change some parameters for these elements. The example simulateds a metal wrap-through solar cell with three electrose, the front electrode (emitter and front metal), the back electrode (metal contact to the base) and a contact foil at the back which contacts the front metal through vias and the back contact. After running the \texttt{generate\_mesh.m} script in GNU Octave a mesh is written to  \texttt{pinup.bin}. This meash is loaded in the PVMOS script \texttt{pinup.mos}. As the mesh is rather large the mesh is first simplified to reduce the number of elements in the mesh without losing resolution in he area definition. After this step the mesh is a tad coarse for simulating the potentials accurately so the mesh is refined again but this time only there where mesh refinement is needed for an accurate simulation of the potentials. After that the device IV characteristics are simulated.
 \subsection{Crystalline silicon module}
-The final example is perhaps the most elaborate. In \texttt{Examples/CSiSTD} we do a simulation of a crystalline solar cell with three busbars. The simulation extensively uses the definition of new meshes which are glued together to form bigger and more complicated meshes untill we have a complete cell with busbars and fingers and tabbing wires. It uses al the tricks PVMOS has to generate a complicated geometry from scratch without aid from GNU Octave. The result is a mesh that is comparatively small and therefore allows to do the simulation is a comparatively small memory footprint (less than 0.5 GB) which makes this example even suitable for 32bit machines. There is an optional section in the input file which you can uncomment to simulate the effect of Banksy spray-painting a rat on your solar cell leaving a permanent rat-shaped shadow pattern on the cell. 
+The final example is perhaps the most elaborate. In \texttt{Examples/CSiSTD} we do a simulation of a crystalline solar cell with three bus-bars. The simulation extensively uses the definition of new meshes which are glued together to form bigger and more complicated meshes until we have a complete cell with bus-bars and fingers and tabbing wires. It uses all the tricks PVMOS has to generate a complicated geometry from scratch without aid from GNU Octave. The result is a mesh that is comparatively small and therefore allows to do the simulation is a comparatively small memory footprint (less than 0.5 GB) which makes this example even suitable for 32bit machines. There is an optional section in the input file which you can un-comment to simulate the effect of Banksy spray-painting a rat on your solar cell leaving a permanent rat-shaped shadow pattern on the cell. 
 \begin{thebibliography}{10}
 
 \bibitem{pvmos:2014}

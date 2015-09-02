@@ -53,7 +53,7 @@
 #include <time.h>
 #include <ctype.h>
 #include <math.h>
-#include <openssl/md5.h>
+#include "md5.h"
 #include "main.h"
 #include "mesh2d.h"
 #include "utils.h"

@@ -1,4 +1,4 @@
-VERSION=0.72
+VERSION=0.73
 CC=gcc
 CFLAGS=-Ofast -flto -Wall -fPIC
 mkpvmosmesh: mesh2d.o utils.o list.o main.h

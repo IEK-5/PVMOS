@@ -1,4 +1,5 @@
 #!/usr/bin/octave -q
+pkg load mkpvmosmesh
 
 function img=ReadImageIntensity(fn)
 	img=imread(fn);
