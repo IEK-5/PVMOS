@@ -55,7 +55,7 @@ set_Rel		da.da		0	5
 set_Rel		da.da		1	0.5
 set_SplitX	da.da
 
-set_R 		p2.p2 	 	0	1e-8
+set_R 		p2.p2 	 	0	1e-2
 set_Rel		p2.p2		0	5
 set_Rel		p2.p2		1	0.5
 set_SplitX	p2.p2
@@ -185,17 +185,15 @@ printarea minimodule defs.dat
 printpars minimodule pars.dat
 
 
-# adaptive_solve 	minimodule 	5 	0.3 	2
-# printmesh minimodule mesh1.dat
+adaptive_solve 	minimodule 	5 	0.3 	2
+printmesh minimodule mesh1.dat
 
-# solve minimodule 0 8 21
-# refine_oc minimodule 1e-6 1e-6 5
-# define_mpp minimodule 1e-6 1e-6 10
-# define_solpar minimodule
-# surfVplot minimodule 0 0 8 8 600 600 [Vmpp] minimoduleVmpp.dat
-# surfVplot minimodule 0 0 8 8 600 600 [Voc] minimoduleVoc.dat
-# surfVplot minimodule 0 0 8 8 600 600 0 minimodule0.dat
-# printIV minimodule IV_minimodule.dat
-# print_solpar minimodule solpar_minimodule.dat
-printlocalJV minimodule 0.5 1 0 -1 1 100 localJV.dat
-printlocalJV minimodule 2.5 4 0 -1 1 100 localJV2.dat
+solve minimodule 0 8 21
+refine_oc minimodule 1e-6 1e-6 5
+refine_mpp minimodule 1e-6 1e-6 10
+define_solpar minimodule
+surfVplot minimodule 0 0 8 8 600 600 [Vmpp] minimoduleVmpp.dat
+surfVplot minimodule 0 0 8 8 600 600 [Voc] minimoduleVoc.dat
+surfVplot minimodule 0 0 8 8 600 600 0 minimodule0.dat
+printIV minimodule IV_minimodule.dat
+print_solpar minimodule solpar_minimodule.dat
