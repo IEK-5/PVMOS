@@ -57,6 +57,8 @@
 #include "select_nodes.h"
 #include "dataexport.h"
 #include "utils.h"
+#include "diode.h"
+#include "phototransistor.h"
 #include "solve.h"
 #include "parsedef.h"
 #include "parse.h"
@@ -1299,7 +1301,7 @@ void Parse (char *file)
 						args=GetArgs (&begin, 8);
 						if (args==NULL)
 							goto premature_end;
-						Print(NORMAL, "* line %3d: Print local JV characteristics in mesh %s to file %s",line_nr,args[0], args[1]);
+						Print(NORMAL, "* line %3d: Print local JV characteristics in mesh %s to file %s",line_nr,args[0], args[7]);
 							
 						M=FetchMesh (args[0],  Meshes, Nm);
 						if (!M)
@@ -1816,7 +1818,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -1940,7 +1942,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -2066,7 +2068,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -2181,7 +2183,11 @@ void Parse (char *file)
 						MV->M.P[P].conn[el].V=JV.x;
 						MV->M.P[P].conn[el].J=JV.y;
 						MV->M.P[P].conn[el].N=JV.N;
-						MV->M.P[P].conn[el].model=JVD;	
+						MV->M.P[P].conn[el].model=JVD;
+						if (MV->M.P[P].conn[el].ParStruct)
+							free(MV->M.P[P].conn[el].ParStruct);
+						MV->M.P[P].conn[el].ParSize=0;
+						MV->M.P[P].conn[el].ParStruct=NULL;
 						free(JV.BR); /* note that the allocated x and y arrays are now in use and should not be freed*/
 						FreeArgs (args, 3);						
 						break;
@@ -2201,7 +2207,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -2238,6 +2244,10 @@ void Parse (char *file)
 								}
 								MV->M.P[a].conn[el].N=JV.N;
 								MV->M.P[a].conn[el].model=JVD;	
+								if (MV->M.P[a].conn[el].ParStruct)
+									free(MV->M.P[a].conn[el].ParStruct);
+								MV->M.P[a].conn[el].ParSize=0;
+								MV->M.P[a].conn[el].ParStruct=NULL;
 								
 							}
 						}
@@ -2300,7 +2310,11 @@ void Parse (char *file)
 									MV->M.P[AreaList[a]].conn[el].J[ii]=JV.y[ii];
 								}
 								MV->M.P[AreaList[a]].conn[el].N=JV.N;
-								MV->M.P[AreaList[a]].conn[el].model=JVD;	
+								MV->M.P[AreaList[a]].conn[el].model=JVD;
+								if (MV->M.P[AreaList[a]].conn[el].ParStruct)
+									free(MV->M.P[AreaList[a]].conn[el].ParStruct);
+								MV->M.P[AreaList[a]].conn[el].ParSize=0;	
+								MV->M.P[AreaList[a]].conn[el].ParStruct=NULL;
 							}							
 							free(newarea);
 							free(AreaList);
@@ -2337,14 +2351,18 @@ void Parse (char *file)
 							
 						Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						
-						MV->M.P[P].conn[el].J01=atof(args[2]);
-						MV->M.P[P].conn[el].J02=atof(args[3]);
-						MV->M.P[P].conn[el].Jph=atof(args[4]);
-						MV->M.P[P].conn[el].Rs=atof(args[5]);
-						MV->M.P[P].conn[el].Rsh=atof(args[6]);
-						MV->M.P[P].conn[el].Eg=atof(args[7]);
-						MV->M.P[P].conn[el].nid1=1.0;
-						MV->M.P[P].conn[el].nid2=2.0;							
+						if (MV->M.P[P].conn[el].ParStruct)
+							free(MV->M.P[P].conn[el].ParStruct);
+						MV->M.P[P].conn[el].ParStruct=InitOneTwoDiodeStruct(&(MV->M.P[P].conn[el].ParSize));
+						
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->J01=atof(args[2]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->J02=atof(args[3]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->Jph=atof(args[4]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->Rs=atof(args[5]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->Rsh=atof(args[6]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->Eg=atof(args[7]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->nid1=1.0;
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->nid2=2.0;							
 						MV->M.P[P].conn[el].model=TWOD;	
 						FreeArgs (args, 8);		
 						break;
@@ -2363,7 +2381,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -2386,17 +2404,20 @@ void Parse (char *file)
 							int a;
 							for (a=0;a<MV->M.Na;a++)
 							{
-								Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[a].name);
-								MV->M.P[a].conn[el].J01=J01;
-								MV->M.P[a].conn[el].J02=J02;
-								MV->M.P[a].conn[el].Jph=Jph;
-								MV->M.P[a].conn[el].Rs=Rs;
-								MV->M.P[a].conn[el].Rsh=Rsh;
-								MV->M.P[a].conn[el].Eg=Eg;
-								MV->M.P[a].conn[el].nid1=1.0;
-								MV->M.P[a].conn[el].nid2=2.0;							
-								MV->M.P[a].conn[el].model=TWOD;	
-								
+								Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[a].name);								
+								if (MV->M.P[a].conn[el].ParStruct)
+									free(MV->M.P[a].conn[el].ParStruct);
+								MV->M.P[a].conn[el].ParStruct=InitOneTwoDiodeStruct(&(MV->M.P[a].conn[el].ParSize));
+						
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->J01=J01;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->J02=J02;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->Jph=Jph;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->Rs=Rs;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->Rsh=Rsh;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->Eg=Eg;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->nid1=1.0;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->nid2=2.0;						
+								MV->M.P[a].conn[el].model=TWOD;						
 							}
 						}
 						else
@@ -2447,14 +2468,18 @@ void Parse (char *file)
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting 2 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name);
-								MV->M.P[AreaList[a]].conn[el].J01=J01;
-								MV->M.P[AreaList[a]].conn[el].J02=J02;
-								MV->M.P[AreaList[a]].conn[el].Jph=Jph;
-								MV->M.P[AreaList[a]].conn[el].Rs=Rs;
-								MV->M.P[AreaList[a]].conn[el].Rsh=Rsh;
-								MV->M.P[AreaList[a]].conn[el].Eg=Eg;
-								MV->M.P[AreaList[a]].conn[el].nid1=1.0;
-								MV->M.P[AreaList[a]].conn[el].nid2=2.0;							
+								if (MV->M.P[AreaList[a]].conn[el].ParStruct)
+									free(MV->M.P[AreaList[a]].conn[el].ParStruct);
+								MV->M.P[AreaList[a]].conn[el].ParStruct=InitOneTwoDiodeStruct(&(MV->M.P[AreaList[a]].conn[el].ParSize));
+						
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->J01=J01;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->J02=J02;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Jph=Jph;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Rs=Rs;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Rsh=Rsh;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Eg=Eg;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->nid1=1.0;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->nid2=2.0;			
 								MV->M.P[AreaList[a]].conn[el].model=TWOD;	
 							}							
 							free(newarea);
@@ -2490,12 +2515,16 @@ void Parse (char *file)
 							
 						Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[P].name);
 						
-						MV->M.P[P].conn[el].J01=atof(args[2]);
-						MV->M.P[P].conn[el].nid1=atof(args[3]);
-						MV->M.P[P].conn[el].Jph=atof(args[4]);
-						MV->M.P[P].conn[el].Rs=atof(args[5]);
-						MV->M.P[P].conn[el].Rsh=atof(args[6]);
-						MV->M.P[P].conn[el].Eg=atof(args[7]);					
+						if (MV->M.P[P].conn[el].ParStruct)
+							free(MV->M.P[P].conn[el].ParStruct);
+						MV->M.P[P].conn[el].ParStruct=InitOneTwoDiodeStruct(&(MV->M.P[P].conn[el].ParSize));
+						
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->J01=atof(args[2]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->nid1=atof(args[3]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->Jph=atof(args[4]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->Rs=atof(args[5]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->Rsh=atof(args[6]);
+						((OneTwoDiode *)(MV->M.P[P].conn[el].ParStruct))->Eg=atof(args[7]);
 						MV->M.P[P].conn[el].model=ONED;	
 						FreeArgs (args, 8);								
 						break;
@@ -2514,7 +2543,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -2538,12 +2567,16 @@ void Parse (char *file)
 							for (a=0;a<MV->M.Na;a++)
 							{
 								Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[a].name);
-								MV->M.P[a].conn[el].J01=J01;
-								MV->M.P[a].conn[el].Jph=Jph;
-								MV->M.P[a].conn[el].Rs=Rs;
-								MV->M.P[a].conn[el].Rsh=Rsh;
-								MV->M.P[a].conn[el].Eg=Eg;
-								MV->M.P[a].conn[el].nid1=nid1;						
+								if (MV->M.P[a].conn[el].ParStruct)
+									free(MV->M.P[a].conn[el].ParStruct);
+								MV->M.P[a].conn[el].ParStruct=InitOneTwoDiodeStruct(&(MV->M.P[a].conn[el].ParSize));
+						
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->J01=J01;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->nid1=nid1;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->Jph=Jph;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->Rs=Rs;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->Rsh=Rsh;
+								((OneTwoDiode *)(MV->M.P[a].conn[el].ParStruct))->Eg=Eg;	
 								MV->M.P[a].conn[el].model=ONED;	
 								
 							}
@@ -2596,18 +2629,341 @@ void Parse (char *file)
 							for (a=1;a<=AreaList[0];a++)
 							{
 								Print(NORMAL,"* line %3d: Setting 1 diode model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name);
-								MV->M.P[AreaList[a]].conn[el].J01=J01;
-								MV->M.P[AreaList[a]].conn[el].Jph=Jph;
-								MV->M.P[AreaList[a]].conn[el].Rs=Rs;
-								MV->M.P[AreaList[a]].conn[el].Rsh=Rsh;
-								MV->M.P[AreaList[a]].conn[el].Eg=Eg;
-								MV->M.P[AreaList[a]].conn[el].nid1=nid1;						
+								if (MV->M.P[AreaList[a]].conn[el].ParStruct)
+									free(MV->M.P[AreaList[a]].conn[el].ParStruct);
+								MV->M.P[AreaList[a]].conn[el].ParStruct=InitOneTwoDiodeStruct(&(MV->M.P[AreaList[a]].conn[el].ParSize));
+						
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->J01=J01;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->nid1=nid1;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Jph=Jph;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Rs=Rs;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Rsh=Rsh;
+								((OneTwoDiode *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Eg=Eg;		
 								MV->M.P[AreaList[a]].conn[el].model=ONED;	
 							}							
 							free(newarea);
 							free(AreaList);
 						}	
 						FreeArgs (args, 8);					
+						break;
+					}
+					case SET_PTJV:
+					{
+						meshvar *MV;
+						int P, el;						
+						char **args;
+						args=GetArgs (&begin, 11);
+						if (args==NULL)
+							goto premature_end;
+								
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
+						if (P<0)
+						{
+							char *area;
+							area=args[0];
+							while ((*area)!='.')
+								area++;
+							area++;
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, area);
+							P=MV->M.Na;
+							NewProperties(&(MV->M), area);	
+						}
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
+							
+						Print(NORMAL,"* line %3d: Setting photo-transistor model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[P].name);
+						
+						if (MV->M.P[P].conn[el].ParStruct)
+							free(MV->M.P[P].conn[el].ParStruct);
+						MV->M.P[P].conn[el].ParStruct=InitPhotoTransistorStruct(&(MV->M.P[P].conn[el].ParSize));
+						
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Jsbe=atof(args[2]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Jsbc=atof(args[3]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Jph=atof(args[4]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Rs=atof(args[5]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Rsh=atof(args[6]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->EgBE=atof(args[7]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->PhiBC=atof(args[8]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Bf=atof(args[9]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Vaf=atof(args[10]);
+						MV->M.P[P].conn[el].model=PHOTOT;	
+						FreeArgs (args, 11);								
+						break;
+					}
+					case SET_PTEXTJV:
+					{
+						meshvar *MV;
+						int P, el;						
+						char **args;
+						args=GetArgs (&begin, 12);
+						if (args==NULL)
+							goto premature_end;
+								
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
+						if (P<0)
+						{
+							char *area;
+							area=args[0];
+							while ((*area)!='.')
+								area++;
+							area++;
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, area);
+							P=MV->M.Na;
+							NewProperties(&(MV->M), area);	
+						}
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("* line %3d: Invalid inter-electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
+						if (MV->M.P[P].conn[el].model!=PHOTOT)							
+							Error("* line %3d: Setting extra paremeters for the phototransistor model requires the model to be set first\n", line_nr);
+							
+						Print(NORMAL,"* line %3d: Setting photo-transistor model extra parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[P].name);
+						
+						
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Jse=atof(args[2]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Jsc=atof(args[3]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Nf=atof(args[4]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Nr=atof(args[5]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Ne=atof(args[6]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Nc=atof(args[7]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->Var=atof(args[8]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->XTIBE=atof(args[9]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->XTIBC=atof(args[10]);
+						((PhotoTransistor *)(MV->M.P[P].conn[el].ParStruct))->XTB=atof(args[11]);
+						FreeArgs (args, 12);								
+						break;
+					}
+					case SET_SEL_PTJV:
+					{
+						meshvar *MV;
+						int el;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 11);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);	
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting photo-transistor model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[a].name);
+								if (MV->M.P[a].conn[el].ParStruct)
+									free(MV->M.P[a].conn[el].ParStruct);
+								MV->M.P[a].conn[el].ParStruct=InitPhotoTransistorStruct(&(MV->M.P[a].conn[el].ParSize));
+						
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Jsbe=atof(args[2]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Jsbc=atof(args[3]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Jph=atof(args[4]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Rs=atof(args[5]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Rsh=atof(args[6]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->EgBE=atof(args[7]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->PhiBC=atof(args[8]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Bf=atof(args[9]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Vaf=atof(args[10]);
+								MV->M.P[a].conn[el].model=PHOTOT;								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								if (!MV->setsel)
+								{
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
+								}
+								AreaList=AddToList(AreaList, a);
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							MV->setsel=1;
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting photo-transistor model parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name);
+								if (MV->M.P[AreaList[a]].conn[el].ParStruct)
+									free(MV->M.P[AreaList[a]].conn[el].ParStruct);
+								MV->M.P[AreaList[a]].conn[el].ParStruct=InitPhotoTransistorStruct(&(MV->M.P[AreaList[a]].conn[el].ParSize));
+						
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Jsbe=atof(args[2]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Jsbc=atof(args[3]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Jph=atof(args[4]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Rs=atof(args[5]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Rsh=atof(args[6]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->EgBE=atof(args[7]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->PhiBC=atof(args[8]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Bf=atof(args[9]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Vaf=atof(args[10]);
+								MV->M.P[AreaList[a]].conn[el].model=PHOTOT;
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 11);					
+						break;
+					}
+					case SET_SEL_PTEXTJV:
+					{
+						meshvar *MV;
+						int el;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 12);
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);	
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								if (MV->M.P[a].conn[el].model!=PHOTOT)							
+									Error("* line %3d: Setting extra paremeters for the photo-transistor model requires the model to be set first in %s.%s\n", line_nr, MV->name, MV->M.P[a].name);
+									
+								Print(NORMAL,"* line %3d: Setting photo-transistor model extra parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[a].name);
+						
+						
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Jse=atof(args[2]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Jsc=atof(args[3]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Nf=atof(args[4]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Nr=atof(args[5]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Ne=atof(args[6]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Nc=atof(args[7]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->Var=atof(args[8]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->XTIBE=atof(args[9]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->XTIBC=atof(args[10]);
+								((PhotoTransistor *)(MV->M.P[a].conn[el].ParStruct))->XTB=atof(args[11]);		
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								if (!MV->setsel)
+								{
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
+								}
+								AreaList=AddToList(AreaList, a);
+								/* assign element to area */
+								AreaList=AddToList(AreaList, a);
+								MV->M.nodes[MV->nodes[E]].P=a;
+								
+							}
+							MV->setsel=1;
+							for (a=1;a<=AreaList[0];a++)
+							{
+								if (MV->M.P[AreaList[a]].conn[el].model!=PHOTOT)							
+									Error("* line %3d: Setting extra paremeters for the photo-transistor model requires the model to be set first in %s.%s\n", line_nr, MV->name, MV->M.P[AreaList[a]].name);
+								Print(NORMAL,"* line %3d: Setting photo-transistor model extra parameters between electrodes %d and %d in %s.%s",line_nr, el, el+1, MV->name, MV->M.P[AreaList[a]].name);
+						
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Jse=atof(args[2]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Jsc=atof(args[3]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Nf=atof(args[4]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Nr=atof(args[5]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Ne=atof(args[6]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Nc=atof(args[7]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->Var=atof(args[8]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->XTIBE=atof(args[9]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->XTIBC=atof(args[10]);
+								((PhotoTransistor *)(MV->M.P[AreaList[a]].conn[el].ParStruct))->XTB=atof(args[11]);
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 12);					
 						break;
 					}
 					case SET_R:
@@ -2649,7 +3005,11 @@ void Parse (char *file)
 						MV->M.P[P].conn[el].J[0]=-1.0/R;
 						MV->M.P[P].conn[el].V[1]=1.0;
 						MV->M.P[P].conn[el].J[1]=1.0/R;
-						MV->M.P[P].conn[el].model=JVD;	
+						MV->M.P[P].conn[el].model=JVD;
+						if (MV->M.P[P].conn[el].ParStruct)
+							free(MV->M.P[P].conn[el].ParStruct);
+						MV->M.P[P].conn[el].ParSize=0;
+						MV->M.P[P].conn[el].ParStruct=NULL;	
 						FreeArgs (args, 3);		
 						break;
 					}
@@ -2668,7 +3028,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -2700,6 +3060,10 @@ void Parse (char *file)
 								MV->M.P[a].conn[el].V[1]=1.0;
 								MV->M.P[a].conn[el].J[1]=1.0/R;
 								MV->M.P[a].conn[el].model=JVD;	
+								if (MV->M.P[a].conn[el].ParStruct)
+									free(MV->M.P[a].conn[el].ParStruct);
+								MV->M.P[a].conn[el].ParSize=0;
+								MV->M.P[a].conn[el].ParStruct=NULL;
 								
 							}
 						}
@@ -2762,7 +3126,11 @@ void Parse (char *file)
 								MV->M.P[AreaList[a]].conn[el].J[0]=-1.0/R;
 								MV->M.P[AreaList[a]].conn[el].V[1]=1.0;
 								MV->M.P[AreaList[a]].conn[el].J[1]=1.0/R;
-								MV->M.P[AreaList[a]].conn[el].model=JVD;	
+								MV->M.P[AreaList[a]].conn[el].model=JVD;
+								if (MV->M.P[AreaList[a]].conn[el].ParStruct)
+									free(MV->M.P[AreaList[a]].conn[el].ParStruct);
+								MV->M.P[AreaList[a]].conn[el].ParSize=0;	
+								MV->M.P[AreaList[a]].conn[el].ParStruct=NULL;	
 							}							
 							free(newarea);
 							free(AreaList);
@@ -2814,7 +3182,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -2932,7 +3300,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
@@ -3052,7 +3420,7 @@ void Parse (char *file)
 							area++;						
 						area++;	
 						if (!(*area))
-							Error("* line %3d: Expecting area indication inthe form <mash>.<area_modifier>\n", line_nr);
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);

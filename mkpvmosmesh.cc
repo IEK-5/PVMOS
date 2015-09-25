@@ -6,6 +6,8 @@ extern "C"
   #include "mesh2d.h"
   #include "main.h"
   #include "utils.h"
+  #include "diode.h"
+  #include "phototransistor.h"
 }
 
 
@@ -21,6 +23,7 @@ const ElModel ElModelTable[] =
       	{"JVD", JVD},
 	{"ONED", ONED},
 	{"TWOD", TWOD},
+	{"PHOTOT", PHOTOT},
       	{NULL, JVD}
 };
 
@@ -73,15 +76,28 @@ octave_value VectorIndex(Matrix v, int i)
 }
 
 
+int Min(Matrix m)
+{
+	int i,j;
+	double res;
+	res=(double)m(0,0);
+	for(i=0;i<m.cols();i++)
+		for (j=0;j<m.rows();j++)
+			if (res>(double)m(j,i))
+				res=(double)m(j,i);
+				
+	return (int)res;
+}
+
 DEFUN_DLD (mkpvmosmesh, args, nargout,"\
 mkpvmosmesh(Na, Nel, Area_Index, Area_Def, x, y, filename)\n\
 Generate a regular mesh for PVMOS from octave data structures and write it to a file.\n\
 Na          - The number or area's in the mesh\n\
-Nel         - The number or area's in the mesh\n\
+Nel         - The number or electrodes\n\
 Area_Index  - A matrix with index number reffering to areas\n\
 Area_Def    - The area definition struct array describing the properties of each area\n\
-x           - vector with x coordinates of node boundaries\n\
-y           - vector with y coordinates of node boundaries\n\
+x           - vector with x coordinates of element boundaries\n\
+y           - vector with y coordinates of element boundaries\n\
 filename    - filename of the file to dump the resulting PVMOS mesh in")
 {
 	mesh M;
@@ -227,86 +243,251 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 				model++;
 			}
 			
-			res=GetValue(elcon, j,  "J01");
-			if (error_state)
+			switch (M.P[i].conn[j].model)
 			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			M.P[i].conn[j].J01=res.double_value();
-			res=GetValue(elcon, j,  "J02");
-			if (error_state)
-			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			M.P[i].conn[j].J02=res.double_value();
-			res=GetValue(elcon, j,  "Jph");
-			if (error_state)
-			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			M.P[i].conn[j].Jph=res.double_value();
-			res=GetValue(elcon, j,  "nid1");
-			if (error_state)
-			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			M.P[i].conn[j].nid1=res.double_value();
-			res=GetValue(elcon, j,  "nid2");
-			if (error_state)
-			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			M.P[i].conn[j].nid2=res.double_value();
-			res=GetValue(elcon, j,  "Eg");
-			if (error_state)
-			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			M.P[i].conn[j].Eg=res.double_value();
-			res=GetValue(elcon, j,  "Rs");
-			if (error_state)
-			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			M.P[i].conn[j].Rs=res.double_value();
-			res=GetValue(elcon, j,  "Rsh");
-			if (error_state)
-			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			M.P[i].conn[j].Rsh=res.double_value();
-			
-			res=GetValue(elcon, j,  "VJ");
-			if (error_state)
-			{
-				FreeMesh(&M);
-				return octave_value();
-			}
-			Matrix JV=res.matrix_value();
-			M.P[i].conn[j].N=JV.rows();
-			
-			N=JV.rows();
-			if ((N<2)||(JV.cols()!=2))
-			{
-				fprintf(stderr, "JV table should be a 2 columns and N rows with N>1\n");
-				exit(1);
-			}
-			M.P[i].conn[j].V=(double *)realloc(M.P[i].conn[j].V, (N+1)*sizeof(double));
-			M.P[i].conn[j].J=(double *)realloc(M.P[i].conn[j].J, (N+1)*sizeof(double));
+				case JVD:
+				{
+					res=GetValue(elcon, j,  "VJ");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					Matrix JV=res.matrix_value();
+					M.P[i].conn[j].N=JV.rows();
+					
+					N=JV.rows();
+					if ((N<2)||(JV.cols()!=2))
+					{
+						fprintf(stderr, "JV table should be a 2 columns and N rows with N>1\n");
+						exit(1);
+					}
+					M.P[i].conn[j].V=(double *)realloc(M.P[i].conn[j].V, (N+1)*sizeof(double));
+					M.P[i].conn[j].J=(double *)realloc(M.P[i].conn[j].J, (N+1)*sizeof(double));
+		
+					M.P[i].conn[j].N=N;
+					for (k=0;k<N;k++)
+					{
+						M.P[i].conn[j].V[k]=JV(k,0);
+						M.P[i].conn[j].J[k]=JV(k,1);
+					}
+					break;
+				}
+				case ONED:
+				case TWOD:
+					M.P[i].conn[j].ParStruct=InitOneTwoDiodeStruct(&(M.P[i].conn[j].ParSize));
+					res=GetValue(elcon, j,  "J01");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((OneTwoDiode *) M.P[i].conn[j].ParStruct)->J01=res.double_value();
+					res=GetValue(elcon, j,  "J02");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((OneTwoDiode *) M.P[i].conn[j].ParStruct)->J02=res.double_value();
+					res=GetValue(elcon, j,  "Jph");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((OneTwoDiode *) M.P[i].conn[j].ParStruct)->Jph=res.double_value();
+					res=GetValue(elcon, j,  "nid1");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((OneTwoDiode *) M.P[i].conn[j].ParStruct)->nid1=res.double_value();
+					res=GetValue(elcon, j,  "nid2");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((OneTwoDiode *) M.P[i].conn[j].ParStruct)->nid2=res.double_value();
+					res=GetValue(elcon, j,  "Eg");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((OneTwoDiode *) M.P[i].conn[j].ParStruct)->Eg=res.double_value();
+					res=GetValue(elcon, j,  "Rs");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((OneTwoDiode *) M.P[i].conn[j].ParStruct)->Rs=res.double_value();
+					res=GetValue(elcon, j,  "Rsh");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((OneTwoDiode *) M.P[i].conn[j].ParStruct)->Rsh=res.double_value();
+					break;
+				case PHOTOT:
+					M.P[i].conn[j].ParStruct=InitPhotoTransistorStruct(&(M.P[i].conn[j].ParSize));
+					res=GetValue(elcon, j,  "Jsbe");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Jsbe=res.double_value();
+					
+					res=GetValue(elcon, j,  "Jsbc");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Jsbc=res.double_value();
+					
+					res=GetValue(elcon, j,  "Jph");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Jph=res.double_value();
+					
+					res=GetValue(elcon, j,  "Rs");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Rs=res.double_value();
 
-			M.P[i].conn[j].N=N;
-			for (k=0;k<N;k++)
-			{
-				M.P[i].conn[j].V[k]=JV(k,0);
-				M.P[i].conn[j].J[k]=JV(k,1);
+					res=GetValue(elcon, j,  "Rsh");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Rsh=res.double_value();
+
+					res=GetValue(elcon, j,  "EgBE");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->EgBE=res.double_value();
+
+					res=GetValue(elcon, j,  "PhiBC");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->PhiBC=res.double_value();
+
+					res=GetValue(elcon, j,  "Bf");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Bf=res.double_value();
+
+					res=GetValue(elcon, j,  "Vaf");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Vaf=res.double_value();
+
+					res=GetValue(elcon, j,  "Jse");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Jse=res.double_value();
+
+					res=GetValue(elcon, j,  "Jsc");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Jsc=res.double_value();
+
+					res=GetValue(elcon, j,  "Nf");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Nf=res.double_value();
+
+					res=GetValue(elcon, j,  "Nr");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Nr=res.double_value();
+
+					res=GetValue(elcon, j,  "Ne");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Ne=res.double_value();
+
+					res=GetValue(elcon, j,  "Nc");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Nc=res.double_value();
+
+					res=GetValue(elcon, j,  "Var");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->Var=res.double_value();
+
+					res=GetValue(elcon, j,  "XTIBE");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->XTIBE=res.double_value();
+
+					res=GetValue(elcon, j,  "XTIBC");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->XTIBC=res.double_value();
+
+					res=GetValue(elcon, j,  "XTB");
+					if (error_state)
+					{
+						FreeMesh(&M);
+						return octave_value();
+					}
+					((PhotoTransistor *)(M.P[i].conn[j].ParStruct))->XTB=res.double_value();
+					break;
+					
 			}
 			
 		}
@@ -340,6 +521,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 	double x2=0;
 	double y1=0;
 	double y2=0;
+	int min=Min(Area_Index);
 	for (i=0;i<Area_Index.cols();i++)
 	{
 		x1=VectorIndex(x, i).double_value();
@@ -348,7 +530,7 @@ filename    - filename of the file to dump the resulting PVMOS mesh in")
 		{
 			y1=VectorIndex(y, j).double_value();
 			y2=VectorIndex(y, j+1).double_value();
-			M.nodes[Nn].P=(int)Area_Index(j,i)-1;
+			M.nodes[Nn].P=(int)Area_Index(j,i)-min;
 			
 			M.nodes[Nn].x1=x1;
 			M.nodes[Nn].x2=x2;

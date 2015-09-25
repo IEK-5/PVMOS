@@ -52,6 +52,8 @@
 #include "list.h"
 #include "utils.h"
 #include "solve.h"
+#include "diode.h"
+#include "phototransistor.h"
 #include "select_nodes.h"
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define MAX(a,b) ((a)<(b) ? (b):(a))
@@ -784,11 +786,11 @@ void PrintPars(char *fn, mesh *M)
 	for (i=0;i<M->Na;i++)
 	{
 		fprintf(f,"*****************Parameters for area %s\n", M->P[i].name);
-		fprintf(f,"id:     %i\n", i);
+		fprintf(f,"id:     %3i\n", i);
 		for (k=0;k<M->Nel;k++)
 		{
-			fprintf(f,"Rel %i: %e\n", k, M->P[i].Rel[k]);
-			fprintf(f,"Rvp %i: %e\tRvn %i: %e\n", k, M->P[i].Rvp[k], k, M->P[i].Rvn[k]);
+			fprintf(f,"Rel %3i: %14e\n", k, M->P[i].Rel[k]);
+			fprintf(f,"Rvp %3i: %14e\tRvn %3i: %14e\n", k, M->P[i].Rvp[k], k, M->P[i].Rvn[k]);
 			if (k>0)
 			{
 				fprintf(f,"Electrode Connection %i to %i:\n", k-1, k);
@@ -797,20 +799,36 @@ void PrintPars(char *fn, mesh *M)
 					case JVD:
 						fprintf(f,"V [V]\t\tJ [A/cm2]\n");
 						for (j=0;j<M->P[i].conn[k-1].N;j++)
-							fprintf(f,"%e\t%e\n", M->P[i].conn[k-1].V[j], M->P[i].conn[k-1].J[j]);
+							fprintf(f,"%14e\t%14e\n", M->P[i].conn[k-1].V[j], M->P[i].conn[k-1].J[j]);
 						break;
 					case ONED:
-						fprintf(f,"J0:     %e\tnid:    %e\n", M->P[i].conn[k-1].J01, M->P[i].conn[k-1].nid1);
-						fprintf(f,"Jph:    %e\n", M->P[i].conn[k-1].Jph);
-						fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].conn[k-1].Rs, M->P[i].conn[k-1].Rsh);
-						fprintf(f,"Eg:     %e\n", M->P[i].conn[k-1].Eg);
+						fprintf(f,"J0:     %14e\tnid:    %14e\n", ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->J01, ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->nid1);
+						fprintf(f,"Jph:    %14e\n", ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->Jph);
+						fprintf(f,"Rs:     %14e\tRsh:    %14e\n", ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->Rs, ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->Rsh);
+						fprintf(f,"Eg:     %14e\n", ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->Eg);
 						break;
 					case TWOD:
-						fprintf(f,"J01:    %e\tnid1:   %e\n", M->P[i].conn[k-1].J01, 1.0);
-						fprintf(f,"J02:    %e\tnid2:   %e\n", M->P[i].conn[k-1].J02, 2.0);
-						fprintf(f,"Jph:    %e\n", M->P[i].conn[k-1].Jph);
-						fprintf(f,"Rs:     %e\tRsh:    %e\n", M->P[i].conn[k-1].Rs, M->P[i].conn[k-1].Rsh);
-						fprintf(f,"Eg:     %e\n", M->P[i].conn[k-1].Eg);
+						fprintf(f,"J01:    %14e\tnid1:   %14e\n",((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->J01, 1.0);
+						fprintf(f,"J02:    %14e\tnid2:   %14e\n", ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->J02, 2.0);
+						fprintf(f,"Jph:    %14e\n", ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->Jph);
+						fprintf(f,"Rs:     %14e\tRsh:    %14e\n", ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->Rs, ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->Rsh);
+						fprintf(f,"Eg:     %14e\n", ((OneTwoDiode *) M->P[i].conn[k-1].ParStruct)->Eg);
+						break;
+					case PHOTOT:
+						fprintf(f,"Jsbe:    %14e\tJsbc:   %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Jsbe, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Jsbc);
+						fprintf(f,"Jse:     %14e\tJsc:    %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Jse, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Jsc);
+						fprintf(f,"nidf:    %14e\tnidr:   %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Nf, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Nr);
+						fprintf(f,"nide:    %14e\tnidc:   %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Ne, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Nc);
+						fprintf(f,"Vaf:     %14e\tVar:    %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Vaf, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Var);
+						fprintf(f,"Bf:      %14e\tJph:    %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Bf, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Jph);
+						fprintf(f,"Rs:      %14e\tRsh:    %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Rs, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->Rsh);
+						fprintf(f,"EgBE:    %14e\tPhiBC:  %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->EgBE, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->PhiBC);
+						fprintf(f,"XTiBE:   %14e\tXTiBC:  %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->XTIBE, ((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->XTIBC);
+						fprintf(f,"XTB:     %14e\n",((PhotoTransistor *) M->P[i].conn[k-1].ParStruct)->XTB);
+						break;
+					default:
+						fprintf(f,"Error: No model data available for this area, this mesh is thoroughly broken!\n");
+						Error("Error: No model data available for this area, this mesh is thoroughly broken!\n");						
 						break;
 				}
 			}

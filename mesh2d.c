@@ -92,14 +92,8 @@ local_prop InitProperties (char *name, int Nel)
 		P.Rvn[i]=-1.0;
 		
 		P.conn[i].model=JVD;
-		P.conn[i].J01=1e-12;
-		P.conn[i].J02=1e-8;
-		P.conn[i].Jph=0;
-		P.conn[i].nid1=1;
-		P.conn[i].nid2=2;
-		P.conn[i].Eg=1.12;
-		P.conn[i].Rs=1e-5;
-		P.conn[i].Rsh=1e4;
+		P.conn[i].ParStruct=NULL;
+		P.conn[i].ParSize=0;
 		
 		P.conn[i].V=malloc(2*sizeof(double));
 		P.conn[i].J=malloc(2*sizeof(double));
@@ -221,6 +215,8 @@ void FreeProperties(local_prop *P, int Nel)
 	{
 		free(P->conn[j].V);
 		free(P->conn[j].J);
+		if (P->conn[j].ParStruct)
+			free(P->conn[j].ParStruct);
 	}
 	free(P->conn);
 }
@@ -398,14 +394,14 @@ void DuplicateProperties(mesh *M, local_prop *dest, local_prop *source)
 		dest->Rvp[j]=source->Rvp[j];
 		dest->Rvn[j]=source->Rvn[j];
 		dest->conn[j].model=source->conn[j].model;
-		dest->conn[j].J01=source->conn[j].J01;
-		dest->conn[j].J02=source->conn[j].J02;
-		dest->conn[j].Jph=source->conn[j].Jph;
-		dest->conn[j].nid1=source->conn[j].nid1;
-		dest->conn[j].nid2=source->conn[j].nid2;
-		dest->conn[j].Eg=source->conn[j].Eg;
-		dest->conn[j].Rs=source->conn[j].Rs;
-		dest->conn[j].Rsh=source->conn[j].Rsh;
+		dest->conn[j].ParSize=source->conn[j].ParSize;
+		if (source->conn[j].ParStruct)
+		{
+			dest->conn[j].ParStruct=malloc(dest->conn[j].ParSize);
+			memcpy(dest->conn[j].ParStruct, source->conn[j].ParStruct, source->conn[j].ParSize);
+		}
+		else
+			dest->conn[j].ParStruct=NULL;
 		dest->conn[j].N=source->conn[j].N;
 		dest->conn[j].V=malloc((source->conn[j].N+1)*sizeof(double));
 		dest->conn[j].J=malloc((source->conn[j].N+1)*sizeof(double));
@@ -559,14 +555,8 @@ void AddElectrode(mesh *M)
 		M->P[i].Rvn[M->Nel-1]=-1.0;
 		
 		M->P[i].conn[M->Nel-2].model=JVD;
-		M->P[i].conn[M->Nel-2].J01=1e-12;
-		M->P[i].conn[M->Nel-2].J02=1e-8;
-		M->P[i].conn[M->Nel-2].Jph=0;
-		M->P[i].conn[M->Nel-2].nid1=1;
-		M->P[i].conn[M->Nel-2].nid2=2;
-		M->P[i].conn[M->Nel-2].Eg=1.12;
-		M->P[i].conn[M->Nel-2].Rs=1e-5;
-		M->P[i].conn[M->Nel-2].Rsh=1e4;
+		M->P[i].conn[M->Nel-2].ParStruct=NULL;
+		M->P[i].conn[M->Nel-2].ParSize=0;
 			
 		M->P[i].conn[M->Nel-2].V=malloc(2*sizeof(double));
 		M->P[i].conn[M->Nel-2].J=malloc(2*sizeof(double));
@@ -2156,13 +2146,14 @@ void ReadNodeArray(FILE *f, mesh *M)
 	int c=0;
 	
 	if (!fread(buf, sizeof(char), LL, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_NODEARRAY], c++);
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_NODEARRAY], c);
+	c++;
 	for (i=0;i<LL;i++)
 		if (buf[i]!=FF_LABELS[FF_NODEARRAY][i])
 			Error("File format error, unexpected data field CODE: %s%02d\n", FF_LABELS[FF_NODEARRAY], c);
 	c++;
 	if (!fread(&i, sizeof(int), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_NODEARRAY], c++);
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_NODEARRAY], c);
 	M->Nn=i;
 	M->nodes=malloc((M->Nn+1)*sizeof(node));
 	for (i=0;i<M->Nn;i++)
@@ -2172,14 +2163,9 @@ void WriteElConn(FILE *f, ElConn conn)
 {
 	fwrite(FF_LABELS[FF_ELCONN], sizeof(char), LL, f);
 	fwrite(&conn.model, sizeof(diode_model), 1, f);
-	fwrite(&conn.J01, sizeof(double), 1, f);
-	fwrite(&conn.J02, sizeof(double), 1, f);
-	fwrite(&conn.Jph, sizeof(double), 1, f);
-	fwrite(&conn.nid1, sizeof(double), 1, f);
-	fwrite(&conn.nid2, sizeof(double), 1, f);
-	fwrite(&conn.Eg, sizeof(double), 1, f);
-	fwrite(&conn.Rs, sizeof(double), 1, f);
-	fwrite(&conn.Rsh, sizeof(double), 1, f);
+	fwrite(&conn.ParSize, sizeof(size_t), 1, f);
+	if (conn.ParSize)
+		fwrite(conn.ParStruct, conn.ParSize, 1, f);
 	fwrite(&conn.N, sizeof(int), 1, f);
 	fwrite(conn.V, sizeof(double), conn.N, f);
 	fwrite(conn.J, sizeof(double), conn.N, f);
@@ -2192,38 +2178,38 @@ ElConn ReadElConn(FILE *f)
 	char buf[LL];
 	int i, c=0;	
 	if (!fread(buf, sizeof(char), LL, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
+	c++;
 	for (i=0;i<LL;i++)
 		if (buf[i]!=FF_LABELS[FF_ELCONN][i])
 			Error("File format error, unexpected data field CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
 	c++;
 	if (!fread(&conn.model, sizeof(diode_model), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
-	if (!fread(&conn.J01, sizeof(double), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
-	if (!fread(&conn.J02, sizeof(double), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
-	if (!fread(&conn.Jph, sizeof(double), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
-	if (!fread(&conn.nid1, sizeof(double), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
-	if (!fread(&conn.nid2, sizeof(double), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
-	if (!fread(&conn.Eg, sizeof(double), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
-	if (!fread(&conn.Rs, sizeof(double), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
-	if (!fread(&conn.Rsh, sizeof(double), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);	
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
+	c++;
+	if (!fread(&conn.ParSize, sizeof(size_t), 1, f))
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
 	
+	c++;
+	if (conn.ParSize)
+	{		
+		conn.ParStruct=malloc(conn.ParSize);	
+		if (!fread(conn.ParStruct, conn.ParSize, 1, f))
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
+	}
+	else
+		conn.ParStruct=NULL;
+	c++;		
 	if (!fread(&conn.N, sizeof(int), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
+	c++;
 	conn.V=malloc((conn.N+1)*sizeof(double));	
 	if (fread(conn.V, sizeof(double), conn.N, f)<conn.N)
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
+	c++;
 	conn.J=malloc((conn.N+1)*sizeof(double));	
 	if (fread(conn.J, sizeof(double), conn.N, f)<conn.N)
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c++);
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
 	return conn;		
 }
 
@@ -2278,38 +2264,47 @@ void ReadPropertiesArray(FILE *f, mesh *M)
 	{
 		c=c1;
 		if (!fread(buf, sizeof(char), LL, f))
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 		for (j=0;j<LL;j++)
 			if (buf[j]!=FF_LABELS[FF_PROP][j])
 				Error("File format error, unexpected data field CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
 		c++;
 				
 		if (!fread(&j, sizeof(int), 1, f))
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 		M->P[i].name=malloc(MAXNAMELEN*sizeof(char));
 		if (fread(M->P[i].name,sizeof(char), j, f)<j)
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 			
 		M->P[i].Rel=malloc((M->Nel+1)*sizeof(double));
 		M->P[i].Rvp=malloc((M->Nel+1)*sizeof(double));
 		M->P[i].Rvn=malloc((M->Nel+1)*sizeof(double));
 		if (fread(M->P[i].Rel, sizeof(double), M->Nel, f)<M->Nel)
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 		if (fread(M->P[i].Rvp, sizeof(double), M->Nel, f)<M->Nel)
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 		if (fread(M->P[i].Rvn, sizeof(double), M->Nel, f)<M->Nel)
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 		
 		M->P[i].conn=malloc((M->Nel)*sizeof(ElConn));	
 		for (j=0;j<M->Nel-1;j++)
 			M->P[i].conn[j]=ReadElConn(f);
 		
 		if (!fread(&(M->P[i].T), sizeof(double), 1, f))
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 		if (!fread(&(M->P[i].SplitX), sizeof(int), 1, f))
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 		if (!fread(&(M->P[i].SplitY), sizeof(int), 1, f))
-			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c++);
+			Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_PROP], c);
+		c++;
 	}
 }
 
@@ -2342,16 +2337,18 @@ void ReadResults(FILE *f, mesh *M)
 			Error("File format error, unexpected data field CODE: %s%02d\n", FF_LABELS[FF_RESULTS], c);
 	c++;
 	if (!fread(&(M->res.Nva), sizeof(int), 1, f))
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_RESULTS], c++);
-	
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_RESULTS], c);
+	c++;
 	M->res.Va=malloc((M->res.Nva+1)*sizeof(double));
 	M->res.I=malloc((M->res.Nva+1)*sizeof(double));
 	M->res.Vn=malloc((M->res.Nva+1)*sizeof(double **));
 	
 	if (fread(M->res.Va, sizeof(double), M->res.Nva, f)<M->res.Nva)
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_RESULTS], c++);
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_RESULTS], c);
+	c++;
 	if (fread(M->res.I, sizeof(double), M->res.Nva, f)<M->res.Nva)
-		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_RESULTS], c++);
+		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_RESULTS], c);
+	c++;
 	for (i=0;i<M->res.Nva;i++)
 	{
 		M->res.Vn[i]=malloc((M->Nel+1)*sizeof(double *));

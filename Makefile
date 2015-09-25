@@ -1,7 +1,7 @@
 # Makefile for PhotoVoltaic MOdule Simulator (PVMOS)
-src=main.c parse.c utils.c mesh2d.c solve.c list.c select_nodes.c dataexport.c diode.c expr.c mkpvmosmesh.cc
-hdr=parse.h mesh2d.h parsedef.h utils.h main.h solve.h list.h select_nodes.h dataexport.h diode.h expr.h
-obj=main.o parse.o utils.o mesh2d.o solve.o list.o select_nodes.o dataexport.o diode.o expr.o
+src=main.c parse.c utils.c mesh2d.c solve.c list.c select_nodes.c dataexport.c diode.c phototransistor.c expr.c mkpvmosmesh.cc
+hdr=parse.h mesh2d.h parsedef.h utils.h main.h solve.h list.h select_nodes.h dataexport.h diode.h phototransistor.h expr.h
+obj=main.o parse.o utils.o mesh2d.o solve.o list.o select_nodes.o dataexport.o diode.o phototransistor.o expr.o
 
 src_util=MeshHasher.c md5.c
 hdr_util=md5.h
@@ -9,7 +9,7 @@ obj_util=md5.o
 
 CC=gcc
 target=pvmos
-VERSION=0.73
+VERSION=0.74
 
 
 CFLAGS=-Ofast -flto -Wall -fPIC
@@ -35,12 +35,12 @@ ifdef OPENBLAS
 else
 	$(CC) $(CFLAGS)   -c main.c
 endif	
-parse.o: utils.h parsedef.h parse.h parse.c mesh2d.h solve.h list.h select_nodes.h dataexport.h expr.h
+parse.o: utils.h parsedef.h parse.h parse.c mesh2d.h solve.h list.h select_nodes.h dataexport.h expr.h diode.h phototransistor.h
 mesh2d.o: mesh2d.h mesh2d.c utils.h meshhash.h
-solve.o: mesh2d.h utils.h solve.c diode.h
+solve.o: mesh2d.h utils.h solve.c diode.h phototransistor.h
 list.o: list.c utils.h
 select_nodes.o: select_nodes.c list.h utils.h mesh2d.h
-dataexport.o: dataexport.c list.h utils.h mesh2d.h
+dataexport.o: dataexport.c list.h utils.h mesh2d.h diode.h phototransistor.h
 diode.o: diode.c diode.h
 expr.o: expr.c expr.h	
 ifdef WITH_LIBMATHEVAL
@@ -48,7 +48,7 @@ ifdef WITH_LIBMATHEVAL
 else
 	$(CC) $(CFLAGS)   -c -o expr.o expr.c
 endif	
-meshhash.h: mesh2d.h mesh2d.c MeshHasher.c list.o utils.o md5.o
+meshhash.h: mesh2d.h mesh2d.c MeshHasher.c list.o utils.o md5.o diode.o phototransistor.o diode.h phototransistor.h
 	# Make a hash (md5 sum) of a standard small mesh as a signature of the current mesh data structure
 	# This hash is used to test compatibility of binary mesh files
 	# we first make a dummy meshhash.h to compile a dummy mesh2d.o
@@ -57,7 +57,7 @@ meshhash.h: mesh2d.h mesh2d.c MeshHasher.c list.o utils.o md5.o
 	echo "unsigned char MESHHASH[] = { 0 };" >> meshhash.h 
 	$(CC) -Og -g -Wall -fPIC -lm   -c -o mesh2d.o mesh2d.c
 	# Build the mesh hasher
-	$(CC) -Og -g -Wall -fPIC -lm -g -Wall  -o MeshHasher mesh2d.o  utils.o list.o md5.o MeshHasher.c
+	$(CC) -Og -g -Wall -fPIC -lm -g -Wall  -o MeshHasher mesh2d.o  utils.o list.o md5.o diode.o phototransistor.o MeshHasher.c
 	# generate the hash
 	./MeshHasher meshhash.h
 	# mesh2d.o needs to be recompiled, with the newly created meshhash.h
@@ -68,24 +68,26 @@ meshhash.h: mesh2d.h mesh2d.c MeshHasher.c list.o utils.o md5.o
 	# the dummy meshhash.h 
 .DELETE_ON_ERROR:
 mkpvmosmesh: mkpvmosmesh.pkg
-	octave --eval "pkg install mkpvmosmesh-$(VERSION).tar.gz"
-mkpvmosmesh.pkg: mesh2d.c utils.c list.c main.h mesh2d.h utils.h list.h meshhash.h
-	mkdir -p mkpvmosmesh-$(VERSION)/src
+	octave --eval "pkg install pvmos-mesh-$(VERSION).tar.gz"
+mkpvmosmesh.pkg: mesh2d.c utils.c list.c main.h mesh2d.h utils.h list.h meshhash.h phototransistor.h diode.h  phototransistor.c diode.c 
+	mkdir -p pvmos-mesh-$(VERSION)/src
+	mkdir -p pvmos-mesh-$(VERSION)/inst
+	cp PVMOS_*.m pvmos-mesh-$(VERSION)/inst/
 	sed -i 's/^VERSION[^\n]\+/VERSION=$(VERSION)/g' Makefile_mkpvmosmesh
-	cp mkpvmosmesh.cc mesh2d.c utils.c list.c main.h mesh2d.h utils.h list.h meshhash.h mkpvmosmesh-$(VERSION)/src/
-	cp Makefile_mkpvmosmesh mkpvmosmesh-$(VERSION)/src/Makefile
-	echo "Name: mkpvmosmesh" > mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "Version: $(VERSION)" >> mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "Date: $(shell date)" >> mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "Author: B.E.Pieters" >> mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "Maintainer: B.E.Pieters" >> mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "Categories: Create PVMOS meshes in Octave >>mkpvmosxmesh" >>  mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "Title: mkpvmosmesh" >> mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "Description: A mesh generator for PVMOS" >> mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "License: GPLv3+" >> mkpvmosmesh-$(VERSION)/DESCRIPTION
-	echo "The GPLv3+ applies to all files in thic package" > mkpvmosmesh-$(VERSION)/COPYING
-	tar -zcvf mkpvmosmesh-$(VERSION).tar.gz mkpvmosmesh-$(VERSION)
-	rm -rf  mkpvmosmesh-$(VERSION)
+	cp mkpvmosmesh.cc diode.c diode.h phototransistor.c phototransistor.h mesh2d.c utils.c list.c main.h mesh2d.h utils.h list.h meshhash.h pvmos-mesh-$(VERSION)/src/
+	cp Makefile_mkpvmosmesh pvmos-mesh-$(VERSION)/src/Makefile
+	echo "Name: pvmos-mesh" > pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Version: $(VERSION)" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Date: $(shell date)" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Author: B.E.Pieters" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Maintainer: B.E.Pieters" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Categories: Create PVMOS meshes in Octave >>mkpvmosxmesh" >>  pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Title: pvmos-mesh" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Description: A mesh generator for PVMOS" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "License: GPLv3+" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "The GPLv3+ applies to all files in thic package" > pvmos-mesh-$(VERSION)/COPYING
+	tar -zcvf pvmos-mesh-$(VERSION).tar.gz pvmos-mesh-$(VERSION)
+	rm -rf  pvmos-mesh-$(VERSION)
 newversion:
 	sed -i 's/version [0-9\.]\+/version $(VERSION)/g' README.md
 cleancopy:
@@ -97,4 +99,4 @@ cleancopy:
 	cp README.md CleanCopy
 	cp Makefile CleanCopy
 clean:
-	-rm *.o *.oct $(target) mkpvmosmesh-$(VERSION).tar.gz MeshHasher
+	-rm *.o *.oct $(target) pvmos-mesh-$(VERSION).tar.gz MeshHasher

@@ -38,14 +38,13 @@
  *                                                               *             
  *****************************************************************/                                                                             
 /* Data Structures */
-typedef enum {JVD,ONED,TWOD} diode_model;
+typedef enum {JVD,ONED,TWOD, PHOTOT} diode_model;
 /* struct describing the connection between two electrodes */
 
 typedef struct ElConn {
 	diode_model model;
-	double J01, J02, Jph, nid1, nid2;
-	double Eg;
-	double Rs, Rsh;
+	void * ParStruct;
+	size_t ParSize;
 	double *V, *J; /* voltage versus current density A/cm^2*/
 	int N; /* number of current-voltage pairs */
 } ElConn;

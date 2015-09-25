@@ -36,6 +36,10 @@
  *                                                               *
  *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
- *****************************************************************/                                                                             
-double TwoDiode(double V, double J01, double J02, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj);
-double OneDiode(double V, double J0,double n, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj);
+ *****************************************************************/   
+typedef struct OneTwoDiode {
+	double J01, J02, Jph, nid1, nid2, Eg, Rs, Rsh;
+} OneTwoDiode;                                        
+void * InitOneTwoDiodeStruct(size_t *size);
+void TwoDiode(double V, OneTwoDiode Pars, double T, double *I, double *dI, double *Vj);
+void OneDiode(double V, OneTwoDiode Pars, double T, double *I, double *dI, double *Vj);

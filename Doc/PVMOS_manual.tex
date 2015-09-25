@@ -104,9 +104,8 @@ A properly set PATH variable will allow you to execute PVMOS from the command li
 \item{} Click on OK
 \end{enumerate}
 
-\subsection{Installing mkpvmosmesh}
-The ``mkpvmosmesh'' library is a dynamic library for GNU Octave which allows one to create and save binary PVMOS meshes from within Octave. Its use is demonstrated in the ``Pinup'' example. It is recommended to install mkpvmosmesh as an Octave package. To create a package from source for installing in Octave you can type ``make mkpvmosmesh.pkg'' which should create a package ``mkpvmosmesh-<version>.tar.gz''. Alternatively, you may download a prepared package. The package can be installed form the Octave command-line using the ``pkg'' command, see the Octave documentation. After installing and loading the mkpvmosmesh library you should have the mkpvmosmesh command available within Octave. 
-
+\subsection{Installing the GNU-Octave PVMOS-mesh package}
+The PVMOS package for GNU Octave is a set of tools to create and save binary PVMOS meshes from within GNU Octave. A more detailed description of the package can be found in Section \ref{mkpvmosmesh}. Installing the PVMOS package in Octave is through the ``pkg'' command, i.e. the usual procedure to install packages in GNU Octave. Prepared packages are available for download and are named PVMOS-mesh-<version>.tar.gz. The package can also be created from source using ``make PVMOS-mesh.pkg''. After installing the package you can use ``pkg load PVMOS-mesh'' to load the functions for use.
 
 \section{Recommended software}
 Obviously you are free to use whatever software you want. However, to process data from PVMOS or to get data into PVMOS I often use file formats which will not be supported by all software packages. I thus here detail my software setup in the hope it helps you. All software here is free and open source software.
@@ -888,6 +887,112 @@ In addition libmatheval defines the following constants:
 \end{itemize}
 
 Note that function and constant names cannot be redefined as a variable. 
+
+\section{\label{mkpvmosmesh}The PVMOS-mesh package for GNU Octave}
+The GNU Octave package PVMOS-mesh allows you to crate and save meshies in binary format for use in PVMOS. GNU Octave is a versatile Matlab-like program. Linking to Octave allows you to, for example, use GNU Octave's ability to work with bitmap images when creating a mesh for a given problem. In general GNU Octave is very good for creating and manipulating matrices. The PVMOS library allows you to create meshes in PVMOS for which the mesh topology can be represented as a matrix, i.e. the elements must be organized in rows and columns. This disallows sub-grids, however, it does allow you to vary the width and height of the rows and columns, i.e. a rudimentary variable mesh can be created. 
+
+The core of the library is the ``mkpvmosmesh'' function, which creates and saves a mesh for PVMOS. There are several utility functions to ease the creation of the data structures used by mkpvmosmesh from, for example, images. We start by describing the input required by the mkpvmosmesh command.\\ \\
+\texttt{mkpvmosmesh(Na, Nel, Area\_Index, Area\_Def, x, y, filename)} \\
+\begin{itemize}
+\item{} \texttt{Na}, The number or area's in the mesh
+\item{} \texttt{Nel},The number or electrodes
+\item{} \texttt{Area\_Index}, A matrix with index numbers, each number referring to one area
+\item{} \texttt{Area\_Def}, The area definition struct array describing the properties of each area
+\item{} \texttt{x}, A vector with x coordinates of element boundaries
+\item{} \texttt{y}, A vector with y coordinates of element boundaries
+\item{} \texttt{filename}, A string containing the filename for the resulting PVMOS mesh
+\end{itemize}
+ 
+In \Fig{meshtopo} shows the topology of meshes created by mkpvmosmesh. The depicted mesh would be $m \times n$-elements. To specify the widths and heights of the columns and rows, respectively, $n+1$ $x$- and $m+1$ $y$-coordinates are specified (i.e., the \texttt{x} and \texttt{y} vectors for the mkpvmosmesh command). For this mesh the \texttt{Area\_Index} would be an 
+$m \times n$ matrix with integers assigning each element to one area. The \texttt{Area\_Def} struct-array described the properties of each area. Note that a struct is a data structure containing various fields. In this case the various field describe various properties of an area, e.g. electrode sheet resistances and diode properties. The numbers in the \texttt{Area\_Index} matrix should correspond to index numbers of the \texttt{Area\_Def} struct-array.
+
+\begin{figure}
+\includegraphics[width=0.4\textwidth]{Octave_PVMOS_Mesh_Topology}
+\caption{\label{meshtopo}The mesh topology of meshes created by mkpvmosmesh.}
+\end{figure}
+
+The fields in the area definition struct are presented in Table \ref{areadefstruct}. Within the area definition struct there is a struct array of the connection struct, describing the inter electrode connections. The connection struct fields are listed and described in \ref{connstruct}
+\begin{table}[H]
+\caption{\label{areadefstruct}The fields in the area definition struct}
+\begin{longtable}{lrlp{0.4\textwidth}}
+Field & Default Value & Unit & Description\\
+\hline
+name 	& ``default'' 	& - 						& String with the area name. Take care that the names should be unique!\\
+Rel	 	&  1 			& [$\Omega$] 				& Array of length \texttt{Nel} with the sheet resistance of each electrode.\\
+Rvp	 	&  -1 			& [$\Omega \text{cm}^2$] 	& Array of length \texttt{Nel} with the resistance to the positive node (external voltage source). If the value is negative the elements will have no direct connection to the external source.\\
+Rvn	 	&  -1 			& [$\Omega \text{cm}^2$] 	& Array of length \texttt{Nel} with the resistance to the ground node (external voltage source). If the value is negative the elements will have no direct connection to the external source.\\
+T		&	300			& [K]						& Scalar value for the temperature in the area\\
+SplitX	&	1			& -							& Boolean value (0 is false, 1 is true) indicating whether an element can be split in the $x$-direction during adaptive meshing. If set to 0 the element will not be split.\\
+SplitY	&	1			& -							& Boolean value (0 is false, 1 is true) indicating whether an element can be split in the $y$-direction during adaptive meshing. If set to 0 the element will not be split.\\
+conn	&	-			& -							& Structure array of length \texttt{Nel}-1 with the properties of the connection between the electrodes
+\end{longtable}
+% \end{table}
+
+% \begin{table}[!h]
+\caption{\label{connstruct}The fields in the connection struct}
+\begin{longtable}{lrlp{0.4\textwidth}}
+Field & Default Value & Unit & Description\\
+\hline
+model 	& ``ONED'' 		& - 						& String with the model name. Possible models are:
+\begin{tabular}{lp{0.2\textwidth}}
+ONED & One diode model\\
+TWOD & Two diode model\\
+PHOTOT & Photo-transistor model\\
+JVD & Tabular JV data
+\end{tabular}
+\\
+Jph	 	&  0 			& [$\text{A}\text{cm}^{-2}$]& Photo-current density for the models  ONED, TWOD, and  PHOTOT\\
+Rs	 	&  1e-5			& [$\Omega \text{cm}^2$] 	& Series resistance for the models  ONED, TWOD, and  PHOTOT\\
+Rsh	 	&  1e3 			& [$\Omega \text{cm}^2$] 	& Shunt resistance for the models  ONED, TWOD, and  PHOTOT\\
+J01		&  1e-12		& [$\text{A}\text{cm}^{-2}$]& Dark saturation current for the first diode, used in models ONED and TWOD\\
+J02		&  1e-8			& [$\text{A}\text{cm}^{-2}$]& Dark saturation current for the second diode, used in model TWOD\\
+nid1	&  1			& [-]						& Ideality factor of the first diode, used in models ONED and TWOD\\
+nid2	&  2			& [-]						& Ideality factor of the second diode, used in model TWOD\\
+Eg		&  1.2			& [eV]						& Band gap of the diode, used in models ONED and TWOD\\
+Jsbc	&  5e-4			& [$\text{A}\text{cm}^{-2}$]& Dark saturation current density of the main BC diode\\
+Jsbe	&  5e-15		& [$\text{A}\text{cm}^{-2}$]& Dark saturation current density of the main BE diode \\
+Jse	 	&  0 			& [$\text{A}\text{cm}^{-2}$]& Dark satuartion current of the leakage BE diode\\
+Jsc	 	&  0 			& [$\text{A}\text{cm}^{-2}$]& Dark satuartion current of the leakage BC diode\\
+Nf	 	&  1 			& [-] 						& Main BE diode ideality factor\\
+Nr		&  1			& [-]						& Main BC diode ideality factor\\
+Ne		&  1.5			& [-]						& Leakage BE diode ideality factor\\
+Nc		&  2			& [-]						& Leakage BC diode ideality factor\\\\
+Vaf		&  $\infty$		& [V]						& Forward operation Early voltage\\
+Var		&  $\infty$		& [V]						& Reverse operation Early voltage\\
+Bf		&  3			& [-]						& Forward operation gain\\
+EgBE	&  1.2			& [eV]						& Band gap of the BE diodes\\
+PhiBC	&  0.3			& [eV]						& Barrier of the BC junction\\
+XTIBE	&  3			& [-]						& Temperature dependency of the BE diodes\\
+XTIBC	&  3			& [-]						& Temperature dependency of the BC diodes\\
+XTIB	&  3			& [-]						& Temperature dependency of the forward gain\\
+\end{longtable}
+\end{table}
+
+Several commands are provided to ease the use of the mkpvmosmesh command. To initialize the area definition struct array (\texttt{Area\_Def}), the package provides the function:\\ \\
+\texttt{Area\_Def=PVMOS\_AreaProperties(Nel)}\\ \\
+It initializes the struct array with one area, using the default values listed in Tables \ref{areadefstruct} and \ref{connstruct}.
+
+I feel it is convenient to work with ``selection masks'' when defining new areas. A selection mask is essentially a matrix, with the same size as the \texttt{Area\_Index} matrix, i.e. one matrix element per mesh element, where a 1 selects the element and a 0 not. There are two functions that allow you to use masks to build up the various areas in the \texttt{Area\_Index} matrix and the \texttt{Area\_Def} area definition struct array. The functions are:\\ \\
+\texttt{[Area\_Index, Area\_Def]=PVMOS\_SetMask(Area\_Index,Area\_Def, mask, Mask\_Area)}\\
+\begin{itemize}
+\item{} \texttt{Area\_Index}, A matrix with index numbers, each number referring to one area
+\item{} \texttt{Area\_Def}, The area definition struct array describing the properties of each area
+\item{} \texttt{mask}, Mesh element selection mask
+\item{} \texttt{Mask\_Area}, Area definition struct to apply to the selected elements (i.e. this area definition will be added to the \texttt{Area\_Def} area definition struct array)
+\end{itemize}
+and \\ \\
+\texttt{[Area\_Index, Area\_Def]=PVMOS\_ModifyMask(Area\_Index,Area\_Def, mask, modlist, name)} \\
+\\ \\
+\begin{itemize}
+\item{} \texttt{Area\_Index}, A matrix with index numbers, each number referring to one area
+\item{} \texttt{Area\_Def}, The area definition struct array describing the properties of each area
+\item{} \texttt{mask}, Mesh element selection mask
+\item{} \texttt{modlist}, Cell array specifying the properties to be changed for the given elements
+\item{} \texttt{name}, String with the addition to the area names for the selected elements 
+\end{itemize}
+
+The difference between the functions is that  \texttt{PVMOS\_SetMask} sets the area for the selected elements and adds one area to the mesh, whereas the \texttt{PVMOS\_ModifyMask} changes only selected properties for the selected elements, creating as many areas as required. The newly created areas keep the name of the area's they were created from but with the addition of the \texttt{name} string at the end of the area name. 
+
 
 \section{Examples}
 In this section I discuss several examples which can be found in the example directory.

@@ -57,6 +57,8 @@
 #include "main.h"
 #include "mesh2d.h"
 #include "utils.h"
+#include "diode.h"
+#include "phototransistor.h"
 
 VERB_LEVEL verbose=QUIET;
 /* 
@@ -134,20 +136,53 @@ int main (int argc, char **argv)
 	char *fn;
 	double x1=0, x2=1, y1=0, y2=1;
 	char *name="meshhash";
+	char * area;
 	int Nx=3, Ny=3;
 	int i;
+	int P;
 	int bytes;
    	MD5_CTX mdContext;
 	unsigned char data[1024];
 	FILE *f;	
 	mesh M;
+	diode_model model;
 	
 	/* temporary filename */
 	fn=malloc((L_tmpnam+1)*sizeof(char));
 	fn=tmpnam (fn);
+#ifdef __MINGW32__ 
+	fn++;
+#endif
 	
 	/* create and save mesh */
 	M=InitMesh(name, x1, x2, y1, y2, Nx, Ny);
+	/* we need to test all diode models as PVMOS
+	   uses a void ponter to point to a model dependent data struct.
+	   i.e. if a model data struct changes it may matter */
+	area=malloc(128*sizeof(char));	
+	
+	model=ONED;
+	sprintf(area, "area%d",(int)model);
+	NewProperties(&M, area);		
+	P=FindProperties(M, area);
+	if (P<0)
+		Error("Cannot fin the area I just created! Fix ur code!");
+	if (M.P[P].conn[0].ParStruct)
+		free(M.P[P].conn[0].ParStruct);
+	M.P[P].conn[0].ParStruct=InitOneTwoDiodeStruct(&(M.P[P].conn[0].ParSize));
+	
+	model=PHOTOT;
+	sprintf(area, "area%d",(int)model);
+	NewProperties(&M, area);		
+	P=FindProperties(M, area);
+	if (P<0)
+		Error("Cannot fin the area I just created! Fix ur code!");
+	if (M.P[P].conn[0].ParStruct)
+		free(M.P[P].conn[0].ParStruct);
+	M.P[P].conn[0].ParStruct=InitPhotoTransistorStruct(&(M.P[P].conn[0].ParSize));
+
+	
+	free(area);
 	WriteMesh(fn,&M);
 	FreeMesh(&M);
 	
@@ -172,7 +207,10 @@ int main (int argc, char **argv)
 		MD5_Update (&mdContext, data, bytes);
 	fclose (f);
 	remove(fn);
-	
+#ifdef __MINGW32__ 
+	fn--;
+#endif
+	free(fn);
 	MD5_Final (c,&mdContext);
 	
 	

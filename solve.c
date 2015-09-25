@@ -57,6 +57,7 @@
 #include "solve.h"
 #include "utils.h"
 #include "diode.h"
+#include "phototransistor.h"
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define MAX(a,b) ((a)<(b) ? (b):(a))
 
@@ -180,16 +181,21 @@ void Diode_J(mesh M, int P, int inter_index, double V, double *J, double *dJdV, 
 
 			break;
 		case ONED:
-			OneDiode(V, M.P[P].conn[inter_index].J01, M.P[P].conn[inter_index].nid1, M.P[P].conn[inter_index].Eg, M.P[P].T, M.P[P].conn[inter_index].Jph, M.P[P].conn[inter_index].Rs, M.P[P].conn[inter_index].Rsh, J, dJdV, Vj);
+			OneDiode(V, *((OneTwoDiode *) M.P[P].conn[inter_index].ParStruct), M.P[P].T, J, dJdV, Vj);
 			break;
 		case TWOD:
-			TwoDiode(V, M.P[P].conn[inter_index].J01, M.P[P].conn[inter_index].J02, M.P[P].conn[inter_index].Eg, M.P[P].T, M.P[P].conn[inter_index].Jph, M.P[P].conn[inter_index].Rs, M.P[P].conn[inter_index].Rsh, J, dJdV, Vj);
+			TwoDiode(V, *((OneTwoDiode *) M.P[P].conn[inter_index].ParStruct), M.P[P].T, J, dJdV, Vj);
 			break;
+		case PHOTOT:
+		{
+			double v2;
+			Phototransistor(V, *((PhotoTransistor *) M.P[P].conn[inter_index].ParStruct), M.P[P].T, Vj, &v2, J, dJdV);
+			break;
+		}
 		default:
 			Error("Unknown diode model in function Diode_J\n");
 	}
 }
-
 
 #define Area (N.x2-N.x1)*(N.y2-N.y1)
 void Diode(mesh M, node N, int inter_index, double V, double *I, double *dIdV, double *Vj)
@@ -1275,10 +1281,10 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 						break;
 					case ONED:
 					case TWOD:
-						M->P[Na_old+i].conn[diode_index].Jph=0;
+						((OneTwoDiode *) M->P[Na_old+i].conn[diode_index].ParStruct)->Jph=0;
 						break;
 					default:
-						Warning("Unknown diode model in function LocallyCollectedCurrent\n");
+						Warning("Unknown or unsupported diode model in function LocallyCollectedCurrent\n");
 				}
 			}
 			else
@@ -1373,7 +1379,7 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 					case ONED:
 					case TWOD:
 					{
-						double rj, is;
+						double rj, is, Rs;
 					/* here we have to be careful, it must be a differential value. The jaccobian makes that if we take tabular data it does not make any difference whether we 
 					take a small or large change in current as we have the linearized system. However, in this case we want to compute the impact of the series resistance
 					this means we must truely work with small values otherwise the diode model goes wrong! as it is not included in the Jacobian so to say */
@@ -1385,7 +1391,8 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 						/* for the one and two diode models we know 1/dIdV-Rs=differential resistance of parallel diodes and shunt */	
 									
 						Ilocal=fabs(Ilocal)+1000*Numeric_Settings.tol_kcl_abs;
-						rj=1/dIdV-M->P[N->P].conn[diode_index].Rs/A;
+						Rs=((OneTwoDiode *) M->P[Na_old+i].conn[diode_index].ParStruct)->Rs;
+						rj=1/dIdV-Rs/A;
 						is=-rj*dIdV*Ilocal;
 						M->P[N->P+Na_old].conn[diode_index].V[0]=v-1;
 						M->P[N->P+Na_old].conn[diode_index].J[0]=(is-dIdV)/A;
@@ -1396,7 +1403,7 @@ double *LocalyCollectedCurrent(mesh *M, double Va, int diode_index, int *nodes, 
 						break;
 					}
 					default:
-						Warning("Unknown diode model in function LocallyCollectedCurrent\n");
+						Warning("Unknown or unsupported diode model in function LocallyCollectedCurrent\n");
 				}
 			}
 		

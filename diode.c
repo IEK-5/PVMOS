@@ -46,10 +46,28 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "diode.h"
 #define k_b 8.6173323478e-5
 #define T0 300
 #define EPS 1e-6
 #define MAXITER 50
+
+
+void * InitOneTwoDiodeStruct(size_t *size)
+{
+	OneTwoDiode *res;
+	*size=sizeof(OneTwoDiode);
+	res=malloc(sizeof(OneTwoDiode));
+	res->J01=1e-12;
+	res->J02=1e-8;
+	res->Jph=0;
+	res->nid1=1;
+	res->nid2=2;
+	res->Eg=1.12;
+	res->Rs=1e-5;
+	res->Rsh=1e4;
+	return (void *) res;
+}
 /* generic diode equation */
 double D(double V, double J0, double Eg, double T, double n, double Jph)
 {
@@ -76,21 +94,21 @@ Jph| \_ _/  /_ _\  /_ _\  |_ _|
              n=1    n=2    Rsh                                                  
              J01    J02                                                                                                           
 */
-void TwoDiode(double V, double J01, double J02, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj)
+void TwoDiode(double V, OneTwoDiode Pars, double T, double *I, double *dI, double *Vj)
 {
 	double V1, lI, E, dIdV;
 	int iter=0;
 	V1=V;
 	do
 	{
-		lI=D(V1,J01,Eg,T,1.0,Jph)+D(V1,J02,Eg,T,2.0,0.0)+V1/Rsh;
-		dIdV=dDdV(V1, J01, Eg, T, 1.0)+dDdV(V1, J02, Eg, T, 2.0)+1/Rsh;
-		E=((V-V1)/Rs-lI);
-		V1+=((V-V1)/Rs-lI)/(dIdV+1/Rs); /* newton-rapson */
+		lI=D(V1,Pars.J01,Pars.Eg,T,1.0,Pars.Jph)+D(V1,Pars.J02,Pars.Eg,T,2.0,0.0)+V1/Pars.Rsh;
+		dIdV=dDdV(V1, Pars.J01, Pars.Eg, T, 1.0)+dDdV(V1, Pars.J02, Pars.Eg, T, 2.0)+1/Pars.Rsh;
+		E=((V-V1)/Pars.Rs-lI);
+		V1+=((V-V1)/Pars.Rs-lI)/(dIdV+1/Pars.Rs); /* newton-rapson */
 		iter++;
 	} while ((fabs(E/lI)>EPS)&&(iter<MAXITER));
 	if (dI)
-		(*dI)=1/((1/dIdV)+Rs);
+		(*dI)=1/((1/dIdV)+Pars.Rs);
 	if (I)
 		(*I)=lI;
 	if (Vj)
@@ -111,21 +129,21 @@ Jph| \_ _/  /_ _\    |_ _|
              J0                                                                                                                
 */
 
-void OneDiode(double V, double J0,double n, double Eg, double T, double Jph, double Rs, double Rsh, double *I, double *dI, double *Vj)
+void OneDiode(double V, OneTwoDiode Pars, double T, double *I, double *dI, double *Vj)
 {
 	double V1, lI, E, dIdV;
 	int iter=0;
 	V1=V;
 	do
 	{
-		lI=D(V1,J0,Eg,T,n,Jph)+V1/Rsh;
-		dIdV=dDdV(V1, J0, Eg, T, n)+1/Rsh;
-		E=((V-V1)/Rs-lI);
-		V1+=((V-V1)/Rs-lI)/(dIdV+1/Rs); /* newton-rapson */
+		lI=D(V1,Pars.J01,Pars.Eg,T,Pars.nid1,Pars.Jph)+V1/Pars.Rsh;
+		dIdV=dDdV(V1, Pars.J01, Pars.Eg, T, Pars.nid1)+1/Pars.Rsh;
+		E=((V-V1)/Pars.Rs-lI);
+		V1+=((V-V1)/Pars.Rs-lI)/(dIdV+1/Pars.Rs); /* newton-rapson */
 		iter++;
 	} while ((fabs(E/lI)>EPS)&&(iter<MAXITER));
 	if (dI)
-		(*dI)=1/((1/dIdV)+Rs);
+		(*dI)=1/((1/dIdV)+Pars.Rs);
 	if (I)
 		(*I)=lI;
 	if (Vj)
