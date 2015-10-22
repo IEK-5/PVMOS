@@ -85,5 +85,5 @@ typedef struct PhotoTransistor {
 	double XTB;	/*  -          	 	Beta temperature dependency	 */
 } PhotoTransistor;
 
-void * InitPhotoTransistorStruct(size_t *size);
+void * InitPhotoTransistorStruct(int *size);
 void Phototransistor(double Va, PhotoTransistor M, double T, double *V1, double *V2, double *J, double *dJdVa);

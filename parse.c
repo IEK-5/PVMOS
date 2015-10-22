@@ -476,7 +476,7 @@ meshvar *LookupMeshArea (char *name,  meshvar * meshes, int Nm, int *P)
 	name[i]='.';
 	return MV;
 }
-
+#define LOOPALLOCBLOCK 5
 /* the parse routine, parses the commands in a file */
 void Parse (char *file)
 {
@@ -486,6 +486,9 @@ void Parse (char *file)
 	meshvar * Meshes;
 	int Nm=0, k;
 	int line_nr=1;
+	int *loop_line_nr;
+	fpos_t *loop_stack, last_pos; 
+	int loop=0, loop_allocated=LOOPALLOCBLOCK;
 	clock_t tic, toc;
 	PRSDEF key;
 	polygon P;
@@ -502,12 +505,15 @@ void Parse (char *file)
 	Meshes=malloc((Nm+1)*sizeof(meshvar));
 	InitExprEval();
 	
+	loop_stack=malloc(loop_allocated*sizeof(fpos_t));
+	loop_line_nr=malloc(loop_allocated*sizeof(int));
+	
+	fgetpos(f, &last_pos);
     	fgets(line, MAXSTRLEN-1, f);
 	
 	tic = clock();
 	while(feof(f)==0)
 	{
-	
     		k=sscanf(line, " %c", &c);
 		if((k!=-1)&&(c!='#'))
 		{
@@ -807,9 +813,9 @@ void Parse (char *file)
 					case SPLITCOARSE:
 					{
 						meshvar *MV;
-						double d;
+						double dx, dy;
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 3);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -818,24 +824,25 @@ void Parse (char *file)
 						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
 							
-						d=atof(args[1]);
+						dx=atof(args[1]);
+						dy=atof(args[2]);
 											
 						if (MV->nodes[0]==0)
 						{
 							/* all nodes */
-							Print(NORMAL,"* line %3d: Splitting all elements in %s until all edges shorter than %e",line_nr, MV->name, d);
+							Print(NORMAL,"* line %3d: Splitting all elements in %s until all edges shorter than %e in x-direction and %e in y-direction",line_nr, MV->name, dx, dy);
 							fflush(stdout);
-							SplitMeshWhileCoarse(&(MV->M), d);
+							SplitMeshWhileCoarse(&(MV->M), dx, dy);
 						}
 						else
 						{
-							Print(NORMAL,"* line %3d: Splitting selected elements in %s until all edges shorter than %e",line_nr, MV->name, d);
+							Print(NORMAL,"* line %3d: Splitting selected elements in %s until all edges shorter than %e in x-direction and %e in y-direction",line_nr, MV->name, dx, dy);
 							fflush(stdout);
-							SplitListWhileCoarse(&(MV->M), MV->nodes, d);
+							SplitListWhileCoarse(&(MV->M), MV->nodes, dx, dy);
 							MV->nodes[0]=0;
 						}	
 						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);
-						FreeArgs (args, 2);											
+						FreeArgs (args, 3);											
 						break;
 					}
 					case MOVEMESH:
@@ -1316,7 +1323,7 @@ void Parse (char *file)
 						Vstart=atof(args[4]);
 						Vend=atof(args[5]);
 						Nstep=atoi(args[6]);
-						Print(NORMAL, "* line %3d: Position (%e,%e), inter electrode indes %d",line_nr,x,y,el);
+						Print(NORMAL, "* line %3d: Position (%e,%e), inter electrode index %d",line_nr,x,y,el);
 						PrintLocalJV(args[7], *M, x, y, el, Vstart, Vend, Nstep);
 						FreeArgs (args, 8);	
 						break;
@@ -1572,7 +1579,8 @@ void Parse (char *file)
 						P.BR[0]=0;
     						fgets(line, MAXSTRLEN-1, f);
 						line_nr++;
-						while(feof(f)==0)
+						key=NONE;
+						while((feof(f)==0)&&(key!=DEF_POLY))
 						{
 							begin=Begin(line);
 							if((begin)&&((*begin)!='#'))
@@ -1598,7 +1606,7 @@ void Parse (char *file)
 								P.BR=AddToList(P.BR, P.N);
 							fgets(line, MAXSTRLEN-1, f);
 							line_nr++;							
-						} while	(key!=DEF_POLY);
+						}
 						
 						P.BR=AddToList(P.BR, P.N);
 						
@@ -1618,6 +1626,85 @@ void Parse (char *file)
 						}
 						begin=GetWord (begin, word);
 						Print(NORMAL, "            -->  Polygon with %d segments defined",P.N);
+						break;
+					}		
+					case WHILE:
+					{			
+						char **args;
+						int go=0;
+						fpos_t cur_pos; 
+						args=GetArgs (&begin, 3);
+						Print(NORMAL, "* line %3d: while-loop (%s %s %s)",line_nr, args[0], args[1], args[2]);
+						switch (args[1][0])
+						{
+							case '<':
+								go=(atof(args[0])<atof(args[2]));
+								break;
+							case '>':
+								go=(atof(args[0])>atof(args[2]));
+								break;
+							case '=':
+								go=(atof(args[0])==atof(args[2]));
+								break;
+							default:
+								break;
+						}
+						FreeArgs (args, 3);	
+						
+						if (go)
+						{
+							Print(NORMAL, "            -->  Entering loop");							
+							/* scan file for end of while loop */
+							if (loop+1==LOOPALLOCBLOCK-1)
+							{
+								loop_allocated+=LOOPALLOCBLOCK;
+								loop_stack=realloc(loop_stack, loop_allocated*sizeof(fpos_t));
+								loop_line_nr=realloc(loop_line_nr, loop_allocated*sizeof(int));
+							}
+							loop_line_nr[loop]=line_nr-1;
+							loop_stack[loop]=last_pos;
+							loop++;						
+						}
+						else
+						{
+							/* scan till end of while loop */
+							fgets(line, MAXSTRLEN-1, f);
+							line_nr++;
+							go=1;		
+							while((feof(f)==0)&&(go>0))
+							{							
+								begin=Begin(line);
+								while((begin)&&((*begin)!='#'))
+								{
+									begin=GetWord (begin, word);
+									key=LookupKey (word,  KeyTable);
+									if (key==ENDWHILE)
+										go--;
+									if (key==WHILE)
+										go++;
+								}
+								if (go)
+								{
+									fgets(line, MAXSTRLEN-1, f);
+									line_nr++;
+								}			
+							}
+							Print(NORMAL, "            -->  Exit loop at line %d", line_nr);
+							line_nr++;
+						}
+						
+						break;
+					}		
+					case ENDWHILE:
+					{		
+						if (!loop)
+						{
+							Print(NORMAL, "* line %3d: no while loop to end",line_nr);
+							goto premature_end;						
+						}
+						loop--;		
+						fsetpos(f, loop_stack+loop);
+						line_nr=loop_line_nr[loop];
 						break;
 					}	
 					case SELECT_RECT:
@@ -3798,6 +3885,28 @@ void Parse (char *file)
 						FreeArgs (args, 1);
 						break;
 					}
+					case EXPR_DEF_BB:	
+					{	
+						meshvar *MV;
+						char **args;
+						double x1, x2, y1, y2;
+						args=GetArgs (&begin, 1);
+						Print(NORMAL,"* line %3d: defining bounding box parameters for mesh %s",line_nr, args[0]);				
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						GetMeshBB(&(MV->M), &x1, &y1, &x2, &y2);
+						Print(NORMAL,"* line %3d: Mesh bounding box:",line_nr,x1, y1);
+						Print(NORMAL,"*           (x1,y1) = (%e, %e)",x1, y1);
+						Print(NORMAL,"*           (x2,y2) = (%e, %e)",x2, y2);
+						
+						DefineVar("x1", x1);
+						DefineVar("y1", y1);
+						DefineVar("x2", x2);
+						DefineVar("y2", y2);
+						FreeArgs (args, 1);
+						break;
+					}
 					/********************************* Secion verbosity settings*/
 					case _QUIET:
 						if(!fixverb)
@@ -3827,6 +3936,7 @@ premature_end:
 			}
 			
 		}
+		fgetpos(f, &last_pos);
     		fgets(line, MAXSTRLEN-1, f);
 		line_nr++;
 	}

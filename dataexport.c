@@ -70,8 +70,10 @@ void Jfield(mesh *M, int Vai, double **Jx, double **Jy, double **Ex, double **Ey
 	
 	
 	if ((Vai>=M->res.Nva)||(Vai<0))
-		Error("No simulation with index %i available", Vai);
-	
+	{
+		Warning("No simulation with index %i available", Vai);
+		return;
+	}
 	R=malloc((M->Nel+1)*sizeof(double));
 	
 	/* remove any possible old data */
@@ -151,7 +153,10 @@ void SurfVPlotNearest(char *fn, mesh *M, int Vai, double x1, double y1, double x
 	double x,y, x_step, y_step;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	x_step=(x2-x1)/((double)Nx);
 	y_step=(y2-y1)/((double)Ny);
 	x=x1;
@@ -184,7 +189,10 @@ void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	double **Ex, **Ey, *V;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	fprintf(f, "# Simulated Potentials mapped to a regular mesh\n");
 	fprintf(f, "# V(i):      Potential in the i-th electrode\n");
@@ -251,7 +259,10 @@ void SurfVjPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, dou
 	double **Ex, **Ey, *V;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	fprintf(f, "# Simulated Junction voltages mapped to a regular mesh\n");
 	fprintf(f, "# Vj(i+0.5):      Junction voltage between the i-th and i+1 the electrode electrode\n");
@@ -321,7 +332,10 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	double **Ex, **Ey, **Jx, **Jy, *V;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 		
 	PrintFileHeader(f);
 	fprintf(f, "# Simulated Power Density mapped to a regular mesh\n");
@@ -393,7 +407,10 @@ void SurfJPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	double **Ex, **Ey, **Jx, **Jy, *V;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 		
 	PrintFileHeader(f);
 	fprintf(f, "# Simulated Current Densities mapped to a regular mesh\n");
@@ -464,7 +481,10 @@ void SurfEPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 	double **Ex, **Ey;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 		
 	PrintFileHeader(f);
 	fprintf(f, "# Simulated Electric Fields mapped to a regular mesh\n");
@@ -511,7 +531,10 @@ void PrintMesh(char *fn, mesh *M, int *selected)
 	int i;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	if (selected[0]==0)
 		fprintf(f, "# Mesh element borders\n");
@@ -552,7 +575,10 @@ void PrintSurfDef(char *fn, mesh *M, int *selected)
 	int i;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	if (selected[0]==0)
 		fprintf(f, "# Mesh element area definition\n");
@@ -590,7 +616,10 @@ void PrintSurfV(char *fn, mesh *M, int *selected)
 	int i, j, k;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	if (selected[0]==0)
 		fprintf(f, "# Simulated Potentials per element\n");
@@ -677,7 +706,10 @@ void PrintConn(char *fn, mesh *M, int *selected)
 	node * N;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	if (selected[0]==0)
 		fprintf(f, "# Connections between elements\n");
@@ -780,7 +812,10 @@ void PrintPars(char *fn, mesh *M)
 	int i, j, k;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	fprintf(f, "# Simulation parameters per area definition\n");
 	for (i=0;i<M->Na;i++)
@@ -828,7 +863,7 @@ void PrintPars(char *fn, mesh *M)
 						break;
 					default:
 						fprintf(f,"Error: No model data available for this area, this mesh is thoroughly broken!\n");
-						Error("Error: No model data available for this area, this mesh is thoroughly broken!\n");						
+						Warning("Error: No model data available for this area, this mesh is thoroughly broken!\n");						
 						break;
 				}
 			}
@@ -846,10 +881,16 @@ void PrintSolPar(char *fn, mesh *M)
 	double Voc, P;
 	int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
 	if(SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p))
-		Error("Could not determine solar cell parameters\n");
+	{
+		Warning("Could not determine solar cell parameters\n");
+		return;
+	}
 		
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	fprintf(f, "# Simulated solar cell parameters\n");
 	
@@ -868,7 +909,10 @@ void PrintIV(char *fn, mesh *M)
 	FILE *f;
 	double *V, *I;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	fprintf(f, "# Simulated Current-Voltage pairs\n");
 	fprintf(f, "# U [V]\tI [A]\n");
@@ -895,7 +939,10 @@ void PrintProbe(char *fn, mesh *M, double x, double y)
 	node N;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	fprintf(f, "# Simulated Potentials at coordinate (%e %e)\n", x, y);
 	fprintf(f, "# Va [V]\tVprobe [V]\n");
@@ -972,8 +1019,11 @@ void PrintInIp(char *fn, mesh *M, int *selected)
 	FILE *f;
 	node *N;
 	double *V, *I, *In, *Ip;
-	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	if ((f=fopen(fn,"w"))==NULL)		
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	PrintFileHeader(f);
 	fprintf(f, "# Total contact currents for selected elements\n");
 	fprintf(f, "# U [V]\tIp [A]\tIn [A]\tI [A]\n");
@@ -1085,7 +1135,10 @@ void PrintLocallyCollectedCurrent(char *fn, mesh *M, double x1, double y1, doubl
 	
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	sel_nodes=malloc(LISTBLOCK*sizeof(int));
 	sel_nodes[0]=0;
 	
@@ -1136,7 +1189,10 @@ void PrintLocalJV(char *fn, mesh M, double x, double y, int inter_index, double 
 	int id, i;
 	double V, dV, I, Vj;
 	if ((f=fopen(fn,"w"))==NULL)
-		Error("Cannot open %s for writing\n", fn);
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
 	
 	PrintFileHeader(f);
 	fprintf(f, "# Local JV characteristics for position (%e,%e) and inter electrode index %d\n", x, y, inter_index);

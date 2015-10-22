@@ -40,6 +40,6 @@
 typedef struct OneTwoDiode {
 	double J01, J02, Jph, nid1, nid2, Eg, Rs, Rsh;
 } OneTwoDiode;                                        
-void * InitOneTwoDiodeStruct(size_t *size);
+void * InitOneTwoDiodeStruct(int *size);
 void TwoDiode(double V, OneTwoDiode Pars, double T, double *I, double *dI, double *Vj);
 void OneDiode(double V, OneTwoDiode Pars, double T, double *I, double *dI, double *Vj);

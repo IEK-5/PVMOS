@@ -713,9 +713,10 @@ void SolveVa(mesh *M, double Vstart, double Vend, int Nstep)
 		   to a sensible range to avoid problems. */
 		if (i>=0)
 		{
+			/*
 			if (fabs(M->res.Va[i])>1e-4)
 				Vaf=Va/M->res.Va[i];
-			if (fabs(Vaf)>100)
+			if (fabs(Vaf)>100)*/
 				Vaf=1;
 			for (j=0;j<M->Nel*M->Nn;j++)				
 				V[j]=M->res.Vn[i][j/M->Nn][j%M->Nn]*Vaf;

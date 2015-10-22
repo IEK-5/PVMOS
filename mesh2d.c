@@ -1003,7 +1003,7 @@ void SplitMeshXY(mesh *M)
 		SplitNodeXY(i-1, M);
 }
 
-void SplitMeshWhileCoarse(mesh *M, double d)
+void SplitMeshWhileCoarse(mesh *M, double dx, double dy)
 {
 	int i, *list, *newlist, c=0;	
 	
@@ -1023,7 +1023,7 @@ void SplitMeshWhileCoarse(mesh *M, double d)
 		{
 			node *N;
 			N=SearchNode(*M, list[i]);
-			if (((N->x2-N->x1)>d)&&((N->y2-N->y1)>d))
+			if (((N->x2-N->x1)>dx)&&((N->y2-N->y1)>dy))
 			{
 				SplitNodeXY(list[i], M);
 				newlist=AddToList(newlist, list[i]);
@@ -1031,13 +1031,13 @@ void SplitMeshWhileCoarse(mesh *M, double d)
 				newlist=AddToList(newlist, M->Nn-2);
 				newlist=AddToList(newlist, M->Nn-3);
 			}
-			else if ((N->x2-N->x1)>d)
+			else if ((N->x2-N->x1)>dx)
 			{
 				SplitNodeX(list[i], M);
 				newlist=AddToList(newlist, list[i]);
 				newlist=AddToList(newlist, M->Nn-1);
 			}
-			else if ((N->y2-N->y1)>d)
+			else if ((N->y2-N->y1)>dy)
 			{
 				SplitNodeY(list[i], M);
 				newlist=AddToList(newlist, list[i]);
@@ -1088,7 +1088,7 @@ void SplitListLong(mesh *M, int *list)
 	}
 }
 
-void SplitListWhileCoarse(mesh *M, int *list, double d)
+void SplitListWhileCoarse(mesh *M, int *list, double dx, double dy)
 {
 	int i;
 	int *list_c, *newlist;
@@ -1107,7 +1107,7 @@ void SplitListWhileCoarse(mesh *M, int *list, double d)
 		{
 			node *N;
 			N=SearchNode(*M, list_c[i]);
-			if (((N->x2-N->x1)>d)&&((N->y2-N->y1)>d))
+			if (((N->x2-N->x1)>dx)&&((N->y2-N->y1)>dy))
 			{
 				SplitNodeXY(list_c[i], M);
 				newlist=AddToList(newlist, list_c[i]);
@@ -1115,13 +1115,13 @@ void SplitListWhileCoarse(mesh *M, int *list, double d)
 				newlist=AddToList(newlist, M->Nn-2);
 				newlist=AddToList(newlist, M->Nn-3);
 			}
-			else if ((N->x2-N->x1)>d)
+			else if ((N->x2-N->x1)>dx)
 			{
 				SplitNodeX(list_c[i], M);
 				newlist=AddToList(newlist, list_c[i]);
 				newlist=AddToList(newlist, M->Nn-1);
 			}
-			else if ((N->y2-N->y1)>d)
+			else if ((N->y2-N->y1)>dy)
 			{
 				SplitNodeY(list_c[i], M);
 				newlist=AddToList(newlist, list_c[i]);
@@ -2163,7 +2163,7 @@ void WriteElConn(FILE *f, ElConn conn)
 {
 	fwrite(FF_LABELS[FF_ELCONN], sizeof(char), LL, f);
 	fwrite(&conn.model, sizeof(diode_model), 1, f);
-	fwrite(&conn.ParSize, sizeof(size_t), 1, f);
+	fwrite(&conn.ParSize, sizeof(int), 1, f);
 	if (conn.ParSize)
 		fwrite(conn.ParStruct, conn.ParSize, 1, f);
 	fwrite(&conn.N, sizeof(int), 1, f);
@@ -2187,7 +2187,7 @@ ElConn ReadElConn(FILE *f)
 	if (!fread(&conn.model, sizeof(diode_model), 1, f))
 		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
 	c++;
-	if (!fread(&conn.ParSize, sizeof(size_t), 1, f))
+	if (!fread(&conn.ParSize, sizeof(int), 1, f))
 		Error("Premature end of mesh file CODE: %s%02d\n", FF_LABELS[FF_ELCONN], c);
 	
 	c++;

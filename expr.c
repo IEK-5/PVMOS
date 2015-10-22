@@ -119,7 +119,6 @@ void DefineVar(char *name, double value)
 	if (IsDefined(name))
 	{
 		int i;
-		fprintf(stderr, "Warning: redefining variable %s\n",name);
 		i=NameIndex(name);
 		var_names[i]=realloc(var_names[i],(len+1)*sizeof(char));
 		strncpy(var_names[i], name, strlen(name)+1);	

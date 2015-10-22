@@ -340,10 +340,11 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{split\_coarse}	& Split selected elements until the node-edges are all smaller than a given length. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes two arguments 
+\texttt{split\_coarse}	& Split selected elements until the node-edges are all smaller than a given length. If no elements are selected, all elements are split. As the topology of the mesh changed all selected nodes in the mesh are un-selected after this command. The command takes three arguments 
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{l}, Maximum edge length
+\item \texttt{lx}, Maximum edge length in x-direction
+\item \texttt{ly}, Maximum edge length in y-direction
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{resolve\_rect}	& Split elements along the edges of a rectangle until all element edges are smaller than a given length. This command can be used to ensure a particular rectangle fits accurately in the mesh. The command takes six arguments 
@@ -635,6 +636,32 @@ Keyword & Description \\
 \item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
 \item \texttt{Eg}, Band gap ($eV$)
 \end{enumerate}\\
+\texttt{set\_PTJV}	&  Specify the photo-transistor model for the JV characteristics per area. If the specified area does not exist it will be newly created. See the command \texttt{set\_PTJV\_extra} to set extra parameters for the model. The command takes eleven arguments:
+\begin{enumerate}
+\item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{Jsbc},  Dark saturation current density of the main BC diode ($\text{A}\text{cm}^{-2}$)
+\item \texttt{Jsbe},  Dark saturation current density of the main BE diode  ($\text{A}\text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{EgBE},  Band gap of the BE diodes (eV)
+\item \texttt{PhiBC},  Barrier of the BC junction (eV)
+\item \texttt{Bf},  Forward operation gain 
+\item \texttt{Vaf},  Forward operation Early voltage (V)
+\end{enumerate}\\
+\texttt{set\_PTJV\_extra}	&  Specify extra parameters for the photo-transistor model for the JV characteristics per area. To use this command you must first set the photo-transistor model with the command \texttt{set\_PTJV}. The command takes ten arguments:
+\begin{enumerate}
+\item \texttt{Jse},  Dark satuartion current of the leakage BE diode ($\text{A}\text{cm}^{-2}$)
+\item \texttt{Jsc},  Dark satuartion current of the leakage BC diode ($\text{A}\text{cm}^{-2}$)
+\item \texttt{Nf},  Main BE diode ideality factor 
+\item \texttt{Nr},  Main BC diode ideality factor 
+\item \texttt{Ne},  Leakage BE diode ideality factor 
+\item \texttt{Nc},  Leakage BC diode ideality factor
+\item \texttt{Var},  Reverse operation Early voltage (V)
+\item \texttt{XTIBE},  Temperature dependency of the BE diodes 
+\item \texttt{XTIBC},  Temperature dependency of the BC diodes 
+\item \texttt{XTIB},  Temperature dependency of the forward gain 
+\end{enumerate}\\
 \texttt{set\_R}	&  Specify a resistance for the JV characteristics per area. If the specified area does not exist it will be newly created. The command takes three arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
@@ -691,6 +718,32 @@ Keyword & Description \\
 \item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
 \item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
 \item \texttt{Eg}, Band gap ($eV$)
+\end{enumerate}\\
+\texttt{set\_sel\_PTJV}	&  Specify the photo-transistor model for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area.See the command \texttt{set\_sel\_PTJV\_extra} to set extra parameters for the model. The command takes eleven arguments:
+\begin{enumerate}
+\item \texttt{area-name},  Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
+\item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
+\item \texttt{Jsbc},  Dark saturation current density of the main BC diode ($\text{A}\text{cm}^{-2}$)
+\item \texttt{Jsbe},  Dark saturation current density of the main BE diode  ($\text{A}\text{cm}^{-2}$)
+\item \texttt{Rs}, Series resistance ($\Omega \text{cm}^2$)
+\item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
+\item \texttt{EgBE},  Band gap of the BE diodes (eV)
+\item \texttt{PhiBC},  Barrier of the BC junction (eV)
+\item \texttt{Bf},  Forward operation gain 
+\item \texttt{Vaf},  Forward operation Early voltage (V)
+\end{enumerate}\\
+\texttt{set\_sel\_PTJV\_extra}	&  Specify extra parameters for the photo-transistor model for the JV characteristics per selection. To use this command you must first set the photo-transistor model with the command \texttt{set\_sel\_PTJV}. The command takes ten arguments:
+\begin{enumerate}
+\item \texttt{Jse},  Dark satuartion current of the leakage BE diode ($\text{A}\text{cm}^{-2}$)
+\item \texttt{Jsc},  Dark satuartion current of the leakage BC diode ($\text{A}\text{cm}^{-2}$)
+\item \texttt{Nf},  Main BE diode ideality factor 
+\item \texttt{Nr},  Main BC diode ideality factor 
+\item \texttt{Ne},  Leakage BE diode ideality factor 
+\item \texttt{Nc},  Leakage BC diode ideality factor
+\item \texttt{Var},  Reverse operation Early voltage (V)
+\item \texttt{XTIBE},  Temperature dependency of the BE diodes 
+\item \texttt{XTIBC},  Temperature dependency of the BC diodes 
+\item \texttt{XTIB},  Temperature dependency of the forward gain 
 \end{enumerate}\\
 \texttt{set\_sel\_R}	&  Specify a resistance for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area. The command takes three arguments:
 \begin{enumerate}
@@ -815,6 +868,10 @@ Keyword & Description \\
 \item \texttt{value}, value of the variable
 \end{enumerate}\\
 \texttt{define\_solpar}	&  Determine the solar cell parameters from the simulated IV points for a mesh and define the variables \texttt{Isc}, \texttt{Voc}, \texttt{Impp}, and \texttt{Vmpp}, with their values set accordingly. These variables can be used wherever a numerical value is required (see Section \ref{expressions}). The command takes one argument:
+\begin{enumerate}
+\item \texttt{mesh-name}, name of the mesh
+\end{enumerate}\\
+\texttt{define\_bb}	&  Determine the bounding box of a mesh and store the results in the variables \texttt{x1}, \texttt{y1}, \texttt{x2}, and \texttt{y2}, where (\texttt{x1}, \texttt{y1}) is the coordinate for the lower left corner and (\texttt{x1}, \texttt{y1}) the upper right corner. These variables can be used wherever a numerical value is required (see Section \ref{expressions}). The command takes one argument:
 \begin{enumerate}
 \item \texttt{mesh-name}, name of the mesh
 \end{enumerate}\\

@@ -263,30 +263,30 @@ deselect cell
 # efficiency wise) after some misfit under the name Banksy decided to spray-paint a rat hanging 
 # from a parachute on the solar cell.
 ###################################################################################################
-## We first load a polygon from a file describing the graffiti. 
-## Note that it would be possible to define the file right here but with 400 points that makes 
-## a rather unreadable input file.
-#simplify cell
-#load_poly graffiti.dat
-#
-## The graffiti will shade the solar cell beneath it so we make an area "shade"
-#set_1DJV 	cell.shade	0	1e-12 	1.0 	0.0 	1e-5 	1e5	1.12
-#set_Rel		cell.shade	1	40
-#set_Rel		cell.shade	0	0.005
-#
-## the mesh it rather coarse in many places so we better first refine the mesh around the polygon.
-#resolve_poly cell 0.001 1 
-#
-## Using still the same polygon we select all elements within the polygon
-#select_poly cell
-#
-## These elemens will be shaded. This only affects the area cell so we make a sub-selection for 
-## the area cell
-#select_area cell.cell
-#
-## those elements are assigned to the area shade
-#assign_properties 	cell.shade
-#deselect cell
+# We first load a polygon from a file describing the graffiti. 
+# Note that it would be possible to define the file right here but with 400 points that makes 
+# a rather unreadable input file.
+simplify cell
+load_poly graffiti.dat
+
+# The graffiti will shade the solar cell beneath it so we make an area "shade"
+set_1DJV 	cell.shade	0	1e-12 	1.0 	0.0 	1e-5 	1e5	1.12
+set_Rel		cell.shade	1	40
+set_Rel		cell.shade	0	0.005
+
+# the mesh it rather coarse in many places so we better first refine the mesh around the polygon.
+resolve_poly cell 0.001 1 
+
+# Using still the same polygon we select all elements within the polygon
+select_poly cell
+
+# These elemens will be shaded. This only affects the area cell so we make a sub-selection for 
+# the area cell
+select_area cell.cell
+
+# those elements are assigned to the area shade
+assign_properties 	cell.shade
+deselect cell
 ###################################################################################################
 
 ###################################################################################################
@@ -351,7 +351,9 @@ set_SplitY	cell.spacer
 # After all the resolving of specific geometries the mesh got messy. This will not fix everything
 # but does clean up things considerably (but it adds a bit of chaos here and there).
 ###################################################################################################
+printmesh cell mesh_0.dat
 simplify cell
+printmesh cell mesh_1.dat
 
 ###################################################################################################
 # As the mesh is now small, it is a good moment to inspect the geometry. Here we output the
@@ -365,15 +367,13 @@ printpars cell cellpars.dat
 # Now we split elements again to get a certain minimum resolution. This resolution ensures we have
 # at least 3 elements between two horizontal fingers.
 ###################################################################################################
-split_coarse cell 0.066
-printmesh cell mesh_0.dat
+split_coarse cell 0.066 0.066
 
 
 ###################################################################################################
 # Do some adaptive meshing to adapt the mesh to the electrical properties
 ###################################################################################################
 adaptive_solve 	cell 	0.0 	0.3	3
-printmesh cell mesh_1.dat
 
 ###################################################################################################
 # Run IV sweep, export some potentials and an IV curve

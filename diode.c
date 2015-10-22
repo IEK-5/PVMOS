@@ -53,7 +53,7 @@
 #define MAXITER 50
 
 
-void * InitOneTwoDiodeStruct(size_t *size)
+void * InitOneTwoDiodeStruct(int *size)
 {
 	OneTwoDiode *res;
 	*size=sizeof(OneTwoDiode);

@@ -44,7 +44,7 @@ typedef enum {JVD,ONED,TWOD, PHOTOT} diode_model;
 typedef struct ElConn {
 	diode_model model;
 	void * ParStruct;
-	size_t ParSize;
+	int ParSize;	/* using the type size_t will make the 32 bit version incompatible with the 64 bit version */
 	double *V, *J; /* voltage versus current density A/cm^2*/
 	int N; /* number of current-voltage pairs */
 } ElConn;
@@ -115,12 +115,12 @@ void SplitMeshX(mesh *M);
 void SplitMeshY(mesh *M);
 void SplitMeshXY(mesh *M);
 void SplitMeshLong(mesh *M);
-void SplitMeshWhileCoarse(mesh *M, double d);
+void SplitMeshWhileCoarse(mesh *M, double dx, double dy);
 void SplitListX(mesh *M, int *list);
 void SplitListY(mesh *M, int *list);
 void SplitListXY(mesh *M, int *list);
 void SplitListLong(mesh *M, int *list);
-void SplitListWhileCoarse(mesh *M, int *list, double d);
+void SplitListWhileCoarse(mesh *M, int *list, double dx, double dy);
 void ScaleMeshX(mesh *M, double f);
 void ScaleMeshY(mesh *M, double f);
 void ScaleMesh(mesh *M, double f);

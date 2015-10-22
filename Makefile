@@ -9,7 +9,7 @@ obj_util=md5.o
 
 CC=gcc
 target=pvmos
-VERSION=0.74
+VERSION=0.75
 
 
 CFLAGS=-Ofast -flto -Wall -fPIC

@@ -86,7 +86,7 @@
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define MAX(a,b) ((a)<(b) ? (b):(a))
 
-void * InitPhotoTransistorStruct(size_t *size)
+void * InitPhotoTransistorStruct(int *size)
 {
 	PhotoTransistor *res;
 	*size=sizeof(PhotoTransistor);

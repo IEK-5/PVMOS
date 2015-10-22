@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.5.27)  25 SEP 2015 11:54
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.5.27)  29 SEP 2015 18:37
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -337,10 +337,6 @@ LaTeX Font Warning: Font shape `U/stmry/b/n' undefined
 (Font)              using `U/stmry/m/n' instead on input line 46.
 
 
-Package natbib Warning: Citation `pvmos:2014' on page 1 undefined on input line
- 49.
-
-
 Underfull \hbox (badness 10000) in paragraph at lines 52--59
 
  []
@@ -374,149 +370,132 @@ Overfull \hbox (8.0pt too wide) in alignment at lines 237--343
  []
 
 [4] [5]
-Overfull \hbox (8.0pt too wide) in alignment at lines 343--492
+Overfull \hbox (8.0pt too wide) in alignment at lines 343--493
  [] [] 
  []
 
 [6] [7]
-Overfull \hbox (8.0pt too wide) in alignment at lines 492--661
+Overfull \hbox (8.0pt too wide) in alignment at lines 493--676
  [] [] 
  []
-
-
-Overfull \vbox (3.89966pt too high) has occurred while \output is active []
-
 
 [8] [9] [10]
-Overfull \hbox (8.0pt too wide) in alignment at lines 661--757
+Overfull \hbox (8.0pt too wide) in alignment at lines 676--794
  [] [] 
  []
 
-[11] [12] [13] [14]
-Overfull \hbox (8.0pt too wide) in alignment at lines 757--817
+[11] [12]
+Overfull \vbox (1.04996pt too high) has occurred while \output is active []
+
+
+[13] [14]
+Overfull \hbox (8.0pt too wide) in alignment at lines 794--861
  [] [] 
  []
 
-[15] [16]
-Overfull \hbox (8.0pt too wide) in alignment at lines 817--823
+[15] [16] [17] [18]
+Overfull \hbox (8.0pt too wide) in alignment at lines 861--880
  [] [] 
  []
 
-[17] [18]
+[19]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table I on input line 823.
+(longtable)                in table I on input line 880.
 
+[20]
 LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <10> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 825.
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 882.
 
-Underfull \hbox (badness 10000) in paragraph at lines 825--835
+Underfull \hbox (badness 10000) in paragraph at lines 882--892
 
  []
 
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 838.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 895.
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 838.
- [19] [20]
-Underfull \hbox (badness 10000) in paragraph at lines 894--896
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 895.
+ [21] [22]
+Underfull \hbox (badness 10000) in paragraph at lines 951--953
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 894--896
+Underfull \hbox (badness 10000) in paragraph at lines 951--953
 
  []
 
-<Octave_PVMOS_Mesh_Topology.pdf, id=84, 381.27122pt x 355.68843pt>
+<Octave_PVMOS_Mesh_Topology.pdf, id=90, 381.27122pt x 355.68843pt>
 File: Octave_PVMOS_Mesh_Topology.pdf Graphic file (type pdf)
 
 <use Octave_PVMOS_Mesh_Topology.pdf>
-Package pdftex.def Info: Octave_PVMOS_Mesh_Topology.pdf used on input line 910.
+Package pdftex.def Info: Octave_PVMOS_Mesh_Topology.pdf used on input line 967.
 
 (pdftex.def)             Requested size: 203.99689pt x 190.31042pt.
 
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table III on input line 928.
+(longtable)                in table III on input line 985.
 
 
-Underfull \hbox (badness 2096) in paragraph at lines 944--945
+Underfull \hbox (badness 2096) in paragraph at lines 1001--1002
 []|\OT1/cmr/m/n/9 Photo-current den-sity for the mod-els ONED,
  []
 
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table V on input line 968.
+(longtable)                in table V on input line 1025.
 
-[21 <./Octave_PVMOS_Mesh_Topology.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 971--974
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 971--974
-
- []
-
-[22]
-Underfull \hbox (badness 10000) in paragraph at lines 975--977
+[23 <./Octave_PVMOS_Mesh_Topology.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 1028--1031
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 975--977
+Underfull \hbox (badness 10000) in paragraph at lines 1028--1031
+
+ []
+
+[24]
+Underfull \hbox (badness 10000) in paragraph at lines 1032--1034
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 983--986
+Underfull \hbox (badness 10000) in paragraph at lines 1032--1034
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 983--986
+Underfull \hbox (badness 10000) in paragraph at lines 1040--1043
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 983--986
+Underfull \hbox (badness 10000) in paragraph at lines 1040--1043
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 983--986
+Underfull \hbox (badness 10000) in paragraph at lines 1040--1043
 
  []
 
-[23] [24]
 
-LaTeX Warning: Reference `LastBibItem' on page 25 undefined on input line 1020.
+Underfull \hbox (badness 10000) in paragraph at lines 1040--1043
 
+ []
 
-
-Class revtex4 Warning: Endnote numbers changed: rerun LaTeX.
-
-
-Package natbib Warning: There were undefined citations.
-
+[25] [26]
 
 Package longtable Warning: Table widths have changed. Rerun LaTeX.
 
-[25] (./PVMOS_manual.aux
-
-Package natbib Warning: Citation(s) may have changed.
-(natbib)                Rerun to get citations correct.
-
-)
+[27] (./PVMOS_manual.aux)
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
-
-
-LaTeX Warning: There were undefined references.
 
 
 LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right .
@@ -524,11 +503,11 @@ LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right .
 
  ) 
 Here is how much of TeX's memory you used:
- 4444 strings out of 493312
- 56919 string characters out of 6140261
- 200723 words of memory out of 5000000
- 7799 multiletter control sequences out of 15000+600000
- 19458 words of font info for 74 fonts, out of 8000000 for 9000
+ 4443 strings out of 493312
+ 56905 string characters out of 6140261
+ 212813 words of memory out of 5000000
+ 7798 multiletter control sequences out of 15000+600000
+ 19148 words of font info for 73 fonts, out of 8000000 for 9000
  956 hyphenation exceptions out of 8191
  37i,14n,28p,1493b,330s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmb10.pfb></usr
@@ -552,10 +531,10 @@ t/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/share/texlive/texmf-dist/fonts
 /amsfonts/cm/cmtt9.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/
 uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
 
-Output written on PVMOS_manual.pdf (25 pages, 402294 bytes).
+Output written on PVMOS_manual.pdf (27 pages, 406404 bytes).
 PDF statistics:
- 281 PDF objects out of 1000 (max. 8388607)
- 185 compressed objects within 2 object streams
+ 287 PDF objects out of 1000 (max. 8388607)
+ 189 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  6 words of extra memory for PDF output out of 10000 (max. 10000000)
 
