@@ -364,6 +364,62 @@ int * MeshOutline(mesh M)
 	return list;
 }
 
+int * MeshNorthEnd(mesh M)
+/* create a list of nodes which lie along the edges of the mesh */
+{
+	int *list;
+	int i;
+	list=malloc(LISTBLOCK*sizeof(int));
+	list[0]=0;	
+	
+	for (i=0;i<M.Nn;i++)
+		if ((M.nodes[i].north[0]==0))
+			list=AddToList(list, M.nodes[i].id);
+	return list;
+}
+
+int * MeshSouthEnd(mesh M)
+/* create a list of nodes which lie along the edges of the mesh */
+{
+	int *list;
+	int i;
+	list=malloc(LISTBLOCK*sizeof(int));
+	list[0]=0;	
+	
+	for (i=0;i<M.Nn;i++)
+		if ((M.nodes[i].south[0]==0))
+			list=AddToList(list, M.nodes[i].id);
+	return list;
+}
+
+int * MeshWestEnd(mesh M)
+/* create a list of nodes which lie along the edges of the mesh */
+{
+	int *list;
+	int i;
+	list=malloc(LISTBLOCK*sizeof(int));
+	list[0]=0;	
+	
+	for (i=0;i<M.Nn;i++)
+		if ((M.nodes[i].west[0]==0))
+			list=AddToList(list, M.nodes[i].id);
+	return list;
+}
+
+int * MeshEastEnd(mesh M)
+/* create a list of nodes which lie along the edges of the mesh */
+{
+	int *list;
+	int i;
+	list=malloc(LISTBLOCK*sizeof(int));
+	list[0]=0;	
+	
+	for (i=0;i<M.Nn;i++)
+		if ((M.nodes[i].east[0]==0))
+			list=AddToList(list, M.nodes[i].id);
+	return list;
+}
+
 
 void DuplicateNode(mesh M, node *d, int source_id)
 /* duplicate a node */
@@ -806,6 +862,218 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 	ReInitResults(&res);
 
 	return res;
+}
+
+void AddRowNorth(mesh *M, double dy)
+{
+	double y1, y2;
+	int *northend;
+	node *N;
+	int i,j, index;
+	
+	
+	northend=MeshNorthEnd(*M);
+	if (!northend[0])
+		Error("Cannot add a now, mesh has no north side\n");
+	M->nodes=realloc(M->nodes,(M->Nn+northend[0]+1)*sizeof(node));
+		
+	N=SearchNode(*M, northend[1]);
+	y1=N->y2;	
+	y2=y1+dy;
+	
+	for (i=1;i<=northend[0];i++)
+	{
+		N=SearchNode(*M, northend[i]);
+		if (fabs(y1-N->y2)>TINY)
+			Error("AddNorth only works on rectangular meshes\n");
+		DuplicateNode(*M, M->nodes+M->Nn, northend[i]);
+		M->nodes[M->Nn].id=M->Nn;
+		M->nodes[M->Nn].y1=y1;
+		M->nodes[M->Nn].y2=y2;
+		
+		/* connect old node to new node and back */
+		N->north=AddToList(N->north, M->Nn);
+		M->nodes[M->Nn].south[0]=0;
+		M->nodes[M->Nn].south=AddToList(M->nodes[M->Nn].south, N->id);
+		
+		/* Lateral connections */
+		
+		/* if a northend node is among the west/east connections we have to make a new connection */
+		M->nodes[M->Nn].west[0]=0;
+		for (j=1;j<=N->west[0];j++)
+			if (FindInList(N->west[j], northend, &index))
+				M->nodes[M->Nn].west=AddToList(M->nodes[M->Nn].west, M->Nn+(index-i));
+				
+		M->nodes[M->Nn].east[0]=0;
+		for (j=1;j<=N->east[0];j++)
+			if (FindInList(N->east[j], northend, &index))
+				M->nodes[M->Nn].east=AddToList(M->nodes[M->Nn].east, M->Nn+(index-i));
+		
+		M->Nn++;
+	}			
+	
+
+	free(northend);
+	ReInitResults(M);
+
+}
+
+void AddColEast(mesh * M, double dx)
+{
+	double x1, x2;
+	int *eastend;
+	node *N;
+	int i,j, index;
+	
+	
+	eastend=MeshEastEnd(*M);
+	if (!eastend[0])
+		Error("Cannot add a now, mesh has no east side\n");
+	M->nodes=realloc(M->nodes,(M->Nn+eastend[0]+1)*sizeof(node));
+		
+	N=SearchNode(*M, eastend[1]);
+	x1=N->x2;	
+	x2=x1+dx;
+	
+	for (i=1;i<=eastend[0];i++)
+	{
+		N=SearchNode(*M, eastend[i]);
+		if (fabs(x1-N->x2)>TINY)
+			Error("AddEast only works on rectangular meshes\n");
+		DuplicateNode(*M, M->nodes+M->Nn, eastend[i]);
+		M->nodes[M->Nn].id=M->Nn;
+		M->nodes[M->Nn].x1=x1;
+		M->nodes[M->Nn].x2=x2;
+		
+		/* connect old node to new node and back */
+		N->east=AddToList(N->east, M->Nn);
+		M->nodes[M->Nn].west[0]=0;
+		M->nodes[M->Nn].west=AddToList(M->nodes[M->Nn].west, N->id);
+		
+		/* Lateral connections */
+		
+		/* if a eastend node is among the north/south connections we have to make a new connection */
+		M->nodes[M->Nn].north[0]=0;
+		for (j=1;j<=N->north[0];j++)
+			if (FindInList(N->north[j], eastend, &index))
+				M->nodes[M->Nn].north=AddToList(M->nodes[M->Nn].north, M->Nn+(index-i));
+				
+		M->nodes[M->Nn].south[0]=0;
+		for (j=1;j<=N->south[0];j++)
+			if (FindInList(N->south[j], eastend, &index))
+				M->nodes[M->Nn].south=AddToList(M->nodes[M->Nn].south, M->Nn+(index-i));
+		M->Nn++;
+	}			
+	
+
+	free(eastend);
+	ReInitResults(M);
+}
+
+void AddRowSouth(mesh *M, double dy)
+{
+	double y1, y2;
+	int *southend;
+	node *N;
+	int i,j, index;
+	
+	
+	southend=MeshSouthEnd(*M);
+	if (!southend[0])
+		Error("Cannot add a now, mesh has no south side\n");
+	M->nodes=realloc(M->nodes,(M->Nn+southend[0]+1)*sizeof(node));
+		
+	N=SearchNode(*M, southend[1]);
+	y2=N->y1;	
+	y1=y2-dy;
+	
+	for (i=1;i<=southend[0];i++)
+	{
+		N=SearchNode(*M, southend[i]);
+		if (fabs(y2-N->y1)>TINY)
+			Error("AddSouth only works on rectangular meshes\n");
+		DuplicateNode(*M, M->nodes+M->Nn, southend[i]);
+		M->nodes[M->Nn].id=M->Nn;
+		M->nodes[M->Nn].y1=y1;
+		M->nodes[M->Nn].y2=y2;
+		
+		/* connect old node to new node and back */
+		N->south=AddToList(N->south, M->Nn);
+		M->nodes[M->Nn].north[0]=0;
+		M->nodes[M->Nn].north=AddToList(M->nodes[M->Nn].north, N->id);
+		
+		/* Lateral connections */
+		
+		/* if a southend node is among the west/east connections we have to make a new connection */
+		M->nodes[M->Nn].west[0]=0;
+		for (j=1;j<=N->west[0];j++)
+			if (FindInList(N->west[j], southend, &index))
+				M->nodes[M->Nn].west=AddToList(M->nodes[M->Nn].west, M->Nn+(index-i));
+				
+		M->nodes[M->Nn].east[0]=0;
+		for (j=1;j<=N->east[0];j++)
+			if (FindInList(N->east[j], southend, &index))
+				M->nodes[M->Nn].east=AddToList(M->nodes[M->Nn].east, M->Nn+(index-i));
+		
+		M->Nn++;
+	}			
+	
+
+	free(southend);
+	ReInitResults(M);
+
+}
+
+void AddColWest(mesh * M, double dx)
+{
+	double x1, x2;
+	int *westend;
+	node *N;
+	int i,j, index;
+	
+	
+	westend=MeshWestEnd(*M);
+	if (!westend[0])
+		Error("Cannot add a now, mesh has no west side\n");
+	M->nodes=realloc(M->nodes,(M->Nn+westend[0]+1)*sizeof(node));
+		
+	N=SearchNode(*M, westend[1]);
+	x2=N->x1;	
+	x1=x2-dx;
+	
+	for (i=1;i<=westend[0];i++)
+	{
+		N=SearchNode(*M, westend[i]);
+		if (fabs(x2-N->x1)>TINY)
+			Error("AddWest only works on rectangular meshes\n");
+		DuplicateNode(*M, M->nodes+M->Nn, westend[i]);
+		M->nodes[M->Nn].id=M->Nn;
+		M->nodes[M->Nn].x1=x1;
+		M->nodes[M->Nn].x2=x2;
+		
+		/* connect old node to new node and back */
+		N->west=AddToList(N->west, M->Nn);
+		M->nodes[M->Nn].east[0]=0;
+		M->nodes[M->Nn].east=AddToList(M->nodes[M->Nn].east, N->id);
+		
+		/* Lateral connections */
+		
+		/* if a westend node is among the north/south connections we have to make a new connection */
+		M->nodes[M->Nn].north[0]=0;
+		for (j=1;j<=N->north[0];j++)
+			if (FindInList(N->north[j], westend, &index))
+				M->nodes[M->Nn].north=AddToList(M->nodes[M->Nn].north, M->Nn+(index-i));
+				
+		M->nodes[M->Nn].south[0]=0;
+		for (j=1;j<=N->south[0];j++)
+			if (FindInList(N->south[j], westend, &index))
+				M->nodes[M->Nn].south=AddToList(M->nodes[M->Nn].south, M->Nn+(index-i));
+		M->Nn++;
+	}			
+	
+
+	free(westend);
+	ReInitResults(M);
 }
 
 void SplitNodeX(int id, mesh *M)

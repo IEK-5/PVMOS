@@ -42,6 +42,10 @@
 /* enummeration of keys */
 typedef enum {
 	NEWMESH,
+	ADDCOL_E,
+	ADDROW_N,
+	ADDCOL_W,
+	ADDROW_S,
 	RMMESH,
 	JOINMESH,
 	JOINMESH_H,
@@ -158,6 +162,10 @@ typedef struct {
 const KeyWord KeyTable[] =
 {
       	{"newmesh", NEWMESH},
+      	{"addcol_right", ADDCOL_E},
+      	{"addrow_top", ADDROW_N},
+      	{"addcol_left", ADDCOL_W},
+      	{"addrow_bottom", ADDROW_S},
       	{"rm", RMMESH},
 	{"joinmesh", JOINMESH},
 	{"joinmesh_h", JOINMESH_H},

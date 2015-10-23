@@ -204,3 +204,11 @@ int *DuplicateList(int *list)
 	res=memcpy(res, list, (list[0]+1)*sizeof(int));
 	return res;
 }
+
+void PrintList(int *list)
+{
+	int i;
+	for (i=1;i<=list[0];i++)
+		printf("%d ", list[i]);
+	printf("\n");
+}

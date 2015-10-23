@@ -552,6 +552,94 @@ void Parse (char *file)
 						FreeArgs (args, 7);
 						break;
 					}
+					case ADDCOL_E:
+					{
+						double dx;
+						char **args;
+						mesh *M;
+						/* read next word and process, if no next word trow an error */
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Adding column to the right side of mesh %s", line_nr,args[1]);	
+						
+														
+						dx=atof(args[0]);
+						if (dx<0)
+							Error("* line %3d: Negative length is not allowed\n",line_nr);						
+						M=FetchMesh(args[1], Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
+						AddColEast(M, dx);
+						FreeArgs (args, 2);
+						break;
+					}
+					case ADDROW_N:
+					{
+						double dy;
+						char **args;
+						mesh *M;
+						/* read next word and process, if no next word trow an error */
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Adding row to the top side of mesh %s", line_nr,args[1]);	
+						
+														
+						dy=atof(args[0]);
+						if (dy<0)
+							Error("* line %3d: Negative length is not allowed\n",line_nr);							
+						M=FetchMesh(args[1], Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
+						AddRowNorth(M, dy);
+						FreeArgs (args, 2);
+						break;
+					}
+					case ADDCOL_W:
+					{
+						double dx;
+						char **args;
+						mesh *M;
+						/* read next word and process, if no next word trow an error */
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Adding column to the left side of mesh %s", line_nr,args[1]);	
+						
+														
+						dx=atof(args[0]);
+						if (dx<0)
+							Error("* line %3d: Negative length is not allowed\n",line_nr);							
+						M=FetchMesh(args[1], Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
+						AddColWest(M, dx);
+						FreeArgs (args, 2);
+						break;
+					}
+					case ADDROW_S:
+					{
+						double dy;
+						char **args;
+						mesh *M;
+						/* read next word and process, if no next word trow an error */
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Adding row to the bottom side of mesh %s", line_nr,args[1]);	
+						
+														
+						dy=atof(args[0]);
+						if (dy<0)
+							Error("* line %3d: Negative length is not allowed\n",line_nr);							
+						M=FetchMesh(args[1], Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
+						AddRowSouth(M, dy);
+						FreeArgs (args, 2);
+						break;
+					}
 					case RMMESH:
 					{
 						char *name;
@@ -1434,7 +1522,8 @@ void Parse (char *file)
 						FreeArgs (args, 9);	
 						break;
 					}
-					case SURFJPLOT:					{
+					case SURFJPLOT:
+					{
 						mesh *M;
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
@@ -1470,7 +1559,8 @@ void Parse (char *file)
 						FreeArgs (args, 9);	
 						break;
 					}
-					case SURFVJPLOT:					{
+					case SURFVJPLOT:
+					{
 						mesh *M;
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
@@ -1506,7 +1596,8 @@ void Parse (char *file)
 						FreeArgs (args, 9);	
 						break;
 					}
-					case SURFEPLOT:					{
+					case SURFEPLOT:
+					{
 						mesh *M;
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
@@ -1632,23 +1723,26 @@ void Parse (char *file)
 					{			
 						char **args;
 						int go=0;
-						fpos_t cur_pos; 
 						args=GetArgs (&begin, 3);
 						Print(NORMAL, "* line %3d: while-loop (%s %s %s)",line_nr, args[0], args[1], args[2]);
-						switch (args[1][0])
+						if (strncmp(args[1], ">=",2)==0)
+							go=(atof(args[0])>=atof(args[2]));
+						else if (strncmp(args[1], "<=",2)==0)
+							go=(atof(args[0])<=atof(args[2]));
+						else if (strncmp(args[1], "==",2)==0)
 						{
-							case '<':
-								go=(atof(args[0])<atof(args[2]));
-								break;
-							case '>':
-								go=(atof(args[0])>atof(args[2]));
-								break;
-							case '=':
-								go=(atof(args[0])==atof(args[2]));
-								break;
-							default:
-								break;
+							double a,b;
+							a=atof(args[0]);
+							b=atof(args[2]);
+							go=(fabs(a-b)/(fabs(a)+fabs(b))<1e-12);
 						}
+						else if (strncmp(args[1], ">",1)==0)
+							go=(atof(args[0])>atof(args[2]));
+						else if (strncmp(args[1], "<",1)==0)
+							go=(atof(args[0])<atof(args[2]));
+						else
+							Warning("Warning at line %3d: ill formatted conditional (%s) for a while loop\n",line_nr, args[1]);
+						
 						FreeArgs (args, 3);	
 						
 						if (go)
@@ -3941,6 +4035,8 @@ premature_end:
 		line_nr++;
 	}
 	fclose(f);
+	free(loop_stack);
+	free(loop_line_nr);
 	free(line);
 	free(word);
 	DestroyExprEval();	

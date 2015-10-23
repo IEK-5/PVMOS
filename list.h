@@ -47,3 +47,4 @@ int *RemoveListFromList(int *dest, int *source);
 int IsInList(int *list, int id);
 void SortList(int * list);
 int *DuplicateList(int *list);
+void PrintList(int *list);

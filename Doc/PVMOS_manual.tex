@@ -142,6 +142,30 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the new mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{addcol\_left} 	& Add a column of elements to the left side of a mesh. This command requires the mesh has no holes and the left side of the mesh is flat, i.e. the left edge is vertical. This command will add one element to the left of each element at the left edge of the mesh. The newly added elements inherit all properties from the element on their right. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the new mesh
+\item \texttt{dx}, width of the column to be added. 
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{addcol\_right} 	& Add a column of elements to the right side of a mesh. This command requires the mesh has no holes and the right side of the mesh is flat, i.e. the right edge is vertical. This command will add one element to the right of each element at the right edge of the mesh. The newly added elements inherit all properties from the element on their left. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the new mesh
+\item \texttt{dx}, width of the column to be added. 
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{addrow\_top} 	& Add a row of elements to the top side of a mesh. This command requires the mesh has no holes and the top side of the mesh is flat, i.e. the top edge is horizontal. This command will add one element on top of each element at the top edge of the mesh. The newly added elements inherit all properties from the element below. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the new mesh
+\item \texttt{dy}, width of the row to be added. 
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{addrow\_bottom} 	& Add a row of elements below a mesh. This command requires the mesh has no holes and the bottom side of the mesh is flat, i.e. the bottom edge is horizontal. This command will add one element below each element at the bottom edge of the mesh. The newly added elements inherit all properties from the element above it. The command takes two arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the new mesh
+\item \texttt{dy}, width of the row to be added. 
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{joinmesh}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes offset values as input which allow you to "shift" the second mesh to align it to the first. The command takes 5 arguments:
 \begin{enumerate}
 \item \texttt{x\_off}, x-offset in coordinate system of the second mesh
@@ -850,6 +874,15 @@ Keyword & Description \\
 \item \texttt{threshold}, Relative threshold for node splitting, a parameter between 0 and 1 that controls how aggressive the mesh is adapted, where lower values lead to a more aggressive mesh adaption (typical values between 0.3 and 0.5).
 \item \texttt{N\_step}, Number adaptive meshing iterations
 \end{enumerate}\\
+\multicolumn{2}{l}{\textsc{While loop}} \\*
+\hline
+\texttt{while}	&  Start a while loop block. The \texttt{while} command takes three arguments
+\begin{enumerate}
+\item \texttt{value 1}, a (floating point) number
+\item \texttt{Comparison operator}, Comparison operator, one of ``\textless'', ``\textgreater'', ``==''``\textless ='', or ``\textgreater =''
+\item \texttt{value 2},  a (floating point) number
+\end{enumerate}\\
+\texttt{endwhile}	&  End a while loop block. The \texttt{enwhile} command takes no arguments\\
 \multicolumn{2}{l}{\textsc{Verbosity levels}} \\*
 \hline
 Keyword & Description \\
