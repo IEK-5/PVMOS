@@ -503,7 +503,6 @@ void Parse (char *file)
 	word=malloc(MAXSTRLEN*sizeof(char));
 	
 	Meshes=malloc((Nm+1)*sizeof(meshvar));
-	InitExprEval();
 	
 	loop_stack=malloc(loop_allocated*sizeof(fpos_t));
 	loop_line_nr=malloc(loop_allocated*sizeof(int));
@@ -1734,7 +1733,14 @@ void Parse (char *file)
 							double a,b;
 							a=atof(args[0]);
 							b=atof(args[2]);
-							go=(fabs(a-b)/(fabs(a)+fabs(b))<1e-12);
+							go=(fabs(a-b)/(fabs(a)+fabs(b)+1e-300)<1e-12);
+						}
+						else if (strncmp(args[1], "!=",2)==0)
+						{
+							double a,b;
+							a=atof(args[0]);
+							b=atof(args[2]);
+							go=(fabs(a-b)/(fabs(a)+fabs(b)+1e-300)>1e-12);
 						}
 						else if (strncmp(args[1], ">",1)==0)
 							go=(atof(args[0])>atof(args[2]));
@@ -1748,7 +1754,7 @@ void Parse (char *file)
 						if (go)
 						{
 							Print(NORMAL, "            -->  Entering loop");							
-							/* scan file for end of while loop */
+							/* put filepointers and linenumbers on the stack */
 							if (loop+1==LOOPALLOCBLOCK-1)
 							{
 								loop_allocated+=LOOPALLOCBLOCK;
@@ -1800,7 +1806,99 @@ void Parse (char *file)
 						fsetpos(f, loop_stack+loop);
 						line_nr=loop_line_nr[loop];
 						break;
+					}
+					case IF:
+					{			
+						char **args;
+						int go=0;
+						args=GetArgs (&begin, 3);
+						Print(NORMAL, "* line %3d: If statement (%s %s %s)",line_nr, args[0], args[1], args[2]);
+						if (strncmp(args[1], ">=",2)==0)
+							go=(atof(args[0])>=atof(args[2]));
+						else if (strncmp(args[1], "<=",2)==0)
+							go=(atof(args[0])<=atof(args[2]));
+						else if (strncmp(args[1], "==",2)==0)
+						{
+							double a,b;
+							a=atof(args[0]);
+							b=atof(args[2]);
+							go=(fabs(a-b)/(fabs(a)+fabs(b)+1e-300)<1e-12);
+						}
+						else if (strncmp(args[1], "!=",2)==0)
+						{
+							double a,b;
+							a=atof(args[0]);
+							b=atof(args[2]);
+							go=(fabs(a-b)/(fabs(a)+fabs(b)+1e-300)>1e-12);
+						}
+						else if (strncmp(args[1], ">",1)==0)
+							go=(atof(args[0])>atof(args[2]));
+						else if (strncmp(args[1], "<",1)==0)
+							go=(atof(args[0])<atof(args[2]));
+						else
+							Warning("Warning at line %3d: ill formatted conditional (%s)\n",line_nr, args[1]);
+						
+						FreeArgs (args, 3);	
+						
+						if (!go)
+						{
+							/* scroll on to the next endif or else */
+							fgets(line, MAXSTRLEN-1, f);
+							line_nr++;
+							go=1;		
+							while((feof(f)==0)&&(go>0))
+							{							
+								begin=Begin(line);
+								while((begin)&&((*begin)!='#'))
+								{
+									begin=GetWord (begin, word);
+									key=LookupKey (word,  KeyTable);
+									if (key==ENDIF)
+										go--;
+									else if (key==IF)
+										go++;
+									else if ((go==1)&&(key==ELSE))
+										go=0;
+								}
+								if (go)
+								{
+									fgets(line, MAXSTRLEN-1, f);
+									line_nr++;
+								}			
+							}
+							line_nr++;
+						}
+						
+						break;
 					}	
+					case ELSE:
+					{
+						int go=1;
+						/* scroll on to the next endif */
+						fgets(line, MAXSTRLEN-1, f);
+						line_nr++;
+						while((feof(f)==0)&&(go>0))
+						{							
+							begin=Begin(line);
+							while((begin)&&((*begin)!='#'))
+							{
+								begin=GetWord (begin, word);
+								key=LookupKey (word,  KeyTable);
+								if (key==ENDIF)
+									go--;
+								else if (key==IF)
+									go++;
+							}
+							if (go)
+							{
+								fgets(line, MAXSTRLEN-1, f);
+								line_nr++;
+							}			
+						}
+						line_nr++;
+					}
+					case ENDIF:
+						break;
 					case SELECT_RECT:
 					{
 						double x1,x2,y1,y2;			
@@ -1904,6 +2002,31 @@ void Parse (char *file)
 						SelectAreaNodes (word,  Meshes, Nm);
 						break;
 					}	
+					case INVERTSELECT:
+					{
+						meshvar *MV;
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;								
+						MV=LookupMesh (word,  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);	
+										
+						if (MV->nodes[0]==0)
+							Error("* line %3d: No selection to invert\n",line_nr);	
+						else
+						{
+							int *oldlist, i;
+							oldlist=DuplicateList(MV->nodes);
+							Print(NORMAL,"* line %3d: Inverting selection in mesh %s", line_nr, MV->name);	
+							fflush(stdout);
+							MV->nodes[0]=0;
+							for (i=0;i<MV->M.Nn;i++)
+								if (!IsInList(oldlist, MV->M.nodes[i].id))
+									MV->nodes=AddToList(MV->nodes, MV->M.nodes[i].id);
+						}				
+						break;
+					}
 					case DESELECT:
 					{
 						meshvar *MV;
@@ -1946,6 +2069,32 @@ void Parse (char *file)
 							Print(NORMAL,"* line %3d: Assigning selected elements to area %s",line_nr, word);
 							fflush(stdout);
 							AssignProperties(&(MV->M), MV->nodes, P);
+						}					
+						break;
+					}
+					case DELETE_ELEMENTS:
+					{
+						meshvar *MV;
+						
+						begin=GetWord (begin, word);
+						if(word[0]=='\0')
+							goto premature_end;				
+						MV=LookupMesh (word,  Meshes, Nm);
+							
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);	
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							Print(NORMAL,"* line %3d: Cannot delete elements, no elements selected in mesh %s",line_nr, word);
+						}
+						else
+						{
+							Print(NORMAL,"* line %3d: deleting selected elements in mesh %s",line_nr, word);
+							fflush(stdout);
+							CleanUpMesh(&(MV->M), MV->nodes);
+							MV->nodes[0]=0;
 						}					
 						break;
 					}
@@ -4038,8 +4187,7 @@ premature_end:
 	free(loop_stack);
 	free(loop_line_nr);
 	free(line);
-	free(word);
-	DestroyExprEval();	
+	free(word);	
 	if (P.N)
 	{
 		free(P.x);

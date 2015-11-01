@@ -1750,13 +1750,14 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	int j;
 	int *list;
 	int MRG;
-	double R;	
+	double R, l;	
 	double newx1, newy1, newx2, newy2;
 	node *N, *Nl;
 	N=SearchNode(*M,id);	
 	/* check east nodes to merge with */
 	j=1;
 	MRG=1;	
+	l=N->y2-N->y1;
 	while ((j<=N->east[0])&&(MRG==1))
 	{
 		if (IsInList(merged, N->east[j]))
@@ -1774,10 +1775,13 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 				MRG=0;											
 			else if ((Nl->y2>N->y2+TINY)||(Nl->y1<N->y1-TINY))
 				MRG=0;	
+			else
+				l-=Nl->y2-Nl->y1;
 		}
 		j++;
 	}
-	
+	if (fabs(l)>TINY)
+		MRG=0;
 	R=(newx2-N->x1)/(N->y2-N->y1);
 	if (R>MaxR)
 		MRG=0;
@@ -1856,6 +1860,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	/*north*/	
 	j=1;
 	MRG=1;
+	l=N->x2-N->x1;
 	while ((j<=N->north[0])&&(MRG==1))
 	{
 		if (IsInList(merged, N->north[j]))
@@ -1872,10 +1877,14 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 			if (Nl->P!=N->P)
 				MRG=0;										
 			else if ((Nl->x2>N->x2+TINY)||(Nl->x1<N->x1-TINY))
-				MRG=0;	
+				MRG=0;		
+			else
+				l-=Nl->x2-Nl->x1;
 		}
 		j++;
 	}
+	if (fabs(l)>TINY)
+		MRG=0;
 	R=(N->x2-N->x1)/(newy2-N->y1);
 	if (R<1.0/MaxR)
 		MRG=0;		
@@ -1951,6 +1960,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	/* west */	
 	j=1;
 	MRG=1;
+	l=N->y2-N->y1;
 	while ((j<=N->west[0])&&(MRG==1))
 	{
 		if (IsInList(merged, N->west[j]))
@@ -1968,10 +1978,14 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 				MRG=0;										
 			else if ((Nl->y2>N->y2+TINY)||(Nl->y1<N->y1-TINY))
 				MRG=0;
+			else
+				l-=(Nl->y2-Nl->y1);
 		}	
 		j++;
 	}
 	
+	if (fabs(l)>TINY)
+		MRG=0;
 	R=(N->x2-newx1)/(N->y2-N->y1);
 	if (R>MaxR)
 		MRG=0;	
@@ -2049,6 +2063,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	/* south */
 	j=1;
 	MRG=1;
+	l=N->x2-N->x1;
 	while ((j<=N->south[0])&&(MRG==1))
 	{
 		if (IsInList(merged, N->south[j]))
@@ -2066,10 +2081,14 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 			if (Nl->P!=N->P)
 				MRG=0;						
 			else if ((Nl->x2>N->x2+TINY)||(Nl->x1<N->x1-TINY))
-				MRG=0;	
+				MRG=0;			
+			else
+				l-=Nl->x2-Nl->x1;
 		}
 		j++;
 	}
+	if (fabs(l)>TINY)
+		MRG=0;
 	R=(N->x2-N->x1)/(N->y2-newy1);
 	if (R<1.0/MaxR)
 		MRG=0;		
@@ -2297,6 +2316,8 @@ void Chunkify(mesh *M)
 		Print(DEBUG,"Round %i, %i nodes left",i, M->Nn);
 	}
 }
+
+
 
 /***************************************************************************
   The PVMOS binary file format is stupid. It just dumps the data structures 

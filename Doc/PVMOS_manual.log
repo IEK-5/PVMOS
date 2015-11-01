@@ -1,11 +1,11 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.5.27)  23 OCT 2015 18:10
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.10.16)  1 NOV 2015 23:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
 **PVMOS_manual.tex
 (./PVMOS_manual.tex
 LaTeX2e <2011/06/27>
-Babel <3.9k> and hyphenation patterns for 77 languages loaded.
+Babel <3.9k> and hyphenation patterns for 75 languages loaded.
 (/usr/share/texlive/texmf-dist/tex/latex/revtex4/revtex4.cls
 Document Class: revtex4 2001/08/02 v4.0 (http://publish.aps.org/revtex4/ for do
 cumentation)
@@ -232,7 +232,7 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 )
 \@float@every@codebox=\toks27
 \c@codebox=\count112
-
+ (./version.tex)
 
 LaTeX Warning: Unused global option(s):
     [letter].
@@ -240,23 +240,23 @@ LaTeX Warning: Unused global option(s):
 (./PVMOS_manual.aux)
 \openout1 = `PVMOS_manual.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-Class revtex4 Info: Patching array package. on input line 39.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 40.
+LaTeX Font Info:    ... okay on input line 40.
+Class revtex4 Info: Patching array package. on input line 40.
 Class revtex4 Info: Patching unrecognized longtable package. (Proceeding with f
-ingers crossed) on input line 39.
-Class revtex4 Info: cite was not loaded (OK!) on input line 39.
-Class revtex4 Info: multicol was not loaded (OK!) on input line 39.
+ingers crossed) on input line 40.
+Class revtex4 Info: cite was not loaded (OK!) on input line 40.
+Class revtex4 Info: multicol was not loaded (OK!) on input line 40.
 
 (/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
@@ -319,190 +319,189 @@ G,.JBIG2,.JB2,.eps]
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-LaTeX Font Info:    Try loading font information for U+msa on input line 46.
+LaTeX Font Info:    Try loading font information for U+msa on input line 47.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 46.
+LaTeX Font Info:    Try loading font information for U+msb on input line 47.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
-LaTeX Font Info:    Try loading font information for U+stmry on input line 46.
+LaTeX Font Info:    Try loading font information for U+stmry on input line 47.
 
 (/usr/share/texlive/texmf-dist/tex/latex/stmaryrd/Ustmry.fd)
 
 LaTeX Font Warning: Font shape `U/stmry/b/n' undefined
-(Font)              using `U/stmry/m/n' instead on input line 46.
+(Font)              using `U/stmry/m/n' instead on input line 47.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 52--59
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 52--59
+Underfull \hbox (badness 10000) in paragraph at lines 53--60
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 52--59
+Underfull \hbox (badness 10000) in paragraph at lines 53--60
 
  []
 
-[1{/usr/share/texlive/texmf-dist/fonts/map/pdftex/updmap/pdftex.map}] [2]
-[3]
-Overfull \hbox (8.0pt too wide) in alignment at lines 129--233
- [] [] 
- []
 
-LaTeX Font Info:    Try loading font information for OML+cmr on input line 336.
-
-(/usr/share/texlive/texmf-dist/tex/latex/base/omlcmr.fd
-File: omlcmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
-)
-LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <9> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 336.
-
-Overfull \hbox (8.0pt too wide) in alignment at lines 233--347
- [] [] 
- []
-
-[4] [5]
-Overfull \hbox (8.0pt too wide) in alignment at lines 347--487
- [] [] 
- []
-
-[6] [7]
-Overfull \hbox (8.0pt too wide) in alignment at lines 487--663
- [] [] 
- []
-
-[8] [9] [10]
-Overfull \hbox (8.0pt too wide) in alignment at lines 663--802
- [] [] 
- []
-
-[11] [12]
-Overfull \vbox (1.04996pt too high) has occurred while \output is active []
-
-
-[13]
-Overfull \hbox (8.0pt too wide) in alignment at lines 802--886
- [] [] 
- []
-
-[14] [15] [16] [17]
-Overfull \hbox (8.0pt too wide) in alignment at lines 886--913
- [] [] 
- []
-
-[18] [19]
-
-Package longtable Warning: Column widths have changed
-(longtable)                in table I on input line 913.
-
-[20]
-LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <10> not available
-(Font)              Font shape `OML/cmm/m/it' tried instead on input line 915.
-
-Underfull \hbox (badness 10000) in paragraph at lines 915--925
+Underfull \hbox (badness 10000) in paragraph at lines 53--60
 
  []
 
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 928.
+[1{/usr/share/texlive/texmf-dist/fonts/map/pdftex/updmap/pdftex.map}]
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 75.
 
 (/usr/share/texlive/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 928.
- [21] [22]
-Underfull \hbox (badness 10000) in paragraph at lines 984--986
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 75.
+LaTeX Font Info:    Try loading font information for OML+cmr on input line 80.
+
+(/usr/share/texlive/texmf-dist/tex/latex/base/omlcmr.fd
+File: omlcmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <10> not available
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 80.
+ [2] [3]
+Overfull \hbox (8.0pt too wide) in alignment at lines 139--243
+ [] [] 
+ []
+
+LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <9> not available
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 346.
+
+Overfull \hbox (8.0pt too wide) in alignment at lines 243--364
+ [] [] 
+ []
+
+[4] [5]
+Overfull \hbox (8.0pt too wide) in alignment at lines 364--485
+ [] [] 
+ []
+
+[6] [7]
+Overfull \hbox (8.0pt too wide) in alignment at lines 485--661
+ [] [] 
+ []
+
+
+Overfull \vbox (3.14975pt too high) has occurred while \output is active []
+
+
+[8] [9]
+Overfull \hbox (8.0pt too wide) in alignment at lines 661--814
+ [] [] 
+ []
+
+[10] [11] [12] [13] [14]
+Overfull \hbox (8.0pt too wide) in alignment at lines 814--898
+ [] [] 
+ []
+
+[15] [16] [17] [18]
+Overfull \hbox (8.0pt too wide) in alignment at lines 898--941
+ [] [] 
+ []
+
+[19] [20]
+
+Package longtable Warning: Column widths have changed
+(longtable)                in table I on input line 941.
+
+[21]
+Underfull \hbox (badness 10000) in paragraph at lines 943--953
+
+ []
+
+[22]
+Underfull \hbox (badness 10000) in paragraph at lines 1012--1014
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 984--986
+Underfull \hbox (badness 10000) in paragraph at lines 1012--1014
 
  []
 
-<Octave_PVMOS_Mesh_Topology.pdf, id=90, 381.27122pt x 355.68843pt>
+[23] <Octave_PVMOS_Mesh_Topology.pdf, id=93, 381.27122pt x 355.68843pt>
 File: Octave_PVMOS_Mesh_Topology.pdf Graphic file (type pdf)
 
 <use Octave_PVMOS_Mesh_Topology.pdf>
-Package pdftex.def Info: Octave_PVMOS_Mesh_Topology.pdf used on input line 1000
+Package pdftex.def Info: Octave_PVMOS_Mesh_Topology.pdf used on input line 1028
 .
 (pdftex.def)             Requested size: 203.99689pt x 190.31042pt.
 
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table III on input line 1018.
+(longtable)                in table III on input line 1046.
 
 
-Underfull \hbox (badness 2096) in paragraph at lines 1034--1035
+Underfull \hbox (badness 2096) in paragraph at lines 1062--1063
 []|\OT1/cmr/m/n/9 Photo-current den-sity for the mod-els ONED,
  []
 
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table V on input line 1058.
+(longtable)                in table V on input line 1086.
 
-[23 <./Octave_PVMOS_Mesh_Topology.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 1061--1064
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1061--1064
-
- []
-
-[24]
-Underfull \hbox (badness 10000) in paragraph at lines 1065--1067
+[24 <./Octave_PVMOS_Mesh_Topology.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 1089--1092
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1065--1067
+Underfull \hbox (badness 10000) in paragraph at lines 1089--1092
+
+ []
+
+[25]
+Underfull \hbox (badness 10000) in paragraph at lines 1093--1095
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1073--1076
+Underfull \hbox (badness 10000) in paragraph at lines 1093--1095
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1073--1076
+Underfull \hbox (badness 10000) in paragraph at lines 1101--1104
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1073--1076
+Underfull \hbox (badness 10000) in paragraph at lines 1101--1104
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1073--1076
+Underfull \hbox (badness 10000) in paragraph at lines 1101--1104
 
  []
 
-[25] [26]
+
+Underfull \hbox (badness 10000) in paragraph at lines 1101--1104
+
+ []
+
+[26] [27]
 
 Package longtable Warning: Table widths have changed. Rerun LaTeX.
 
-[27] (./PVMOS_manual.aux)
+[28] (./PVMOS_manual.aux)
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
  ) 
 Here is how much of TeX's memory you used:
- 4443 strings out of 493312
- 56905 string characters out of 6140261
- 209261 words of memory out of 5000000
- 7798 multiletter control sequences out of 15000+600000
+ 4447 strings out of 493339
+ 56943 string characters out of 6141381
+ 217107 words of memory out of 5000000
+ 7788 multiletter control sequences out of 15000+600000
  19148 words of font info for 73 fonts, out of 8000000 for 9000
  956 hyphenation exceptions out of 8191
  37i,14n,28p,1493b,330s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -527,10 +526,10 @@ t/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/share/texlive/texmf-dist/fonts
 /amsfonts/cm/cmtt9.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/
 uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
 
-Output written on PVMOS_manual.pdf (27 pages, 408882 bytes).
+Output written on PVMOS_manual.pdf (28 pages, 410300 bytes).
 PDF statistics:
- 287 PDF objects out of 1000 (max. 8388607)
- 189 compressed objects within 2 object streams
+ 290 PDF objects out of 1000 (max. 8388607)
+ 191 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  6 words of extra memory for PDF output out of 10000 (max. 10000000)
 

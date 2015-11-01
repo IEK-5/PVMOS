@@ -132,6 +132,7 @@ void MoveMesh(mesh *M, double x, double y);
 void RotateMesh(mesh *M, double x, double y, int d);
 void GetMeshBB(mesh *M, double *x1, double *y1, double *x2, double *y2);
 void SetMeshBB(mesh *M, double x1, double y1, double x2, double y2, int FixR);
+void CleanUpMesh(mesh *M, int *merged);
 void Chunkify(mesh *M);
 void WriteMesh(char *fn, mesh *M);
 void ReadMesh(char *fn, mesh *M);

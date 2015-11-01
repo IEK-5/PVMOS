@@ -30,6 +30,7 @@
 \newcommand{\pin}{\emph{pin}}
 \newcommand{\ea}{\emph{et al.}}
 \newcommand{\vect}[1]{\boldsymbol{#1}}
+\input{version.tex}
 
 
 % correct bad hyphenation here
@@ -37,7 +38,7 @@
 
 
 \begin{document}
-\title{PVMOS manual}
+\title{PVMOS manual - Version \version}
 
 \author{B.E. Pieters}%
 \email{b.pieters@fz-juelich.de}
@@ -46,7 +47,7 @@
 \maketitle
 
 \section{Introduction}
-This is (or rather will be as the current state of this document is far from finished) the manual for the Photo-Voltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{pvmos:2014}. The purpose of this document is to document how PVMOS is operated and installed. In the following sections I discuss in order, the installation, basic usage and operating principles and finally a detailed discussion of all available functions.
+This is the manual for the Photo-Voltaic MOdule Simulator (PVMOS). PVMOS is an ordinary differential equation solver using finite-differences specifically designed to electrically model solar modules. For more information on how that works I refer the reader to \cite{pvmos:2014}. The purpose of this document is to document how PVMOS is operated and installed. In the following sections I discuss in order, the installation, basic usage and operating principles and finally a detailed discussion of all available functions.
 
 \section{Disclaimer}
 If this software ever does anything you think I claim it does or should do, consider yourself lucky.\\ \\
@@ -57,19 +58,28 @@ redistribute under certain conditions. You should have received a copy of the GN
 Public License along with this program. If not, see <http://www.gnu.org/licenses/>.\\
 }\\
 
-
-\section{Basic Usage and operating principles}
-The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the file name describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this
-\begin{verbatim}
-pvmos [verbose-option] <input-file>
-\end{verbatim}
-where \texttt{[verbose-option]} is an option which how much information PVMOS outputs to stdout, and \texttt{<input-file>} is the plain text input file. We first describe the mesh data structure in more detail. 
-
+\section{What is PVMOS}
 In its essence PVMOS is a Poisson solver. The Poisson equation is solved for several stacked, 2D ``electrodes'', where each electrode is coupled to the electrodes above and below (note that a stack of 2D electrodes makes a 3D structure). The electrodes itself are simply conductors and behave linearly (Ohmic). However, the connection between the electrodes can be non-linear (e.g. a diode). Now, there are several limitations of the structures that PVMOS handles. The main limitation is that the meshes are 2D as in PVMOS all electrodes share the same 2D mesh. This means that PVMOS is specifically designed for flat layered structures. PVMOS uses straight forward finite-differences to solve the coupled Poisson equations. As such the 2D meshes in PVMOS divide the 2D surface in rectangular elements. Now every element in the mesh must be associated with certain properties. Storing properties on a per element basis would put a heavy burden on the memory resources. For that reason elements are grouped into ``areas'' where each area constitutes a certain combination of properties. A mesh therefore also contains a list of all areas and every element is a member of one of the areas in the mesh (note that an element is always assigned to one area, i.e. you need at least one area for every unique combination of local properties). Also note that as all electrodes share the same 2D mesh, one area contains the properties for all electrodes and connections between them.
 
-The PVMOS input file is processed sequentially and contains commands that create or modify meshes, perform a simulation, or export data to a file. A complete list of commands is presented in Section \ref{commref}. In PVMOS we can define more than one mesh at the same time. This is useful as it allows you to create new meshes by joining two meshes, e.g., to create several series connected cells in a thin-film module. In order to reference one particular mesh, each mesh has a name. This name must thus be provided to any command that operates on a mesh. Likewise, some commands operate on an area within a mesh and thus areas also have a name. To reference an area within a mesh we use the following syntax \texttt{<mesh-name>.<area-name>}, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis.
+PVMOS is a commandline program which must be given an file. The PVMOS input file is processed sequentially and contains commands that create or modify meshes, perform a simulation, or export data to a file. A complete list of commands is presented in Section \ref{commref}. In PVMOS we can define more than one mesh at the same time. This is useful as it allows you to create new meshes by joining two meshes, e.g., to create several series connected cells in a thin-film module. In order to reference one particular mesh, each mesh has a name. This name must thus be provided to any command that operates on a mesh. Likewise, some commands operate on an area within a mesh and thus areas also have a name. To reference an area within a mesh we use the following syntax \texttt{<mesh-name>.<area-name>}, i.e. the name of the mesh followed by a dot and the name of the area within that particular mesh. Sometimes we need to select elements in a mesh (for example when we want to assign a set of elements to a certain area). To this end each mesh has a list of selected elements. If you select elements in a mesh the list is occupied by the element ID's, after which you can do operations on the selected elements. Note that elements are selected on a per mesh basis.
 
 It may be useful to store intermediate results, especially as sometimes creating the mesh may take some time and you want to do many different calculations based on the same mesh. For such cases PVMOS has a binary file format to store complete meshes with all elements, areas, properties and simulation results. This mesh may be loaded later to continue where you left of. The primary focus is to store intermediate results and as such not much value is put on compatibility between different PVMOS versions, i.e. compatibility between the file format of different PVMOS versions is not guaranteed (in general compatibility will break if a new version makes any change in the mesh data structures). The binary format is also used for a dynamic library for GNU Octave (an open source tool largely compatible with Matlab), which allows you to generate a mesh for PVMOS within octave and store it in binary form for use in PVMOS. 
+
+\section{Basic Usage}
+The input for PVMOS is a plain text file with commands. To solve a problem PVMOS is typically called from the command line with as an argument the file name describing the problem. With these input files you can specify the geometry of your solar cell/module including the local properties such as electrode sheet resistances and solar cell properties. You can also specify which calculations you want PVMOS should perform and what data to save. A call to PVMOS from the command line looks like this
+\begin{verbatim}
+pvmos [options/variables] <input-file>
+\end{verbatim}
+where the optional argument \texttt{[options/variables]} is used to set options and define variables. Valid options and variable definitions are:
+\begin{itemize}
+\item{``-q''} Set verbosity level to quiet (i.e. supress all non essential output)
+\item{``-n''} Set verbosity level to normal 
+\item{``-v''} Set verbosity level to verbose
+\item{``-db''} Set verbosity level to debug
+\item{``-vf''} Indicates next argument is a variable file
+\item{``\textless name\textgreater=\textless value\textgreater''} Define variable \textless name\textgreater. Note there should be no white spaces within the definition
+\end{itemize}
+A variable file is a file with one variable per line of the form ``\textless name\textgreater=\textless value\textgreater''. In variable files all spaces are ignored. Lines that do not follow this format are ignored. Note that not all variable names are allowed, see Section \ref{expressions}. The last option must be the PVMOS input file, a plain text input file with commands for PVMOS.
 
 \section{Installation Instructions}	
 PVMOS is a command-line application written entirely in C. For the operation PVMOS depends on several libraries, most notably \texttt{cholmod}, for the solving of sparse linear systems. PVMOS has been tested on Linux and Windows systems. To install PVMOS you need to either compile the source, for which a Makefile is provided, or you need to download pre-compiled binaries for your system (if available). 
@@ -336,7 +346,17 @@ Keyword & Description \\
 \item \texttt{area-name}, Name of the mesh and area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{invertselect}	& Inverts a selection within a mesh, i.e. select all unselected elements. The command takes one argument.
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{deselect}	& deselects a selection within a mesh. The command takes one argument.
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{delete\_elements}	& deletes all selected elements from a mesh. The command takes one argument.
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
@@ -874,15 +894,23 @@ Keyword & Description \\
 \item \texttt{threshold}, Relative threshold for node splitting, a parameter between 0 and 1 that controls how aggressive the mesh is adapted, where lower values lead to a more aggressive mesh adaption (typical values between 0.3 and 0.5).
 \item \texttt{N\_step}, Number adaptive meshing iterations
 \end{enumerate}\\
-\multicolumn{2}{l}{\textsc{While loop}} \\*
+\multicolumn{2}{l}{\textsc{Conditionals}} \\*
 \hline
+\texttt{if}	&  Start an if conditional block. The \texttt{if} command takes three arguments
+\begin{enumerate}
+\item \texttt{value 1}, a (floating point) number
+\item \texttt{Comparison operator}, Comparison operator, one of ``\textless'', ``\textgreater'', ``=='',, ``!='' ``\textless ='', or ``\textgreater =''
+\item \texttt{value 2},  a (floating point) number
+\end{enumerate}\\
+\texttt{else}	&  Start an else block as part of an if conditional block. The \texttt{else} command takes no arguments\\
+\texttt{endif}	&  End a if conditional block. The \texttt{endif} command takes no arguments\\
 \texttt{while}	&  Start a while loop block. The \texttt{while} command takes three arguments
 \begin{enumerate}
 \item \texttt{value 1}, a (floating point) number
-\item \texttt{Comparison operator}, Comparison operator, one of ``\textless'', ``\textgreater'', ``==''``\textless ='', or ``\textgreater =''
+\item \texttt{Comparison operator}, Comparison operator, one of ``\textless'', ``\textgreater'', ``=='',, ``!='' ``\textless ='', or ``\textgreater =''
 \item \texttt{value 2},  a (floating point) number
 \end{enumerate}\\
-\texttt{endwhile}	&  End a while loop block. The \texttt{enwhile} command takes no arguments\\
+\texttt{endwhile}	&  End a while loop block. The \texttt{endwhile} command takes no arguments\\
 \multicolumn{2}{l}{\textsc{Verbosity levels}} \\*
 \hline
 Keyword & Description \\

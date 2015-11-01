@@ -9,7 +9,7 @@ obj_util=md5.o
 
 CC=gcc
 target=pvmos
-VERSION=0.75
+VERSION=0.78
 
 
 CFLAGS=-Ofast -flto -Wall -fPIC
@@ -25,7 +25,7 @@ WITH_LIBMATHEVAL=""
 
 pvmos: newversion $(obj)
 	$(CC) -o $(target)  $(obj) $(LFLAGS)
-install: pvmos
+install: pvmos doc
 	cp $(target) /usr/bin/
 utils.o: utils.c mesh2d.h utils.h
 	$(CC) $(CFLAGS)   -c -o utils.o -DVERSION=\"$(VERSION)\" utils.c
@@ -90,6 +90,10 @@ mkpvmosmesh.pkg: mesh2d.c utils.c list.c main.h mesh2d.h utils.h list.h meshhash
 	rm -rf  pvmos-mesh-$(VERSION)
 newversion:
 	sed -i 's/version [0-9\.]\+/version $(VERSION)/g' README.md
+doc:
+	cd Doc/;echo "\newcommand{\version}{$(VERSION)}" > version.tex
+	cd Doc/;pdflatex PVMOS_manual.tex
+	cd Doc/;pdflatex PVMOS_manual.tex	
 cleancopy:
 	mkdir -p CleanCopy
 	cp $(src) CleanCopy

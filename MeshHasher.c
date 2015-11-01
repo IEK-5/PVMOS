@@ -151,13 +151,13 @@ int main (int argc, char **argv)
 	fn=malloc((L_tmpnam+1)*sizeof(char));
 	fn=tmpnam (fn);
 #ifdef __MINGW32__ 
-	fn++;
+	fn++; /* whatever... */
 #endif
 	
 	/* create and save mesh */
 	M=InitMesh(name, x1, x2, y1, y2, Nx, Ny);
 	/* we need to test all diode models as PVMOS
-	   uses a void ponter to point to a model dependent data struct.
+	   uses a void pointer to point to a model dependent data struct.
 	   i.e. if a model data struct changes it may matter */
 	area=malloc(128*sizeof(char));	
 	
@@ -166,7 +166,7 @@ int main (int argc, char **argv)
 	NewProperties(&M, area);		
 	P=FindProperties(M, area);
 	if (P<0)
-		Error("Cannot fin the area I just created! Fix ur code!");
+		Error("Cannot find the area I just created! Fix ur code!");
 	if (M.P[P].conn[0].ParStruct)
 		free(M.P[P].conn[0].ParStruct);
 	M.P[P].conn[0].ParStruct=InitOneTwoDiodeStruct(&(M.P[P].conn[0].ParSize));
@@ -176,7 +176,7 @@ int main (int argc, char **argv)
 	NewProperties(&M, area);		
 	P=FindProperties(M, area);
 	if (P<0)
-		Error("Cannot fin the area I just created! Fix ur code!");
+		Error("Cannot find the area I just created! Fix ur code!");
 	if (M.P[P].conn[0].ParStruct)
 		free(M.P[P].conn[0].ParStruct);
 	M.P[P].conn[0].ParStruct=InitPhotoTransistorStruct(&(M.P[P].conn[0].ParSize));
