@@ -154,6 +154,7 @@ typedef enum {
 	_NORMAL,
 	_VERBOSE,
 	_DEBUG,
+	DEBUGCOMMAND,
 	NONE
 } PRSDEF;
 /* Keyword to key mapping struct */
@@ -279,6 +280,7 @@ const KeyWord KeyTable[] =
 	{"out_normal",_NORMAL},
 	{"out_verbose",_VERBOSE},
 	{"out_debug",_DEBUG},
+	{"debug",DEBUGCOMMAND},
       	{NULL, NONE}
 };
 

@@ -4167,6 +4167,9 @@ void Parse (char *file)
 						if(!fixverb)
 							verbose=DEBUG;
 						break;
+					case DEBUGCOMMAND:
+						/* I sometimes insert things here for testing purposes,  it is not intended for normal use */
+						break;
 					case NONE:
 						Warning("* line %3d: Warning: Word \"%s\" is not recognized\n", line_nr, word);			
 					default:

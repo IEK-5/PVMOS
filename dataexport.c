@@ -184,7 +184,7 @@ void SurfVPlotNearest(char *fn, mesh *M, int Vai, double x1, double y1, double x
 
 void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
 {
-	int i,j, k, ln_y=0, ln_x=0;
+	int i,j, k, ln_y=0, ln_x=0, notinmesh;
 	double x,y, x_step, y_step;
 	double **Ex, **Ey, *V;
 	FILE *f;
@@ -223,19 +223,20 @@ void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 			/* The FindPos routine searches a node by simply walking from the start node toward the desired coordinate */
 			/* It is thus useful to try and choose a start node as close as possible to the desired coordinate */
 			/* at the beginning of the routine we have no idea but after that we start always at a nearby node */
-			ln_y=FindPos(*M, ln_y, x, y);
-			N=*SearchNode(*M,ln_y);
-			LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
-			
-			fprintf(f,"%e %e", x, y);
-			for (k=0;k<M->Nel;k++)
-				fprintf(f," %e",V[k]);
-			fprintf(f,"\n");
+			ln_y=FindPos(*M, ln_y, x, y, &notinmesh);
+			if (!notinmesh)
+			{
+				N=*SearchNode(*M,ln_y);
+				LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
 				
+				fprintf(f,"%e %e", x, y);
+				for (k=0;k<M->Nel;k++)
+					fprintf(f," %e",V[k]);
+				fprintf(f,"\n");
+			}
 			if (j==0)
 				ln_x=ln_y;
 			y+=y_step;
-			
 		}
 		fprintf(f,"\n");
 		ln_y=ln_x;
@@ -254,7 +255,7 @@ void SurfVPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 
 void SurfVjPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
 {
-	int i,j, k, ln_y=0, ln_x=0;
+	int i,j, k, ln_y=0, ln_x=0, notinmesh;
 	double x,y, x_step, y_step;
 	double **Ex, **Ey, *V;
 	FILE *f;
@@ -290,20 +291,23 @@ void SurfVjPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, dou
 		{
 			node N;
 			double Vj;
-			ln_y=FindPos(*M, ln_y, x, y);
-			N=*SearchNode(*M,ln_y);
-			LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
-			fprintf(f,"%e %e", x, y);
-			for (k=0;k<M->Nel;k++)
+			ln_y=FindPos(*M, ln_y, x, y, &notinmesh);
+			if (!notinmesh)
 			{
-				if (k>0)
+				N=*SearchNode(*M,ln_y);
+				LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
+				fprintf(f,"%e %e", x, y);
+				for (k=0;k<M->Nel;k++)
 				{
-					Diode(*M, N, k-1, V[k-1]-V[k], NULL, NULL, &Vj);
-					fprintf(f," %e", Vj);
+					if (k>0)
+					{
+						Diode(*M, N, k-1, V[k-1]-V[k], NULL, NULL, &Vj);
+						fprintf(f," %e", Vj);
+					}
+					
 				}
-				
+				fprintf(f,"\n");
 			}
-			fprintf(f,"\n");
 			
 			if (j==0)
 				ln_x=ln_y;
@@ -327,7 +331,7 @@ void SurfVjPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, dou
 
 void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
 {
-	int i,j, k, ln_y=0, ln_x=0;
+	int i,j, k, ln_y=0, ln_x=0, notinmesh;
 	double x,y, x_step, y_step;
 	double **Ex, **Ey, **Jx, **Jy, *V;
 	FILE *f;
@@ -366,25 +370,28 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 			node N;
 			double P, Pj;
 			double I; 
-			ln_y=FindPos(*M, ln_y, x, y);
-			N=*SearchNode(*M,ln_y);
-			LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
-			fprintf(f,"%e %e", x, y);
-			for (k=0;k<M->Nel;k++)
+			ln_y=FindPos(*M, ln_y, x, y, &notinmesh);
+			if (!notinmesh)
 			{
-				P=sqrt((Jx[k][ln_y]*Jx[k][ln_y]+Jy[k][ln_y]*Jy[k][ln_y])*(Ex[k][ln_y]*Ex[k][ln_y]+Ey[k][ln_y]*Ey[k][ln_y]));
-				if (k>0)
+				N=*SearchNode(*M,ln_y);
+				LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
+				fprintf(f,"%e %e", x, y);
+				for (k=0;k<M->Nel;k++)
 				{
-					Diode(*M, N, k-1, V[k-1]-V[k], &I, NULL, NULL);
-					Pj=(V[k-1]-V[k])*I/((N.x2-N.x1)*(N.y2-N.y1));
-					fprintf(f," %e %e", Pj, P);
+					P=sqrt((Jx[k][ln_y]*Jx[k][ln_y]+Jy[k][ln_y]*Jy[k][ln_y])*(Ex[k][ln_y]*Ex[k][ln_y]+Ey[k][ln_y]*Ey[k][ln_y]));
+					if (k>0)
+					{
+						Diode(*M, N, k-1, V[k-1]-V[k], &I, NULL, NULL);
+						Pj=(V[k-1]-V[k])*I/((N.x2-N.x1)*(N.y2-N.y1));
+						fprintf(f," %e %e", Pj, P);
+					}
+					else
+						fprintf(f," %e", P);
+					
 				}
-				else
-					fprintf(f," %e", P);
-				
-			}
-			fprintf(f,"\n");
 			
+				fprintf(f,"\n");
+			}
 			if (j==0)
 				ln_x=ln_y;
 			y+=y_step;
@@ -402,7 +409,7 @@ void SurfPPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 }
 void SurfJPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
 {
-	int i,j, k, ln_y=0, ln_x=0;
+	int i,j, k, ln_y=0, ln_x=0, notinmesh;
 	double x,y, x_step, y_step;
 	double **Ex, **Ey, **Jx, **Jy, *V;
 	FILE *f;
@@ -441,24 +448,26 @@ void SurfJPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 		{	
 			node N;
 			double Jz;
-			ln_y=FindPos(*M, ln_y, x, y);
-			N=*SearchNode(*M,ln_y);
-			LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
-			fprintf(f,"%e %e", x, y);
-			for (k=0;k<M->Nel;k++)
+			ln_y=FindPos(*M, ln_y, x, y, &notinmesh);
+			if (!notinmesh)
 			{
-				if (k>0)
+				N=*SearchNode(*M,ln_y);
+				LocalVoltage(M, Vai, N, Ex, Ey, x, y, V);
+				fprintf(f,"%e %e", x, y);
+				for (k=0;k<M->Nel;k++)
 				{
-					Diode(*M, N, k-1, V[k-1]-V[k], &Jz, NULL, NULL);
-					Jz/=((N.x2-N.x1)*(N.y2-N.y1));
-					fprintf(f," %e %e %e", Jz, Jx[k][ln_y], Jy[k][ln_y]);
+					if (k>0)
+					{
+						Diode(*M, N, k-1, V[k-1]-V[k], &Jz, NULL, NULL);
+						Jz/=((N.x2-N.x1)*(N.y2-N.y1));
+						fprintf(f," %e %e %e", Jz, Jx[k][ln_y], Jy[k][ln_y]);
+					}
+					else
+						fprintf(f," %e %e", Jx[k][ln_y], Jy[k][ln_y]);
+					
 				}
-				else
-					fprintf(f," %e %e", Jx[k][ln_y], Jy[k][ln_y]);
-				
+				fprintf(f,"\n");
 			}
-			fprintf(f,"\n");
-			
 			if (j==0)
 				ln_x=ln_y;
 			y+=y_step;
@@ -476,7 +485,7 @@ void SurfJPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 }
 void SurfEPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, double y2, int Nx, int Ny)
 {
-	int i,j, k, ln_y=0, ln_x=0;
+	int i,j, k, ln_y=0, ln_x=0, notinmesh;
 	double x,y, x_step, y_step;
 	double **Ex, **Ey;
 	FILE *f;
@@ -506,12 +515,14 @@ void SurfEPlot(char *fn, mesh *M, int Vai, double x1, double y1, double x2, doub
 		y=y1;
 		for (j=0;j<=Ny;j++)
 		{	
-			ln_y=FindPos(*M, ln_y, x, y);
-			fprintf(f,"%e %e", x, y);
-			for (k=0;k<M->Nel;k++)
-				fprintf(f," %e %e", Ex[k][ln_y], Ey[k][ln_y]);
-			fprintf(f,"\n");
-			
+			ln_y=FindPos(*M, ln_y, x, y, &notinmesh);
+			if (!notinmesh)
+			{
+				fprintf(f,"%e %e", x, y);
+				for (k=0;k<M->Nel;k++)
+					fprintf(f," %e %e", Ex[k][ln_y], Ey[k][ln_y]);
+				fprintf(f,"\n");
+			}	
 			if (j==0)
 				ln_x=ln_y;
 			y+=y_step;
@@ -934,7 +945,7 @@ void PrintIV(char *fn, mesh *M)
 
 void PrintProbe(char *fn, mesh *M, double x, double y)
 {
-	int i,k;
+	int i,k, notinmesh;
 	double **Ex, **Ey, *V;
 	node N;
 	FILE *f;
@@ -955,17 +966,21 @@ void PrintProbe(char *fn, mesh *M, double x, double y)
 		Ey[i]=malloc(M->Nn*sizeof(double));
 	}
 	                              
-	N=*SearchNode(*M,FindPos(*M, 0, x, y));
-	
-	for (i=0;i<M->res.Nva;i++)
+	N=*SearchNode(*M,FindPos(*M, 0, x, y, &notinmesh));
+	if (notinmesh)
+		Warning("Probe coordinate (%e,%e) is not in the mesh\n", x,y);
+	else
 	{
-		/* compute the electric field in each node for each electrode */
-		Jfield(M, i, NULL, NULL, Ex, Ey);
-		LocalVoltage(M, i, N, Ex, Ey, x, y, V);
-		fprintf(f,"%e",M->res.Va[i]);
-		for (k=0;k<M->Nel;k++)
-			fprintf(f," %e",V[k]);
-		fprintf(f,"\n");
+		for (i=0;i<M->res.Nva;i++)
+		{
+			/* compute the electric field in each node for each electrode */
+			Jfield(M, i, NULL, NULL, Ex, Ey);
+			LocalVoltage(M, i, N, Ex, Ey, x, y, V);
+			fprintf(f,"%e",M->res.Va[i]);
+			for (k=0;k<M->Nel;k++)
+				fprintf(f," %e",V[k]);
+			fprintf(f,"\n");
+		}
 	}
 	for (i=0;i<M->Nel;i++)
 	{
@@ -1085,7 +1100,7 @@ void PrintInIp(char *fn, mesh *M, int *selected)
 /* select nodes along the points in a grid, i.e. select those nodes which contain the points in a grid */
 int * ListGridNodes(mesh M, double x1, double y1, double x2, double y2, int Nx, int Ny, int *list, int *index)
 {
-	int i,j, ln_y=0, ln_x=0;
+	int i,j, ln_y=0, ln_x=0, notinmesh;
 	double x,y, x_step, y_step;
 	/* scan a regular mesh */
 	x_step=(x2-x1)/((double)Nx);
@@ -1097,8 +1112,9 @@ int * ListGridNodes(mesh M, double x1, double y1, double x2, double y2, int Nx, 
 		y=y1;
 		for (j=0;j<=Ny;j++)
 		{
-			ln_y=FindPos(M, ln_y, x, y);
-			list=AddToList(list, ln_y);
+			ln_y=FindPos(M, ln_y, x, y, &notinmesh);
+			if (!notinmesh)
+				list=AddToList(list, ln_y);
 			if (j==0)
 				ln_x=ln_y;
 			y+=y_step;
@@ -1113,8 +1129,9 @@ int * ListGridNodes(mesh M, double x1, double y1, double x2, double y2, int Nx, 
 		y=y1;
 		for (j=0;j<=Ny;j++)
 		{
-			ln_y=FindPos(M, ln_y, x, y);
-			FindInList(ln_y, list, index+i*(Ny+1)+j);
+			ln_y=FindPos(M, ln_y, x, y, &notinmesh);
+			if (!notinmesh)
+				FindInList(ln_y, list, index+i*(Ny+1)+j);
 			if (j==0)
 				ln_x=ln_y;
 			y+=y_step;
@@ -1186,7 +1203,7 @@ void PrintLocalJV(char *fn, mesh M, double x, double y, int inter_index, double 
 {
 	FILE *f;
 	node N;
-	int id, i;
+	int id, i, notinmesh;
 	double V, dV, I, Vj;
 	if ((f=fopen(fn,"w"))==NULL)
 	{
@@ -1199,30 +1216,34 @@ void PrintLocalJV(char *fn, mesh M, double x, double y, int inter_index, double 
 	fprintf(f, "# U [V]\tJp [A/cm^2]\tUj [V]\n");
 	
 	/* find local node */
-	id=FindPos(M, 0, x, y);
+	id=FindPos(M, 0, x, y, &notinmesh);
+	if (notinmesh)
+		Warning("Position (%e,%e) is not in the mesh\n", x, y);
+	else
+	{	
+		/* copy node, to edit it */
+		DuplicateNode(M, &N, id);
 	
-	/* copy node, to edit it */
-	DuplicateNode(M, &N, id);
-	
-	/* make node 1 cm^2 so the current is equal to the current-density */
-	N.x1=0;
-	N.x2=1;
-	N.y1=0;
-	N.y2=1;
-	
-	if (Nstep==0)
-		Nstep++;
-	dV=Vend-Vstart;	
-	for (i=0;i<=Nstep;i++)
-	{
-		V=Vstart+dV*(double)i/(double)Nstep;
-		Diode(M, N, inter_index, V, &I, NULL, &Vj);
-		fprintf(f,"%e %e %e\n", V, I, Vj);
+		/* make node 1 cm^2 so the current is equal to the current-density */
+		N.x1=0;
+		N.x2=1;
+		N.y1=0;
+		N.y2=1;
 		
-	}
+		if (Nstep==0)
+			Nstep++;
+		dV=Vend-Vstart;	
+		for (i=0;i<=Nstep;i++)
+		{
+			V=Vstart+dV*(double)i/(double)Nstep;
+			Diode(M, N, inter_index, V, &I, NULL, &Vj);
+			fprintf(f,"%e %e %e\n", V, I, Vj);
+			
+		}
 	
-	free(N.north);
-	free(N.south);
-	free(N.east);
-	free(N.west);
+		free(N.north);
+		free(N.south);
+		free(N.east);
+		free(N.west);
+	}
 }

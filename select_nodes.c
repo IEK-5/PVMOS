@@ -64,7 +64,7 @@ node *NextNodeNE(mesh M, node *N, double a, double b)
 	node *N2;
 	int i;
 	if (a<0)
-		Error("Cannot open follow line y=%e x + %e in north-east direction\n", a,b);
+		Error("Cannot follow line y=%e x + %e in north-east direction\n", a,b);
 	x=(N->y2-b)/a;
 	if ((x>=N->x1)&&(x<=N->x2))
 		for (i=1;i<=N->north[0];i++)
@@ -93,7 +93,7 @@ node *NextNodeSW(mesh M, node *N, double a, double b)
 	node *N2;
 	int i;
 	if (a<0)
-		Error("Cannot open follow line y=%e x + %e in north-east direction\n", a,b);
+		Error("Cannot follow line y=%e x + %e in north-east direction\n", a,b);
 	x=(N->y1-b)/a;
 	if ((x>=N->x1)&&(x<=N->x2))
 		for (i=1;i<=N->south[0];i++)
@@ -122,7 +122,7 @@ node *NextNodeNW(mesh M, node *N, double a, double b)
 	node *N2;
 	int i;
 	if (a>0)
-		Error("Cannot open follow line y=%e x + %e in north-west direction\n", a,b);
+		Error("Cannot follow line y=%e x + %e in north-west direction\n", a,b);
 	x=(N->y2-b)/a;
 	if ((x>=N->x1)&&(x<=N->x2))
 		for (i=1;i<=N->north[0];i++)
@@ -151,7 +151,7 @@ node *NextNodeSE(mesh M, node *N, double a, double b)
 	node *N2;
 	int i;
 	if (a>0)
-		Error("Cannot open follow line y=%e x + %e in north-west direction\n", a,b);
+		Error("Cannot follow line y=%e x + %e in north-west direction\n", a,b);
 	x=(N->y1-b)/a;
 	if ((x>=N->x1)&&(x<=N->x2))
 		for (i=1;i<=N->south[0];i++)
@@ -173,12 +173,13 @@ node *NextNodeSE(mesh M, node *N, double a, double b)
 }
 
 
-int FindPos(mesh M, int id, double x, double y)
+int FindPos(mesh M, int id, double x, double y, int *NOTINMESH)
 /* find the node within which the coordinate x,y falls */
 {
-	double a,b, xx, yy, d, mind;
+	double a,b, xx, yy;
 	int n_id;
 	node *N;
+	*NOTINMESH=0;
 	N=SearchNode(M, id);
 	n_id=N->id;
 	/* parameterize the line from current node center to desired point */
@@ -213,23 +214,17 @@ int FindPos(mesh M, int id, double x, double y)
 			N=NULL;	
 	}
 	/* That did not work */
-	/* It could be that the coordinate is not within the mesh or the shape of the mesh is such that ther is no straight line */
+	/* It could be that the coordinate is not within the mesh or the shape of the mesh is such that there is no straight line */
 	/* between start and end which connects the two. Here we do a brute force search */
-	Warning("Warning: could not follow a straight line from\n(%e,%e)\nto\n(%e,%e)\nwithin the mesh\n", xx, yy, x, y);
 	/* fallback option, check all nodes */
-	mind=(y-yy)*(y-yy)+(x-xx)*(x-xx);
-	for (id=1;id<M.Nn;id++)
+	for (id=0;id<M.Nn;id++)
 	{
 		N=SearchNode(M, id);
-		xx=(N->x1+N->x2)/2;
-		yy=(N->y1+N->y2)/2;
-		d=(y-yy)*(y-yy)+(x-xx)*(x-xx);
-		if (d<mind)
-			n_id=N->id;
-		if ((x>=N->x1)&&(x<=N->x2)&&(y>=N->y1)&&(y<=N->y2))
+		if ((x-N->x1>=-TINY)&&(N->x2-x>=-TINY)&&(y-N->y1>=-TINY)&&(N->y2-y>=-TINY))
 			return N->id;
 	}
-	Warning("Warning: No node at coordinate (%e,%e), returning closest node\n", x, y);
+	/* position is not in the mesh */
+	*NOTINMESH=1;
 	return n_id;
 }
 
@@ -291,7 +286,7 @@ int IsInPolygon_(polygon P, double x, double y)
 }
 
 
-/* less naive, use Jordan curve theorem with a horizobal line through the point of interest*/
+/* less naive, use Jordan curve theorem with a horizontal line through the point of interest*/
 int IsInPolygon(polygon P, double x, double y)
 {
 	int i=0, c=0;

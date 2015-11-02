@@ -350,6 +350,7 @@ void NodeConnector(node *N1, node *N2)
 	}
 }
 
+
 int * MeshOutline(mesh M)
 /* create a list of nodes which lie along the edges of the mesh */
 {
@@ -359,8 +360,54 @@ int * MeshOutline(mesh M)
 	list[0]=0;	
 	
 	for (i=0;i<M.Nn;i++)
+	{
 		if ((M.nodes[i].north[0]==0) || (M.nodes[i].south[0]==0) || (M.nodes[i].east[0]==0) || (M.nodes[i].west[0]==0))
 			list=AddToList(list, M.nodes[i].id);
+		else
+		{
+			int j;
+			double l;
+			l=M.nodes[i].x2-M.nodes[i].x1;
+			for (j=1;j<=M.nodes[i].north[0];j++)
+			{
+				node *N;
+				N=SearchNode(M, M.nodes[i].north[j]);
+				l-=(MIN(M.nodes[i].x2,  N->x2)-MAX(M.nodes[i].x1, N->x1));
+			}
+			if (l>TINY)
+				list=AddToList(list, M.nodes[i].id);	
+			l=M.nodes[i].x2-M.nodes[i].x1;
+			for (j=1;j<=M.nodes[i].south[0];j++)
+			{
+				node *N;
+				N=SearchNode(M, M.nodes[i].south[j]);
+				l-=(MIN( M.nodes[i].x2,  N->x2)-MAX(M.nodes[i].x1, N->x1));
+			}
+			if (l>TINY)
+				list=AddToList(list, M.nodes[i].id);
+				
+			l=M.nodes[i].y2-M.nodes[i].y1;
+			for (j=1;j<=M.nodes[i].east[0];j++)
+			{
+				node *N;
+				N=SearchNode(M, M.nodes[i].east[j]);
+				l-=(MIN( M.nodes[i].y2,  N->y2)-MAX(M.nodes[i].y1, N->y1));
+			}
+			if (l>TINY)
+				list=AddToList(list, M.nodes[i].id);
+			
+			l=M.nodes[i].y2-M.nodes[i].y1;	
+			for (j=1;j<=M.nodes[i].west[0];j++)
+			{
+				node *N;
+				N=SearchNode(M, M.nodes[i].west[j]);
+				l-=(MIN( M.nodes[i].y2,  N->y2)-MAX(M.nodes[i].y1, N->y1));
+			}
+			if (l>TINY)
+				list=AddToList(list, M.nodes[i].id);
+		
+		}
+	}
 	return list;
 }
 
@@ -373,8 +420,24 @@ int * MeshNorthEnd(mesh M)
 	list[0]=0;	
 	
 	for (i=0;i<M.Nn;i++)
+	{
 		if ((M.nodes[i].north[0]==0))
 			list=AddToList(list, M.nodes[i].id);
+		else
+		{
+			int j;
+			double l;
+			l=M.nodes[i].x2-M.nodes[i].x1;
+			for (j=1;j<=M.nodes[i].north[0];j++)
+			{
+				node *N;
+				N=SearchNode(M, M.nodes[i].north[j]);
+				l-=(MIN( M.nodes[i].x2,  N->x2)-MAX(M.nodes[i].x1, N->x1));
+			}
+			if (l>TINY)
+				list=AddToList(list, M.nodes[i].id);
+		}
+	}
 	return list;
 }
 
@@ -387,8 +450,24 @@ int * MeshSouthEnd(mesh M)
 	list[0]=0;	
 	
 	for (i=0;i<M.Nn;i++)
+	{
 		if ((M.nodes[i].south[0]==0))
 			list=AddToList(list, M.nodes[i].id);
+		else
+		{
+			int j;
+			double l;
+			l=M.nodes[i].x2-M.nodes[i].x1;				
+			for (j=1;j<=M.nodes[i].south[0];j++)
+			{
+				node *N;
+				N=SearchNode(M, M.nodes[i].south[j]);
+				l-=(MIN( M.nodes[i].x2,  N->x2)-MAX(M.nodes[i].x1, N->x1));
+			}
+			if (l>TINY)
+				list=AddToList(list, M.nodes[i].id);
+		}
+	}
 	return list;
 }
 
@@ -401,8 +480,24 @@ int * MeshWestEnd(mesh M)
 	list[0]=0;	
 	
 	for (i=0;i<M.Nn;i++)
+	{
 		if ((M.nodes[i].west[0]==0))
 			list=AddToList(list, M.nodes[i].id);
+		else
+		{
+			int j;
+			double l;				
+			l=M.nodes[i].y2-M.nodes[i].y1;
+			for (j=1;j<=M.nodes[i].west[0];j++)
+			{
+				node *N;
+				N=SearchNode(M, M.nodes[i].west[j]);
+				l-=(MIN( M.nodes[i].y2,  N->y2)-MAX(M.nodes[i].y1, N->y1));
+			}
+			if (l>TINY)
+				list=AddToList(list, M.nodes[i].id);
+		}
+	}
 	return list;
 }
 
@@ -415,8 +510,24 @@ int * MeshEastEnd(mesh M)
 	list[0]=0;	
 	
 	for (i=0;i<M.Nn;i++)
+	{
 		if ((M.nodes[i].east[0]==0))
 			list=AddToList(list, M.nodes[i].id);
+		else
+		{
+			int j;
+			double l;				
+			l=M.nodes[i].y2-M.nodes[i].y1;
+			for (j=1;j<=M.nodes[i].east[0];j++)
+			{
+				node *N;
+				N=SearchNode(M, M.nodes[i].east[j]);
+				l-=(MIN( M.nodes[i].y2,  N->y2)-MAX(M.nodes[i].y1, N->y1));
+			}
+			if (l>TINY)
+				list=AddToList(list, M.nodes[i].id);
+		}
+	}
 	return list;
 }
 

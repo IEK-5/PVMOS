@@ -46,7 +46,7 @@ typedef struct polygon {
 	int N;
 } polygon;
 
-int FindPos(mesh M, int id, double x, double y);
+int FindPos(mesh M, int id, double x, double y, int *NOTINMESH);
 int * PolySelectNodes(polygon P, mesh M, int *sel_nodes);
 int * PolyContourSelectNodes(double d, polygon P, int loop, mesh M, int *sel_nodes);
 int * CircSelectNodes(double x, double y, double r, mesh M, int *sel_nodes);
