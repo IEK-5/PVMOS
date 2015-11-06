@@ -185,7 +185,7 @@ Keyword & Description \\
 \item \texttt{mesh3-name}, Name of the resulting mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{joinmesh\_h}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes a y-offset value as input which allow you to "shift" the second mesh in the y-direction to align it to the first. The x-offset value is the maximal x-value found in the first mesh. The command takes 4 arguments:
+\texttt{joinmesh\_h}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes a y-offset value as input which allow you to "shift" the second mesh in the y-direction to align it to the first. The x-offset is computed such that the meshes touch but do not overlap (if possible with the given y-offset). The command takes 4 arguments:
 \begin{enumerate}
 \item \texttt{y\_off}, y-offset in coordinate system of the second mesh 
 \item \texttt{mesh1-name}, Name of the first mesh
@@ -193,7 +193,7 @@ Keyword & Description \\
 \item \texttt{mesh3-name}, Name of the resulting mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{joinmesh\_v}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes an x-offset value as input which allow you to "shift" the second mesh in the x-direction to align it to the first. The y-offset value is the maximal y-value found in the first mesh. The command takes 4 arguments:
+\texttt{joinmesh\_v}	& Create new mesh by joining two meshes. Make sure the meshes touch but do not overlap. The function takes an x-offset value as input which allow you to "shift" the second mesh in the x-direction to align it to the first. The y-offset is computed such that the meshes touch but do not overlap (if possible with the given x-offset). The command takes 4 arguments:
 \begin{enumerate}
 \item \texttt{x\_off}, x-offset in coordinate system of the second mesh 
 \item \texttt{mesh1-name}, Name of the first mesh
@@ -680,7 +680,7 @@ Keyword & Description \\
 \item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
 \item \texttt{Eg}, Band gap ($eV$)
 \end{enumerate}\\
-\texttt{set\_PTJV}	&  Specify the photo-transistor model for the JV characteristics per area. If the specified area does not exist it will be newly created. See the command \texttt{set\_PTJV\_extra} to set extra parameters for the model. The command takes eleven arguments:
+\texttt{set\_PTJV}	&  Specify the photo-transistor model for the JV characteristics per area.  See reference \cite{Walter:photo-T} for details on the photo-transistor model for solar cells. If the specified area does not exist it will be newly created. See the command \texttt{set\_PTJV\_extra} to set extra parameters for the model. The command takes eleven arguments:
 \begin{enumerate}
 \item \texttt{area-name}, Name of the area (\textless mesh-name\textgreater .\textless area-name\textgreater )
 \item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
@@ -693,7 +693,7 @@ Keyword & Description \\
 \item \texttt{Bf},  Forward operation gain 
 \item \texttt{Vaf},  Forward operation Early voltage (V)
 \end{enumerate}\\
-\texttt{set\_PTJV\_extra}	&  Specify extra parameters for the photo-transistor model for the JV characteristics per area. To use this command you must first set the photo-transistor model with the command \texttt{set\_PTJV}. The command takes ten arguments:
+\texttt{set\_PTJV\_extra}	&  Specify extra parameters for the photo-transistor model for the JV characteristics per area. See reference \cite{Walter:photo-T} for details on the photo-transistor model for solar cells. To use this command you must first set the photo-transistor model with the command \texttt{set\_PTJV}. The command takes ten arguments:
 \begin{enumerate}
 \item \texttt{Jse},  Dark satuartion current of the leakage BE diode ($\text{A}\text{cm}^{-2}$)
 \item \texttt{Jsc},  Dark satuartion current of the leakage BC diode ($\text{A}\text{cm}^{-2}$)
@@ -763,7 +763,7 @@ Keyword & Description \\
 \item \texttt{Rsh}, Shunt resistance ($\Omega \text{cm}^2$)
 \item \texttt{Eg}, Band gap ($eV$)
 \end{enumerate}\\
-\texttt{set\_sel\_PTJV}	&  Specify the photo-transistor model for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area.See the command \texttt{set\_sel\_PTJV\_extra} to set extra parameters for the model. The command takes eleven arguments:
+\texttt{set\_sel\_PTJV}	&  Specify the photo-transistor model (see reference \cite{Walter:photo-T} for details on the photo-transistor model for solar cells) for the JV characteristics per selection, i.e. change a parameter for all elements within a selection. If no elements are selected this command sets a parameter for all areas. If elements are selected this command may create new areas to make sure the change is confined to the selected elements. To do this it appends an area modifier name to existing area names. If the modified area name already exists the modifications are applied to this existing area.See the command \texttt{set\_sel\_PTJV\_extra} to set extra parameters for the model. The command takes eleven arguments:
 \begin{enumerate}
 \item \texttt{area-name},  Area name modifier (\textless mesh-name\textgreater .\textless modifier\textgreater )
 \item \texttt{connection-index}, Index of the connection. The first connection, between electrode 0 and 1,  has index 0
@@ -776,7 +776,7 @@ Keyword & Description \\
 \item \texttt{Bf},  Forward operation gain 
 \item \texttt{Vaf},  Forward operation Early voltage (V)
 \end{enumerate}\\
-\texttt{set\_sel\_PTJV\_extra}	&  Specify extra parameters for the photo-transistor model for the JV characteristics per selection. To use this command you must first set the photo-transistor model with the command \texttt{set\_sel\_PTJV}. The command takes ten arguments:
+\texttt{set\_sel\_PTJV\_extra}	&  Specify extra parameters for the photo-transistor model (see reference \cite{Walter:photo-T} for details on the photo-transistor model for solar cells) for the JV characteristics per selection. To use this command you must first set the photo-transistor model with the command \texttt{set\_sel\_PTJV}. The command takes ten arguments:
 \begin{enumerate}
 \item \texttt{Jse},  Dark satuartion current of the leakage BE diode ($\text{A}\text{cm}^{-2}$)
 \item \texttt{Jsc},  Dark satuartion current of the leakage BC diode ($\text{A}\text{cm}^{-2}$)
@@ -924,6 +924,11 @@ Keyword & Description \\
 \texttt{tic}	&  Start the timer.\\
 \texttt{toc}	&  Print seconds since last \texttt{tic} command (or start of execution if no \texttt{tic} command was issued)\\
 \texttt{define}	&  Define a variable. PVMOS variables only support numerical values. These variables can be used wherever a numerical value is required (see Section \ref{expressions}). The command takes two arguments:
+\begin{enumerate}
+\item \texttt{name}, name of the variable
+\item \texttt{value}, value of the variable
+\end{enumerate}\\
+\texttt{ifndef}	&  Conditionally define a variable, defines a variable only if it is not already defined. PVMOS variables only support numerical values. These variables can be used wherever a numerical value is required (see Section \ref{expressions}). As it is possible to pass variables to PVMOS at runtime, this way of defining variables allows you to change the value of a variable from its default value to a value defined at runtime. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{name}, name of the variable
 \item \texttt{value}, value of the variable
@@ -1144,6 +1149,10 @@ B.~E. Pieters, ``{PVMOS: A Free and Open Source Simulation Tool for Solar Module
 T.~A. Davis. (retrieved 22 May 2014) {BLAS performance bug and its effect on
   sparse "bench" in MATLAB 7.4}. [Online]. Available:
   \url{http://www.cise.ufl.edu/research/sparse/cholmod/blasbug.html}
+
+\bibitem{Walter:photo-T}
+T. Ott, Thomas Walter, and Thomas Unold. ``{Phototransistor effects in Cu(In,Ga)Se2 solar cells},'' Thin Solid Films 535, 275-278, 2013.
+
 \end{thebibliography}
 % that's all folks
 \end{document}

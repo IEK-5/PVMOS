@@ -9,7 +9,7 @@ obj_util=md5.o
 
 CC=gcc
 target=pvmos
-VERSION=0.78
+VERSION=0.79
 
 
 CFLAGS=-Ofast -flto -Wall -fPIC
@@ -94,13 +94,19 @@ doc:
 	cd Doc/;echo "\newcommand{\version}{$(VERSION)}" > version.tex
 	cd Doc/;pdflatex PVMOS_manual.tex
 	cd Doc/;pdflatex PVMOS_manual.tex	
-cleancopy:
-	mkdir -p CleanCopy
-	cp $(src) CleanCopy
-	cp $(hdr) CleanCopy
-	cp $(src_util) CleanCopy
-	cp $(hdr_util) CleanCopy
-	cp README.md CleanCopy
-	cp Makefile CleanCopy
+cleancopy: doc
+	mkdir -p PVMOS-${VERSION}
+	cp $(src) PVMOS-${VERSION}
+	cp $(hdr) PVMOS-${VERSION}
+	cp $(src_util) PVMOS-${VERSION}
+	cp $(hdr_util) PVMOS-${VERSION}
+	cp README.md PVMOS-${VERSION}
+	cp Makefile PVMOS-${VERSION}
+	mkdir -p PVMOS-${VERSION}/Doc
+	cp Doc/PVMOS_manual.tex PVMOS-${VERSION}/Doc
+	cp Doc/version.tex PVMOS-${VERSION}/Doc
+	cp Doc/Octave_PVMOS_Mesh_Topology.pdf PVMOS-${VERSION}/Doc
+	tar -zcvf PVMOS-${VERSION}.tar.gz PVMOS-${VERSION}  
+	rm -rf PVMOS-${VERSION}
 clean:
 	-rm *.o *.oct $(target) pvmos-mesh-$(VERSION).tar.gz MeshHasher

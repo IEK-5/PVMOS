@@ -1,4 +1,4 @@
-VERSION=0.77
+VERSION=0.78
 CC=gcc
 CFLAGS=-Ofast -flto -Wall -fPIC
 mkpvmosmesh: mesh2d.o utils.o list.o main.h diode.o phototransistor.o

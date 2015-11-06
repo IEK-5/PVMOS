@@ -148,25 +148,28 @@ static char *GetWord (char *begin, char *word)
 			expr=strncpy(expr,be+1,ee-be-1);
 			expr[ee-be-1]='\0';
 			
-			if (ExprEval(expr, res))
+			if (ExprEval(expr, res)) 
 				Error("Failed to evaluate expression: \"%s\"\n", expr);
-			p=res+strlen(res);
-			q=ee+1;
-			while ((*q)&&(p-res+be-word<MAXSTRLEN))
+			else
 			{
-				*p=*q;
-				q++;
-				p++;
+				p=res+strlen(res);
+				q=ee+1;
+				while ((*q)&&(p-res+be-word<MAXSTRLEN))
+				{
+					*p=*q;
+					q++;
+					p++;
+				}
+				*p='\0';
+				p=res;
+				while (*p)
+				{
+					*be=*p;
+					be++;
+					p++;
+				}
+				*be='\0';
 			}
-			*p='\0';
-			p=res;
-			while (*p)
-			{
-				*be=*p;
-				be++;
-				p++;
-			}
-			*be='\0';
 			free(expr);
 			free(res);
 		}
@@ -174,6 +177,21 @@ static char *GetWord (char *begin, char *word)
 			/* we have no '[', no more expression in the word */
 			parseExp=0;
 	}
+	return begin;
+}
+
+static char *GetWord_noexp (char *begin, char *word)
+{
+	char *end;
+	if(!begin)
+	{
+		*word='\0';
+		return NULL;
+	}
+	end=End(begin);	
+	word=strncpy(word,begin,end-begin);
+	word[end-begin]='\0';
+	begin=Begin(end);
 	return begin;
 }
 
@@ -487,7 +505,7 @@ void Parse (char *file)
 	int Nm=0, k;
 	int line_nr=1;
 	int *loop_line_nr;
-	fpos_t *loop_stack, last_pos; 
+	long int *loop_stack, last_pos; 
 	int loop=0, loop_allocated=LOOPALLOCBLOCK;
 	clock_t tic, toc;
 	PRSDEF key;
@@ -495,7 +513,7 @@ void Parse (char *file)
 	
 	P.N=0;
 	
-	if ((f=fopen(file,"r"))==NULL)
+	if ((f=fopen(file,"rb"))==NULL)
 		Error("In Parse: Cannot open file %s\n", file);
 	
 
@@ -504,10 +522,10 @@ void Parse (char *file)
 	
 	Meshes=malloc((Nm+1)*sizeof(meshvar));
 	
-	loop_stack=malloc(loop_allocated*sizeof(fpos_t));
+	loop_stack=malloc(loop_allocated*sizeof(long int));
 	loop_line_nr=malloc(loop_allocated*sizeof(int));
 	
-	fgetpos(f, &last_pos);
+	last_pos=ftell(f);
     	fgets(line, MAXSTRLEN-1, f);
 	
 	tic = clock();
@@ -1758,7 +1776,7 @@ void Parse (char *file)
 							if (loop+1==LOOPALLOCBLOCK-1)
 							{
 								loop_allocated+=LOOPALLOCBLOCK;
-								loop_stack=realloc(loop_stack, loop_allocated*sizeof(fpos_t));
+								loop_stack=realloc(loop_stack, loop_allocated*sizeof(long int));
 								loop_line_nr=realloc(loop_line_nr, loop_allocated*sizeof(int));
 							}
 							loop_line_nr[loop]=line_nr-1;
@@ -1776,7 +1794,7 @@ void Parse (char *file)
 								begin=Begin(line);
 								while((begin)&&((*begin)!='#'))
 								{
-									begin=GetWord (begin, word);
+									begin=GetWord_noexp (begin, word);
 									key=LookupKey (word,  KeyTable);
 									if (key==ENDWHILE)
 										go--;
@@ -1803,7 +1821,7 @@ void Parse (char *file)
 							goto premature_end;						
 						}
 						loop--;		
-						fsetpos(f, loop_stack+loop);
+						fseek(f, loop_stack[loop], SEEK_SET);
 						line_nr=loop_line_nr[loop];
 						break;
 					}
@@ -1851,7 +1869,7 @@ void Parse (char *file)
 								begin=Begin(line);
 								while((begin)&&((*begin)!='#'))
 								{
-									begin=GetWord (begin, word);
+									begin=GetWord_noexp (begin, word);
 									key=LookupKey (word,  KeyTable);
 									if (key==ENDIF)
 										go--;
@@ -1882,7 +1900,7 @@ void Parse (char *file)
 							begin=Begin(line);
 							while((begin)&&((*begin)!='#'))
 							{
-								begin=GetWord (begin, word);
+								begin=GetWord_noexp (begin, word);
 								key=LookupKey (word,  KeyTable);
 								if (key==ENDIF)
 									go--;
@@ -4067,8 +4085,27 @@ void Parse (char *file)
 					{	
 						char **args;
 						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
 						Print(NORMAL,"* line %3d: defining \"%s=%s\"",line_nr, args[0], args[1]);	
 						DefineVar(args[0], atof(args[1]));
+						FreeArgs (args, 2);
+						break;
+					}
+					case EXPR_IFDEF:	
+					{	
+						char **args;
+						args=GetArgs (&begin, 2);
+						if (args==NULL)
+							goto premature_end;
+						if (!IsDefined(args[0]))
+						{
+							Print(NORMAL,"* line %3d: defining \"%s=%s\"",line_nr, args[0], args[1]);	
+							DefineVar(args[0], atof(args[1]));
+						}
+						else
+							Print(NORMAL,"* line %3d: variable %s is already defined",line_nr, args[0]);
+							
 						FreeArgs (args, 2);
 						break;
 					}
@@ -4182,7 +4219,7 @@ premature_end:
 			}
 			
 		}
-		fgetpos(f, &last_pos);
+		last_pos=ftell(f);
     		fgets(line, MAXSTRLEN-1, f);
 		line_nr++;
 	}

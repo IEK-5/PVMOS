@@ -314,7 +314,7 @@ double R_Overlap(double a1, double b1, double a2, double b2)
 	return (MIN(a2,b2)-MAX(a1,b1))/MIN(a2-a1,b2-b1);
 }
 
-void NodeConnector(node *N1, node *N2)
+int NodeConnector(node *N1, node *N2)
 {
 	/* first remove all connections */
 	N1->north=RemoveFromList(N1->north, N2->id);
@@ -332,22 +332,27 @@ void NodeConnector(node *N1, node *N2)
 	{
 		N1->north=AddToList(N1->north, N2->id);
 		N2->south=AddToList(N2->south, N1->id);
+		return 1;
 	}
 	if ((fabs(N1->x2-N2->x1)/MIN(N1->x2-N1->x1,N2->x2-N2->x1)<TINY) && (R_Overlap(N1->y1,N2->y1, N1->y2, N2->y2) > TINY))
 	{
 		N1->east=AddToList(N1->east, N2->id);
 		N2->west=AddToList(N2->west, N1->id);
+		return 1;
 	}
 	if ((fabs(N1->y1-N2->y2)/MIN(N1->y2-N1->y1,N2->y2-N2->y1)<TINY) && (R_Overlap(N1->x1,N2->x1, N1->x2, N2->x2) > TINY))
 	{
 		N1->south=AddToList(N1->south, N2->id);
 		N2->north=AddToList(N2->north, N1->id);
+		return 1;
 	}
 	if ((fabs(N1->x1-N2->x2)/MIN(N1->x2-N1->x1,N2->x2-N2->x1)<TINY) && (R_Overlap(N1->y1,N2->y1, N1->y2, N2->y2) > TINY))
 	{
 		N1->west=AddToList(N1->west, N2->id);
 		N2->east=AddToList(N2->east, N1->id);
+		return 1;
 	}
+	return 0;
 }
 
 
@@ -737,13 +742,94 @@ void AddElectrode(mesh *M)
 	ReInitResults(M);
 }
 
+/* Before we start joining meshes together we need to be able to detect whether the meshes overlap */
+int OverlappingNodes(node N1, node N2, double x_shift, double y_shift)
+{
+	return (((MIN(N1.x2,N2.x2+x_shift)-MAX(N1.x1,N2.x1+x_shift))>TINY)&&((MIN(N1.y2,N2.y2+y_shift)-MAX(N1.y1,N2.y1+y_shift))>TINY));
+}
+
+int OverlappingMeshes(mesh M1, mesh M2, int *outline1, int *outline2, double x_shift, double y_shift)
+{
+	int i, j;
+	for (i=1;i<=outline1[0];i++)
+		for (j=1;j<=outline2[0];j++)
+			if(OverlappingNodes(M1.nodes[outline1[i]], M2.nodes[outline2[j]], x_shift, y_shift))
+				return 1;
+	return 0;	
+}
+
+/* I want to be able to "snap" meshes together */
+/* For these routines you must first place the meshes such that they do not overlap */
+/* Then you can compute the minimum x or y distance between the outlines of the meshes. */
+/* This distance can be sused to snap M2 in either x or y direction to M1*/
+int XNodeDistance(node N1, node N2, double x_shift, double y_shift, double *xdistance)
+{
+	if ((MIN(N1.y2,N2.y2+y_shift)-MAX(N1.y1,N2.y1+y_shift))>TINY)
+	{
+		*xdistance=N1.x2-N2.x1-x_shift;
+		return 1;
+	}
+	return 0;
+}
+
+int YNodeDistance(node N1, node N2, double x_shift, double y_shift, double *ydistance)
+{
+	if ((MIN(N1.x2,N2.x2+x_shift)-MAX(N1.x1,N2.x1+x_shift))>TINY)
+	{
+		*ydistance=N1.y2-N2.y1-y_shift;
+		return 1;
+	}
+	return 0;
+}
+
+int XMeshDistance(mesh M1, mesh M2, int *outline1, int *outline2, double x_shift, double y_shift, double *xdistance)
+{
+	int i, j, dist=0;
+	double d, mind=0;
+	for (i=1;i<=outline1[0];i++)
+		for (j=1;j<=outline2[0];j++)
+			if(XNodeDistance(M1.nodes[outline1[i]], M2.nodes[outline2[j]], x_shift, y_shift, &d))
+			{
+				if (!dist)
+				{
+					mind=d;
+					dist=1;		
+				}
+				else if (fabs(d)<fabs(mind))
+					mind=d;
+			
+			}
+	*xdistance=mind;
+	return dist;	
+}
+
+int YMeshDistance(mesh M1, mesh M2, int *outline1, int *outline2, double x_shift, double y_shift, double *ydistance)
+{
+	int i, j, dist=0;
+	double d, mind=0;
+	for (i=1;i<=outline1[0];i++)
+		for (j=1;j<=outline2[0];j++)
+			if(YNodeDistance(M1.nodes[outline1[i]], M2.nodes[outline2[j]], x_shift, y_shift, &d))
+			{
+				if (!dist)
+				{
+					mind=d;
+					dist=1;		
+				}
+				else if (fabs(d)<fabs(mind))
+					mind=d;	
+			}
+	*ydistance=mind;
+	return dist;	
+}
+
 mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
 {
 	mesh res;
 	int *outl1, *outl2;
 	int *prop_out;
 	node *m1, *m2;
-	int i,j;
+	int i,j, cc=0;
 	
 	if (M1.Nel!=M2.Nel)
 		Error("Cannot join meshes with unequal number of electrodes, M1:%d M2:%d\n",M1.Nel, M2.Nel);
@@ -751,7 +837,8 @@ mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
 	outl1=MeshOutline(M1);
 	outl2=MeshOutline(M2);
 	
-	/* TODO check for overlap */
+	if (OverlappingMeshes(M1, M2, outl1, outl2, xoff, yoff))
+		Error("Error: The meshes overlap\n");
 	
 	res=DuplicateMesh(M1);
 	res.nodes=realloc(res.nodes,(res.Nn+M2.Nn+1)*sizeof(node));
@@ -796,9 +883,11 @@ mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
 		for (j=1;j<=outl2[0];j++)
 		{
 			m2=SearchNode(res, outl2[j]+M1.Nn);
-			NodeConnector(m1, m2);
+			cc+=NodeConnector(m1, m2);
 		}			
 	}
+	if (!cc)
+		Warning("Meshes are merged but form two disjoint areas, i.e. no element to element connections made\n");
 	free(outl1);
 	free(outl2);
 	free(prop_out);
@@ -813,19 +902,22 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 	int *outl1, *outl2;
 	int *prop_out;
 	node *m1, *m2;
-	int i,j;
+	int i,j, cc=0;
 	
 	if (M1.Nel!=M2.Nel)
 		Error("Cannot join meshes with unequal number of electrodes, M1:%d M2:%d\n",M1.Nel, M2.Nel);
 	outl1=MeshOutline(M1);
-	outl2=MeshOutline(M2);
+	outl2=MeshOutline(M2);	
+	
+	/* maximum x-coordinate of mesh 1 */
 	xoff1=M1.nodes[0].x1;
 	for (i=1;i<=outl1[0];i++)
 	{
 		m1=SearchNode(M1, outl1[i]);
 		if (xoff1<m1->x2)
 			xoff1=m1->x2;
-	}	
+	}
+	/* minimum x-coordinate of mesh 2 */	
 	xoff2=M2.nodes[0].x2;
 	for (i=1;i<=outl2[0];i++)
 	{
@@ -833,9 +925,14 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 		if (xoff2>m1->x1)
 			xoff2=m1->x1;
 	}	
+	/* certian no overlap offset */
 	xoff=xoff1-xoff2;
 	
-	/* TODO check for overlap */
+	/* shift further if we can */
+	if (XMeshDistance(M1, M2, outl1, outl2, xoff, yoff, &xoff1))
+		xoff+=xoff1;
+	/* if (YMeshDistance(M1, M2, outl1, outl2, xoff, yoff, &xoff1))
+		yoff+=xoff1;*/
 	
 	res=DuplicateMesh(M1);
 	res.nodes=realloc(res.nodes,(res.Nn+M2.Nn+1)*sizeof(node));
@@ -880,9 +977,11 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 		for (j=1;j<=outl2[0];j++)
 		{
 			m2=SearchNode(res, outl2[j]+M1.Nn);
-			NodeConnector(m1, m2);
+			cc+=NodeConnector(m1, m2);
 		}			
 	}
+	if (!cc)
+		Warning("Meshes are merged but form two disjoint areas\n");
 	free(outl1);
 	free(outl2);
 	free(prop_out);
@@ -890,6 +989,7 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 
 	return res;
 }
+
 mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 {
 	mesh res;
@@ -897,7 +997,7 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 	int *outl1, *outl2;
 	int *prop_out;
 	node *m1, *m2;
-	int i,j;
+	int i,j, cc=0;
 	
 	if (M1.Nel!=M2.Nel)
 		Error("Cannot join meshes with unequal number of electrodes, M1:%d M2:%d\n",M1.Nel, M2.Nel);
@@ -919,7 +1019,10 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 	}	
 	yoff=yoff1-yoff2;
 	
-	/* TODO check for overlap */
+	if (YMeshDistance(M1, M2, outl1, outl2, xoff, yoff, &yoff1))
+		yoff+=yoff1;
+	/* if (XMeshDistance(M1, M2, outl1, outl2, xoff, yoff, &yoff1))
+		xoff+=yoff1; */
 	
 	res=DuplicateMesh(M1);
 	res.nodes=realloc(res.nodes,(res.Nn+M2.Nn+1)*sizeof(node));
@@ -964,9 +1067,11 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 		for (j=1;j<=outl2[0];j++)
 		{
 			m2=SearchNode(res, outl2[j]+M1.Nn);
-			NodeConnector(m1, m2);
+			cc+=NodeConnector(m1, m2);
 		}			
 	}
+	if (!cc)
+		Warning("Meshes are merged but form two disjoint areas\n");
 	free(outl1);
 	free(outl2);
 	free(prop_out);
@@ -2428,6 +2533,7 @@ void Chunkify(mesh *M)
 	}
 }
 
+	
 
 
 /***************************************************************************

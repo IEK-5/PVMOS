@@ -156,7 +156,7 @@ int ExprEval(char * expr, char *result)
 	{
 		if (!IsDefined(names[i]))
 		{
-			fprintf(stderr, "ExprEval: Error variable \"%s\" not defined\n", names[i]);
+			fprintf(stderr, "ExprEval: Warning variable \"%s\" not defined\n", names[i]);
 			evaluator_destroy (f);
 			return 1;
 		}

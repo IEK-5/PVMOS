@@ -907,10 +907,18 @@ void PrintSolPar(char *fn, mesh *M)
 	
 	Voc=(M->res.Va[ioc_m]*fabs(M->res.I[ioc_p])+M->res.Va[ioc_p]*fabs(M->res.I[ioc_m]))/(fabs(M->res.I[ioc_p])+fabs(M->res.I[ioc_m]));
 	P=M->res.I[imp]*M->res.Va[imp];
-	
-	fprintf(f, "Isc: %e [A]\t\tImpp: %e [A]\n", M->res.I[isc], M->res.I[imp]);
-	fprintf(f, "Voc: %e [V]\t\tVmpp: %e [V]\n", Voc, M->res.Va[imp]);	
-	fprintf(f, "FF:  %e [-]\t\tPmpp: %e [W]\n", P/(M->res.I[isc]*Voc), P);
+	fprintf(f, "# Isc:  Short Circuit Current               [A]\n");
+	fprintf(f, "# Voc:  Open Circuit Voltage                [V]\n");
+	fprintf(f, "# Impp: Current at the Maximum Power Point  [A]\n");
+	fprintf(f, "# Vmpp: Voltage at the Maximum Power Point  [V]\n");
+	fprintf(f, "# FF:   Fill Factor                         [-]\n");
+	fprintf(f, "# Pmpp: Maximum Power                       [W]\n");
+	fprintf(f, "Isc  = %e\n", M->res.I[isc]);
+	fprintf(f, "Voc  = %e\n", Voc);
+	fprintf(f, "Impp = %e\n", M->res.I[imp]);
+	fprintf(f, "Vmpp = %e\n", M->res.Va[imp]);	
+	fprintf(f, "FF   = %e\n", P/(M->res.I[isc]*Voc));
+	fprintf(f, "Pmpp = %e\n", P);
 	fclose(f);
 }
 

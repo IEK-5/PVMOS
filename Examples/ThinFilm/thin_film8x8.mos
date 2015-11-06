@@ -140,23 +140,23 @@ set_R		minimodule.shunt 	0 	0.00001
 # elements are 0.02x0.4 cm^2. We select an area with radius 2 cm and refine it a bit
 ###################################################################################################
 select_circ 2.5 4 2 minimodule
-split_coarse minimodule 0.2
+split_coarse minimodule 0.2 0.2
 
 ###################################################################################################
 # now the elements in a radius of 2 cm around the defect are 0.02x0.2 cm^2
 # we do another run, this time in an area with a 1 cm radius around the defect 
 ###################################################################################################
 select_circ 2.5 4 1 minimodule
-split_coarse minimodule 0.05
+split_coarse minimodule 0.05 0.05
 
 ###################################################################################################
 # repeat ...
 ###################################################################################################
 select_circ 2.5 4 0.5 minimodule
-split_coarse minimodule 0.025
+split_coarse minimodule 0.025 0.025
 
 select_circ 2.5 4 0.25 minimodule
-split_coarse minimodule 0.0125
+split_coarse minimodule 0.0125 0.0125
 
 ###################################################################################################
 # We create a defect with a radius of 1mm, a a rule of thumb I want at leat 10 elements along the 
@@ -164,14 +164,14 @@ split_coarse minimodule 0.0125
 # of 0.01.
 ###################################################################################################
 select_circ 2.5 4 0.13 minimodule
-split_coarse minimodule 0.005
+split_coarse minimodule 0.005 0.005
 
 ###################################################################################################
 # Finally we refine around the contour of the defect, to get a very acurate shape (in 5 µm 
 # resolution)
 ###################################################################################################
 select_circ_contour 2.5 4 0.1 0.005 minimodule
-split_coarse minimodule 0.0005
+split_coarse minimodule 0.0005 0.0005
 deselect minimodule
 
 ###################################################################################################

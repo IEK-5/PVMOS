@@ -816,75 +816,75 @@ int SolPar(mesh *M, int *isc, int *imp_m, int *imp, int *imp_p, int *ioc_m, int 
 			(*ioc_p)=0;
 			Ioc_p=M->res.I[0];
 		}
-		Pmax=-(M->res.I[i]*M->res.Va[i]);
+		Pmax=-(M->res.I[0]*M->res.Va[0]);
 		Vmp=Vsc;
 		(*imp)=0;
+		for (i=1;i<M->res.Nva;i++)
+		{
+			if (fabs(Vsc)>fabs(M->res.Va[i]))
+			{
+				Vsc=M->res.Va[i];
+				(*isc)=i;		
+			}
+			
+			if ((M->res.I[i]<0)&&((Ioc_m<M->res.I[i])||((*ioc_m)<0)))
+			{
+				(*ioc_m)=i;
+				Ioc_m=M->res.I[i];			
+			}
+				
+			if ((M->res.I[i]>=0)&&((Ioc_p>M->res.I[i])||((*ioc_p)<0)))
+			{
+				(*ioc_p)=i;
+				Ioc_p=M->res.I[i];			
+			}
+			
+			if (Pmax<-(M->res.I[i]*M->res.Va[i]))		
+			{
+				if (Vmp<M->res.Va[i])
+				{
+					(*imp_m)=(*imp);
+					Vmp_m=Vmp;				
+				}
+				else
+				{
+					(*imp_p)=(*imp);
+					Vmp_p=Vmp;				
+				}
+				Pmax=-(M->res.I[i]*M->res.Va[i]);
+				Vmp=M->res.Va[i];
+				(*imp)=i;
+			} 
+			else if (((*imp_p)<0)&&(Vmp>M->res.Va[i]))
+			{
+				(*imp_m)=i;
+				Vmp_m=M->res.Va[i];		
+			} 
+			else if (((*imp_p)<0)&&(Vmp<M->res.Va[i]))
+			{
+				(*imp_p)=i;
+				Vmp_p=M->res.Va[i];		
+			} 
+			else if ((Vmp<M->res.Va[i])&&(Vmp_p>M->res.Va[i]))
+			{
+				(*imp_p)=i;
+				Vmp_p=M->res.Va[i];		
+			} 
+			else if ((Vmp>M->res.Va[i])&&(Vmp_m<M->res.Va[i]))
+			{
+				(*imp_m)=i;
+				Vmp_m=M->res.Va[i];		
+			}
+				
+		}
+		if (M->res.Nva>0)
+		{
+			if (fabs(M->res.Va[(*isc)])>1e-3)
+				Warning("Warning: Short circuit conditions were not simulated\n\t-->Using current at %e V instead\n", M->res.Va[(*isc)]);
+		}
 						
 	}
 	
-	for (i=1;i<M->res.Nva;i++)
-	{
-		if (fabs(Vsc)>fabs(M->res.Va[i]))
-		{
-			Vsc=M->res.Va[i];
-			(*isc)=i;		
-		}
-		
-		if ((M->res.I[i]<0)&&((Ioc_m<M->res.I[i])||((*ioc_m)<0)))
-		{
-			(*ioc_m)=i;
-			Ioc_m=M->res.I[i];			
-		}
-			
-		if ((M->res.I[i]>=0)&&((Ioc_p>M->res.I[i])||((*ioc_p)<0)))
-		{
-			(*ioc_p)=i;
-			Ioc_p=M->res.I[i];			
-		}
-		
-		if (Pmax<-(M->res.I[i]*M->res.Va[i]))		
-		{
-			if (Vmp<M->res.Va[i])
-			{
-				(*imp_m)=(*imp);
-				Vmp_m=Vmp;				
-			}
-			else
-			{
-				(*imp_p)=(*imp);
-				Vmp_p=Vmp;				
-			}
-			Pmax=-(M->res.I[i]*M->res.Va[i]);
-			Vmp=M->res.Va[i];
-			(*imp)=i;
-		} 
-		else if (((*imp_p)<0)&&(Vmp>M->res.Va[i]))
-		{
-			(*imp_m)=i;
-			Vmp_m=M->res.Va[i];		
-		} 
-		else if (((*imp_p)<0)&&(Vmp<M->res.Va[i]))
-		{
-			(*imp_p)=i;
-			Vmp_p=M->res.Va[i];		
-		} 
-		else if ((Vmp<M->res.Va[i])&&(Vmp_p>M->res.Va[i]))
-		{
-			(*imp_p)=i;
-			Vmp_p=M->res.Va[i];		
-		} 
-		else if ((Vmp>M->res.Va[i])&&(Vmp_m<M->res.Va[i]))
-		{
-			(*imp_m)=i;
-			Vmp_m=M->res.Va[i];		
-		}
-			
-	}
-	if (M->res.Nva>0)
-	{
-		if (fabs(M->res.Va[(*isc)])>1e-3)
-			Warning("Warning: Short circuit conditions were not simulated\n\t-->Using current at %e V instead\n", M->res.Va[(*isc)]);
-	}
 	if (((*isc)<0)||((*imp_m)<0)||((*imp)<0)||((*imp_p)<0)||((*ioc_m)<0)||((*ioc_p)<0))
 		return 1;
 	return 0;
