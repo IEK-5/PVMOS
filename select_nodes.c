@@ -51,7 +51,7 @@
 #include "main.h"
 #include "list.h"
 #include "utils.h"
-#include "select_nodes.h"
+#include "polygon.h"
 #define TWOPI 6.28318530717959
 #define FOURPI 12.5663706143592
 #define TINY 1e-12
@@ -228,169 +228,11 @@ int FindPos(mesh M, int id, double x, double y, int *NOTINMESH)
 	return n_id;
 }
 
-double Angle (double y, double x)
-{
-	double a;
-	a=atan2(y,x);
-	if (a<0)
-		a+=TWOPI;
-	return a;
-}
-	
-double dAngle(double x1, double x2, double y1, double y2, double x, double y)
-{
-	/* change in angle over a line segmentn*/
-	double da; 
-	
-	double a1=Angle(y1-y, x1-x);
-	double a2=Angle(y2-y,x2-x);
-	
-	da=a2-a1;
-	/* if the angle is larger than pi rad, choose shortest angular change */
-	if (da<-TWOPI/2)
-		da+=TWOPI;
-	
-	if (da>TWOPI/2)
-		da-=TWOPI;
-	
-	return da;
-}
 
-
-/* to support holes in polygons we could do polygons with breaks. The polygon is split at the breaks (i.e. each part looped)
-   and the integration below is summed up over all parts. we then do a modulus 4pi and figure out whether the node is in or out */
-/* my first naive attempt, easy to understand but damn slow */
-/* pergaps it whould suffice to check crossing along three axi instead of doing the atan, which is probably the most expensice operation in this routine  */
-/* another solution is to use Jordan's curve theorem (see below)  */
-int IsInPolygon_(polygon P, double x, double y)
-{
-	int i=0;
-	int j;
-	int F, L;
-	
-	/* if the point is enclosed by the Contour the total change in angle should be 2*pi */
-	double sa=0;
-	L=-1;
-	for (j=1;j<=P.BR[0];j++)
-	{
-		F=L+1;
-		L=P.BR[j]-1;
-		for (i=F;i<L;i++)
-			sa+=dAngle(P.x[i], P.x[i+1],P.y[i], P.y[i+1],x, y);
-		sa+=dAngle(P.x[L], P.x[F],P.y[L], P.y[F],x, y);	
-	}
-	if (fmod(fabs(sa)+1e-6,FOURPI)<TWOPI-1e-6)
-		return 0;
-	else
-		return 1;
-}
-
-
-/* less naive, use Jordan curve theorem with a horizontal line through the point of interest*/
-int IsInPolygon(polygon P, double x, double y)
-{
-	int i=0, c=0;
-	int j;
-	int F, L;
-	L=-1;
-	for (j=1;j<=P.BR[0];j++)
-	{
-		F=L+1;
-		L=P.BR[j]-1;
-		for (i=F;i<L;i++)
-    			if ( ((P.y[i+1]>y) != (P.y[i]>y)) && (x < (P.x[i]-P.x[i+1]) * (y-P.y[i+1]) / (P.y[i]-P.y[i+1]) + P.x[i+1]) )
-       				c = !c;
-    		if ( ((P.y[F]>y) != (P.y[L]>y)) && (x < (P.x[L]-P.x[F]) * (y-P.y[F]) / (P.y[L]-P.y[F]) + P.x[F]) )
-       			c = !c;
-	}
-	return c;
-}
-
-int IsNearPolygon(polygon P, double x, double y, double D, int loop)
-{
-	int i;
-	int j;
-	int F, L;
-	double dx, dy, xx, yy, d;
-	D=D*D;
-	
-	L=-1;
-	for (j=1;j<=P.BR[0];j++)
-	{
-		F=L+1;
-		L=P.BR[j]-1;
-		for (i=F;i<L;i++)
-		{
-			/* check endpoints */
-			d=(x-P.x[i+1])*(x-P.x[i+1])+(y-P.y[i+1])*(y-P.y[i+1]);
-			if (d<D)
-				return 1;
-			d=(x-P.x[i])*(x-P.x[i])+(y-P.y[i])*(y-P.y[i]);
-			if (d<D)
-				return 1;
-				
-			/* compute distance point to line */
-			/* line dx and dy values */
-			dx=P.x[i+1]-P.x[i];
-			dy=P.y[i+1]-P.y[i];
-			/* if the line is actually a point we can ignore it as we already checked the distance to he endpoints */
-			if ((dy*dy+dx*dx)>TINY)
-			{
-				/* Intersectipon point, perhaps not so readable but trust me, it is correct :) */
-				xx=(dx*dy*y-dx*dy*P.y[i]+dx*dx*x+dy*dy*P.x[i])/(dy*dy+dx*dx);
-				yy=(dy*dy*y+dx*dx*P.y[i]+dx*dy*x-dx*dy*P.x[i])/(dy*dy+dx*dx);
-				
-				/* perhaps not so readable but trust me, it is correct :) */
-				if (((P.x[i]-xx)*(P.x[i+1]-xx)<=TINY)&&((P.y[i]-yy)*(P.y[i+1]-yy)<=TINY))
-				{
-					d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
-					if (d<D)
-						return 1;
-				}
-			}
-		}
-		if (loop)
-		{
-			/* check endpoints */
-			d=(x-P.x[F])*(x-P.x[F])+(y-P.y[F])*(y-P.y[F]);
-			if (d<D)
-				return 1;
-			d=(x-P.x[L])*(x-P.x[L])+(y-P.y[L])*(y-P.y[L]);
-			if (d<D)
-				return 1;
-				
-			/* compute distance point to line */
-			/* line dx and dy values */
-			dx=P.x[F]-P.x[L];
-			dy=P.y[F]-P.y[L];
-			/* if the line is actually a point we can ignore it as we already checked the distance to he endpoints */
-			if ((dy*dy+dx*dx)>TINY)
-			{
-				/* Intersectipon point, perhaps not so readable but trust me, it is correct :) */
-				xx=(dx*dy*y-dx*dy*P.y[L]+dx*dx*x+dy*dy*P.x[L])/(dy*dy+dx*dx);
-				yy=(dy*dy*y+dx*dx*P.y[L]+dx*dy*x-dx*dy*P.x[L])/(dy*dy+dx*dx);
-				
-				/* perhaps not so readable but trust me, it is correct :) */
-				if (((P.x[L]-xx)*(P.x[F]-xx)<=TINY)&&((P.y[L]-yy)*(P.y[F]-yy)<=TINY))
-				{
-					d=(x-xx)*(x-xx)+(y-yy)*(y-yy);
-					if (d<D)
-						return 1;
-				}
-			}
-		}
-		
-	}
-	return 0;
-
-}
 
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define MAX(a,b) ((a)<(b) ? (b):(a))
-
-
-
-int Overlap(double a1, double a2, double b1, double b2)
+inline int Overlap(double a1, double a2, double b1, double b2)
 {
 	if (a2<a1)
 	{
@@ -957,59 +799,6 @@ void ResolvRect(double x1, double y1, double x2, double y2, mesh *M, double D)
 
 }
 
-
-
-/* extendable to polygons with holes if we add the possibility to track breaks, i.e. an empty line to indicate no connection between two susequent nodes
-   This would allow clean holes cut out of a polygon shape. See comment at IsInPoly */
-polygon ReadPoly(char *fn)
-{
-	polygon res;
-	char c, *line;
-	int k, Na=50;
-	FILE *f;
-	if ((f=fopen(fn,"r"))==NULL)
-		Error("Cannot open %s for reading\n", fn);
-		
-	line=malloc(MAXSTRLEN*sizeof(char));
-    	fgets(line, MAXSTRLEN-1, f);
-	res.N=0;
-	res.x=malloc(Na*sizeof(double));
-	res.y=malloc(Na*sizeof(double));
-	res.BR=malloc(LISTBLOCK*sizeof(int));
-	res.BR[0]=0;
-	while(feof(f)==0)
-	{
-		
-    		k=sscanf(line, " %c", &c);
-		if((k!=-1)&&(c!='#'))
-		{
-			k=sscanf(line, " %le %le", res.x+res.N,res.y+res.N);
-			if(k!=-1)
-			{
-				res.N++;
-				if (Na-1==res.N)
-				{
-					Na+=50;
-					res.x=realloc(res.x, Na*sizeof(double));	
-					res.y=realloc(res.y, Na*sizeof(double));					
-				}
-			}
-			else
-				res.BR=AddToList(res.BR, res.N);
-			
-		}
-		else
-			if (k==-1)
-				res.BR=AddToList(res.BR, res.N);
-    		fgets(line, MAXSTRLEN-1, f);
-	}
-	free(line);
-	res.x=realloc(res.x, (res.N+1)*sizeof(double));	
-	res.y=realloc(res.y, (res.N+1)*sizeof(double));
-	res.BR=AddToList(res.BR, res.N);
-	fclose(f);
-	return res;
-}
 
 int * SelectArea(mesh M, int *sel_nodes, char *name)
 {

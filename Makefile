@@ -1,7 +1,7 @@
 # Makefile for PhotoVoltaic MOdule Simulator (PVMOS)
-src=main.c parse.c utils.c mesh2d.c solve.c list.c select_nodes.c dataexport.c diode.c phototransistor.c expr.c mkpvmosmesh.cc
-hdr=parse.h mesh2d.h parsedef.h utils.h main.h solve.h list.h select_nodes.h dataexport.h diode.h phototransistor.h expr.h
-obj=main.o parse.o utils.o mesh2d.o solve.o list.o select_nodes.o dataexport.o diode.o phototransistor.o expr.o
+src=main.c parse.c utils.c mesh2d.c solve.c list.c polygon.c select_nodes.c dataexport.c diode.c phototransistor.c expr.c mkpvmosmesh.cc
+hdr=parse.h mesh2d.h parsedef.h utils.h main.h solve.h list.h polygon.h select_nodes.h dataexport.h diode.h phototransistor.h expr.h
+obj=main.o parse.o utils.o mesh2d.o solve.o list.o polygon.o select_nodes.o dataexport.o diode.o phototransistor.o expr.o
 
 src_util=MeshHasher.c md5.c
 hdr_util=md5.h
@@ -23,26 +23,42 @@ LFLAGS= -flto -lcholmod -lopenblas-r0.2.14 -lm -lmatheval
 OPENBLAS=""
 WITH_LIBMATHEVAL=""
 
-pvmos: newversion $(obj)
-	$(CC) -o $(target)  $(obj) $(LFLAGS)
+# routines to split elements use realloc in a manner that is probably inefficient in terms of speed (I keep memory overhead small). 
+# Realloc performance in windows apears to be poor compared to the gllibc version, I measure a fairly consistent factor 10 difference.
+# The public domain code for dlmalloc is a good drop in replacement for the malloc family of functions. This predecessor 
+# of glibc's malloc functions works fine on windows. Performance is similar to the standard glibc allocator on both windows and 
+# linux systems. Use the WITH_DLMALLOC variable to compile PVMOS with dlmalloc. Recommended for windows.
+WITH_DLMALLOC=""
+
+ifdef WITH_DLMALLOC
+	MALLOC_O=malloc-2.8.6.o
+	VERSION_=$(VERSION)-dl
+else
+	VERSION_=$(VERSION)
+endif	
+pvmos: newversion $(obj) $(MALLOC_O) 
+	$(CC) -o $(target)  $(obj) $(MALLOC_O) $(LFLAGS)
 install: pvmos doc
 	cp $(target) /usr/bin/
 utils.o: utils.c mesh2d.h utils.h
-	$(CC) $(CFLAGS)   -c -o utils.o -DVERSION=\"$(VERSION)\" utils.c
+	$(CC) $(CFLAGS)   -c -o utils.o -DVERSION=\"$(VERSION_)\" utils.c
+malloc-2.8.6.o:
+	$(CC) -O3  -Wall -fPIC  -c -o malloc-2.8.6.o malloc-2.8.6.c
 main.o: parse.h main.c main.h
 ifdef OPENBLAS
 	$(CC) $(CFLAGS)   -c -o main.o -DOPENBLAS main.c
 else
 	$(CC) $(CFLAGS)   -c main.c
 endif	
-parse.o: utils.h parsedef.h parse.h parse.c mesh2d.h solve.h list.h select_nodes.h dataexport.h expr.h diode.h phototransistor.h
+parse.o: utils.h parsedef.h parse.h parse.c mesh2d.h solve.h list.h polygon.h select_nodes.h dataexport.h expr.h diode.h phototransistor.h
 mesh2d.o: mesh2d.h mesh2d.c utils.h meshhash.h
 solve.o: mesh2d.h utils.h solve.c diode.h phototransistor.h
 list.o: list.c utils.h
-select_nodes.o: select_nodes.c list.h utils.h mesh2d.h
+polygon.o: main.h polygon.h list.h utils.h
+select_nodes.o: main.h polygon.h list.h utils.h mesh2d.h
 dataexport.o: dataexport.c list.h utils.h mesh2d.h diode.h phototransistor.h
 diode.o: diode.c diode.h
-expr.o: expr.c expr.h	
+expr.o: expr.c expr.h
 ifdef WITH_LIBMATHEVAL
 	$(CC) $(CFLAGS)   -c -o expr.o -DWITH_LIBMATHEVAL expr.c
 else

@@ -1622,16 +1622,22 @@ void SplitListWhileCoarse(mesh *M, int *list, double dx, double dy)
 }
 
 /* apply basic geometrical transforms on meshes */
-void ScaleMeshX(mesh *M, double f)
+void Mesh_ScaleMove(mesh *M, double fx, double fy, double dx, double dy)
 {
 	int i;
 	int *dummy;
-	double xx;
+	double xx, yy;
 	for (i=0;i<M->Nn;i++)
 	{
-		M->nodes[i].x1*=f;
-		M->nodes[i].x2*=f;
-		if (f<0) /* swap east and west */
+		M->nodes[i].x1*=fx;
+		M->nodes[i].x2*=fx;
+		M->nodes[i].y1*=fy;
+		M->nodes[i].y2*=fy;
+		M->nodes[i].x1+=dx;
+		M->nodes[i].x2+=dx;
+		M->nodes[i].y1+=dy;
+		M->nodes[i].y2+=dy;
+		if (fx<0) /* swap east and west */
 		{
 			/* adapt nodes to new orientation */ 
 			/* swap east and west */
@@ -1642,18 +1648,7 @@ void ScaleMeshX(mesh *M, double f)
 			M->nodes[i].x1=M->nodes[i].x2;
 			M->nodes[i].x2=xx;
 		}
-	}
-}
-void ScaleMeshY(mesh *M, double f)
-{
-	int i;
-	int *dummy;
-	double yy;
-	for (i=0;i<M->Nn;i++)
-	{
-		M->nodes[i].y1*=f;
-		M->nodes[i].y2*=f;
-		if (f<0) /* swap north and south */
+		if (fy<0) /* swap north and south */
 		{
 			/* adapt nodes to new orientation */ 
 			/* swap north and south */
@@ -1665,50 +1660,6 @@ void ScaleMeshY(mesh *M, double f)
 			M->nodes[i].y2=yy;
 		
 		}
-	}
-}
-void ScaleMesh(mesh *M, double f)
-{
-	int i;
-	int *dummy;
-	double xx,yy;
-	for (i=0;i<M->Nn;i++)
-	{
-		M->nodes[i].x1*=f;
-		M->nodes[i].x2*=f;
-		M->nodes[i].y1*=f;
-		M->nodes[i].y2*=f;
-		if (f<0)
-		{
-			/* adapt nodes to new orientation */ 
-			/* swap east and west, and north and south */
-			dummy=M->nodes[i].east;
-			M->nodes[i].east=M->nodes[i].west;
-			M->nodes[i].west=dummy;
-		
-			dummy=M->nodes[i].north;
-			M->nodes[i].north=M->nodes[i].south;
-			M->nodes[i].south=dummy;
-			
-			xx=M->nodes[i].x1;
-			M->nodes[i].x1=M->nodes[i].x2;
-			M->nodes[i].x2=xx;
-			
-			yy=M->nodes[i].y1;
-			M->nodes[i].y1=M->nodes[i].y2;
-			M->nodes[i].y2=yy;
-		}
-	}
-}
-void MoveMesh(mesh *M, double x, double y)
-{
-	int i;
-	for (i=0;i<M->Nn;i++)
-	{
-		M->nodes[i].x1+=x;
-		M->nodes[i].x2+=x;
-		M->nodes[i].y1+=y;
-		M->nodes[i].y2+=y;
 	}
 }
 
@@ -1780,7 +1731,7 @@ void RotateMesh(mesh *M, double x, double y, int d)
 				M->nodes[i].x2=xx;	
 				yy=M->nodes[i].y1;
 				M->nodes[i].y1=M->nodes[i].y2;
-				M->nodes[i].y2=xx;	
+				M->nodes[i].y2=yy;	
 				break;
 			case 3:  /* E->S, S->W, W->N, N->E */
 				dummy=M->nodes[i].south;
@@ -1791,7 +1742,7 @@ void RotateMesh(mesh *M, double x, double y, int d)
 				/* make sure the lower left corner and the upper right corner are exactly that */
 				yy=M->nodes[i].y1;
 				M->nodes[i].y1=M->nodes[i].y2;
-				M->nodes[i].y2=xx;	
+				M->nodes[i].y2=yy;	
 				break;
 		}
 		
@@ -1821,36 +1772,26 @@ void GetMeshBB(mesh *M, double *x1, double *y1, double *x2, double *y2)
 	}
 }
 
-void SetMeshBB(mesh *M, double x1, double y1, double x2, double y2, int FixR)
+void SetMeshBB(mesh *M, double x1, double y1, double x2, double y2, int FixR, double *fx, double *fy, double *dx, double *dy)
 {
 	/* change bounding box of a mesh (using scaling and moving)  */
 	double xx1, xx2, yy1, yy2;
-	double fx,fy;
+	
 	GetMeshBB(M, &xx1, &yy1, &xx2, &yy2);
 	
-	fx=(x2-x1)/(xx2-xx1);
-	fy=(y2-y1)/(yy2-yy1);
+	*fx=(x2-x1)/(xx2-xx1);
+	*fy=(y2-y1)/(yy2-yy1);
 	
 	if (FixR)
 	{
-		if (fx<fy)
-			fy=fx;
+		if (*fx<*fy)
+			*fy=*fx;
 		else
-			fx=fy;
-		
-		ScaleMesh(M, fx);
-	
+			*fx=*fy;	
 	}
-	else
-	{	
-		ScaleMeshX(M, fx);
-		ScaleMeshY(M, fy);
-	}
-	
-	xx1=(x1+x2)/2-fx*(xx1+xx2)/2;
-	yy1=(y1+y2)/2-fy*(yy1+yy2)/2;
-	
-	MoveMesh(M, xx1, yy1);
+	*dx=(x1+x2)/2-(*fx)*(xx1+xx2)/2;
+	*dy=(y1+y2)/2-(*fy)*(yy1+yy2)/2;
+	Mesh_ScaleMove(M, *fx, *fy, *dx, *dy);
 }
 
 

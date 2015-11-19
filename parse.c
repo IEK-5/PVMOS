@@ -54,6 +54,7 @@
 #include "main.h"
 #include "mesh2d.h"
 #include "list.h"
+#include "polygon.h"
 #include "select_nodes.h"
 #include "dataexport.h"
 #include "utils.h"
@@ -927,7 +928,7 @@ void Parse (char *file)
 													
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 							
 						dx=atof(args[1]);
 						dy=atof(args[2]);
@@ -950,28 +951,30 @@ void Parse (char *file)
 						FreeArgs (args, 3);											
 						break;
 					}
-					case MOVEMESH:
+					case MESH_SCALEMOVE:
 					{	
 						meshvar *MV;
 						char **args;
-						double x,y;
-						args=GetArgs (&begin, 3);
+						double fx,fy, dx, dy;
+						args=GetArgs (&begin, 5);
 						if (args==NULL)
 							goto premature_end;
 						
 													
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 							
-						x=atof(args[1]);
-						y=atof(args[2]);
-						Print(NORMAL,"* line %3d: Moving mesh %s %e in x and %e in y direction",line_nr, MV->name, x,y);
-						MoveMesh(&(MV->M), x, y);
-						FreeArgs (args, 3);										
+						fx=atof(args[1]);
+						fy=atof(args[2]);
+						dx=atof(args[3]);
+						dy=atof(args[4]);
+						Print(NORMAL,"* line %3d: Scaling and moving mesh %s, scaling: fx=%e, fy=%e moving: dx=%e dy=%e",line_nr, MV->name, fx,fy, dx,dy);
+						Mesh_ScaleMove(&(MV->M), fx, fy, dx, dy);
+						FreeArgs (args, 5);										
 						break;
 					}
-					case ROTATEMESH:
+					case MESH_ROTATE:
 					{	
 						meshvar *MV;
 						char **args;
@@ -984,7 +987,7 @@ void Parse (char *file)
 													
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 							
 						x=atof(args[1]);
 						y=atof(args[2]);
@@ -997,10 +1000,12 @@ void Parse (char *file)
 						FreeArgs (args, 4);												
 						break;
 					}
-					case FLIPX:
+					case MESH_FLIPX:
 					{		
 						meshvar *MV;
 						char **args;
+						double xx1, yy1, xx2, yy2;
+						
 						args=GetArgs (&begin, 1);
 						if (args==NULL)
 							goto premature_end;
@@ -1008,17 +1013,19 @@ void Parse (char *file)
 													
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 							
-						Print(NORMAL,"* line %3d: Inverting x-coordinates for mesh %s",line_nr, MV->name);
-						ScaleMeshX(&(MV->M), -1.0);
+						Print(NORMAL,"* line %3d: Flip x-coordinates for mesh %s",line_nr, MV->name);
+						GetMeshBB(&(MV->M), &xx1, &yy1, &xx2, &yy2);
+						Mesh_ScaleMove(&(MV->M), -1.0, 1.0, (xx1+xx2), 0);
 						FreeArgs (args, 1);																				
 						break;
 					}
-					case FLIPY:
+					case MESH_FLIPY:
 					{		
 						meshvar *MV;
 						char **args;
+						double xx1, yy1, xx2, yy2;
 						args=GetArgs (&begin, 1);
 						if (args==NULL)
 							goto premature_end;
@@ -1026,75 +1033,20 @@ void Parse (char *file)
 													
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 							
-						Print(NORMAL,"* line %3d: Inverting y-coordinates for mesh %s",line_nr, MV->name);
-						ScaleMeshY(&(MV->M), -1.0);
+						Print(NORMAL,"* line %3d: Flip y-coordinates for mesh %s",line_nr, MV->name);
+						GetMeshBB(&(MV->M), &xx1, &yy1, &xx2, &yy2);
+						Mesh_ScaleMove(&(MV->M), 1.0, -1.0, 0, (yy1+yy2));
 						FreeArgs (args, 1);												
 						break;
 					}
-					case SCALE:
-					{	
-						meshvar *MV;
-						char **args;
-						double f;
-						args=GetArgs (&begin, 2);
-						if (args==NULL)
-							goto premature_end;
-						
-													
-						MV=LookupMesh (args[0],  Meshes, Nm);
-						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
-						f=atof(args[1]);	
-						Print(NORMAL,"* line %3d: Scaling coordinates in mesh %s by factor %e",line_nr, MV->name, f);
-						ScaleMesh(&(MV->M), f);
-						FreeArgs (args, 2);										
-						break;
-					}
-					case SCALEX:
-					{	
-						meshvar *MV;
-						char **args;
-						double f;
-						args=GetArgs (&begin, 2);
-						if (args==NULL)
-							goto premature_end;
-						
-													
-						MV=LookupMesh (args[0],  Meshes, Nm);
-						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
-						f=atof(args[1]);	
-						Print(NORMAL,"* line %3d: Scaling x-coordinates in mesh %s by factor %e",line_nr, MV->name, f);
-						ScaleMeshX(&(MV->M), f);
-						FreeArgs (args, 2);										
-						break;	
-					}
-					case SCALEY:
-					{		
-						meshvar *MV;
-						char **args;
-						double f;
-						args=GetArgs (&begin, 2);
-						if (args==NULL)
-							goto premature_end;
-						
-													
-						MV=LookupMesh (args[0],  Meshes, Nm);
-						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
-						f=atof(args[1]);	
-						Print(NORMAL,"* line %3d: Scaling y-coordinates in mesh %s by factor %e",line_nr, MV->name, f);
-						ScaleMeshY(&(MV->M), f);
-						FreeArgs (args, 2);										
-						break;	
-					}
-					case SETBB:
+					case MESH_SETBB:
 					{	
 						meshvar *MV;
 						char **args;
 						double x1,x2,y1,y2;
+						double fx, fy, dx, dy;
 						int FixR;
 						args=GetArgs (&begin, 6);
 						if (args==NULL)
@@ -1103,7 +1055,7 @@ void Parse (char *file)
 													
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);		
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);		
 						x1=atof(args[1]);			
 						y1=atof(args[2]);		
 						x2=atof(args[3]);		
@@ -1115,8 +1067,118 @@ void Parse (char *file)
 						else
 							Print(NORMAL,"*           Not preserving ascpect ratio");
 						
-						SetMeshBB(&(MV->M), x1, y1, x2, y2, FixR);
+						SetMeshBB(&(MV->M), x1, y1, x2, y2, FixR, &fx, &fy, &dx, &dy);
+						Print(NORMAL,"* line %3d: Mesh scaled by fx=%e, fy=%e",line_nr, fx,fy);
+						Print(NORMAL,"* line %3d: Mesh translated by dx=%e, dy=%e",line_nr, dx,dy);
+						Print(NORMAL,"* line %3d: Variables Fx, Fy, Dx, and Dy set accordingly",line_nr);
+						DefineVar("Fx", fx);
+						DefineVar("Fy", fy);
+						DefineVar("Dx", dx);
+						DefineVar("Dy", dy);						
 						FreeArgs (args, 6);												
+						break;
+					}
+					case POLY_SCALEMOVE:
+					{	
+						char **args;
+						double fx,fy, dx, dy;
+						args=GetArgs (&begin, 4);
+						if (args==NULL)
+							goto premature_end;
+						
+											
+						if (!P.N)
+							Warning("* line %3d: No polygon defined\n",line_nr);		
+							
+						fx=atof(args[0]);
+						fy=atof(args[1]);
+						dx=atof(args[2]);
+						dy=atof(args[3]);
+						Print(NORMAL,"* line %3d: Scaling and moving polygon, scaling: fx=%e, fy=%e moving: dx=%e dy=%e",line_nr, fx,fy, dx,dy);
+						Poly_ScaleMove(P, fx, fy, dx, dy);
+						FreeArgs (args, 4);										
+						break;
+					}
+					case POLY_ROTATE:
+					{	
+						char **args;
+						double x,y;
+						int d;
+						args=GetArgs (&begin, 3);
+						if (args==NULL)
+							goto premature_end;
+						
+											
+						if (!P.N)
+							Warning("* line %3d: No polygon defined\n",line_nr);	
+							
+						x=atof(args[0]);
+						y=atof(args[1]);
+						d=atoi(args[2]);
+							
+						Print(NORMAL,"* line %3d: Rotating polygon over %d degrees around point (%e, %e)",line_nr,d, x,y);
+						Poly_Rotate(P, x, y, d);
+						FreeArgs (args, 3);												
+						break;
+					}
+					case POLY_FLIPX:
+					{											
+						if (!P.N)
+							Warning("* line %3d: No polygon defined\n",line_nr);	
+						else	
+						{
+							Print(NORMAL,"* line %3d: Flip polygon x-coordinates",line_nr);
+							Poly_FlipX(P);
+						}														
+						break;
+					}
+					case POLY_FLIPY:
+					{												
+						if (!P.N)
+							Warning("* line %3d: No polygon defined\n",line_nr);	
+						else	
+						{
+							Print(NORMAL,"* line %3d: Flip polygon y-coordinates",line_nr);
+							Poly_FlipY(P);
+						}														
+						break;	
+					}
+					case POLY_SETBB:
+					{	
+						char **args;
+						double x1,x2,y1,y2;
+						double fx, fy, dx, dy;
+						int FixR;
+						args=GetArgs (&begin, 5);
+						if (args==NULL)
+							goto premature_end;
+											
+						if (!P.N)
+						{
+							Warning("* line %3d: No polygon defined\n",line_nr);						
+							FreeArgs (args, 5);	
+							break;
+						}
+						x1=atof(args[0]);			
+						y1=atof(args[1]);		
+						x2=atof(args[2]);		
+						y2=atof(args[3]);
+						Print(NORMAL,"* line %3d: Fitting polygon to bounding box (%e,%e) (%e,%e)",line_nr, x1,y1,x2,y2);
+						FixR=atoi(args[4]);
+						if (FixR)	
+							Print(NORMAL,"*           Preserving ascpect ratio");
+						else
+							Print(NORMAL,"*           Not preserving ascpect ratio");
+						
+						Poly_SetBoundingBox(P, x1, y1, x2, y2, FixR, &fx, &fy, &dx, &dy);
+						Print(NORMAL,"* line %3d: Polygon scaled by fx=%e, fy=%e",line_nr, fx,fy);
+						Print(NORMAL,"* line %3d: Polygon translated by dx=%e, dy=%e",line_nr, dx,dy);
+						Print(NORMAL,"* line %3d: Variables Fx, Fy, Dx, and Dy set accordingly",line_nr);
+						DefineVar("Fx", fx);
+						DefineVar("Fy", fy);
+						DefineVar("Dx", dx);
+						DefineVar("Dy", dy);						
+						FreeArgs (args, 5);												
 						break;
 					}
 					case RESOLVPOLY:
@@ -1133,13 +1195,19 @@ void Parse (char *file)
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);		
-							
-						d=atof(args[1]);
-						loop=atoi(args[2]);
+										
+						if (P.N)
+						{
+							d=atof(args[1]);
+							loop=atoi(args[2]);
 						
-						Print(NORMAL,"* line %3d: Resolving polygon in mesh %s  down to %e",line_nr, MV->name, d);
-						ResolvContour(P, &(MV->M), loop, d);
-						Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);
+							Print(NORMAL,"* line %3d: Resolving polygon in mesh %s  down to %e",line_nr, MV->name, d);
+							ResolvContour(P, &(MV->M), loop, d);
+							Print(NORMAL,"            ---> Mesh %s consists of %d elements",MV->name, MV->M.Nn);
+						}
+						else
+							Print(NORMAL,"* line %3d: Cannot resolve polygon in mesh %s, no polygon defined",line_nr, MV->name);
+						
 						FreeArgs (args, 3);											
 						break;
 					}
@@ -1808,7 +1876,6 @@ void Parse (char *file)
 								}			
 							}
 							Print(NORMAL, "            -->  Exit loop at line %d", line_nr);
-							line_nr++;
 						}
 						
 						break;

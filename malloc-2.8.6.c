@@ -563,6 +563,9 @@ MAX_RELEASE_CHECK_RATE   default: 4095 unless not HAVE_MMAP
 #define MMAP_CLEARS 1
 #endif /* _WIN32_WCE */
 #endif /*MMAP_CLEARS */
+#ifndef EINVAL /* 18.11.2015 Bart Pieters: mingw compleined about EINVAL being undefined */
+#include <errno.h>
+#endif
 #endif  /* WIN32 */
 
 #if defined(DARWIN) || defined(_DARWIN)
@@ -1660,7 +1663,7 @@ static int dev_zero_fd = -1; /* Cached file descriptor for /dev/zero. */
 #define DIRECT_MMAP_DEFAULT(s) MMAP_DEFAULT(s)
 
 #else /* WIN32 */
-
+/* 18.11.2015 Bart Pieters: the next 3 functions were declared static, which did not do it for me... */
 /* Win32 MMAP via VirtualAlloc */
 FORCEINLINE void* win32mmap(size_t size) {
   void* ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);

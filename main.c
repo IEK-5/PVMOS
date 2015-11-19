@@ -243,6 +243,20 @@ int main(int argc, char **argv)
 	/* printenv("OMP_NUM_THREADS");*/
 	
 	InitExprEval();
+	if (argc<2)
+	{
+		PrintHeader();
+		fprintf(stderr,"USAGE:\n%s [options/variable] <inputfile>\n", argv[0]);
+		fprintf(stderr,"optional argument can be:\n");
+		fprintf(stderr,"       -q   			-   quiet\n");
+		fprintf(stderr,"       -n   			-   normal\n");
+		fprintf(stderr,"       -v   			-   verbose\n");
+		fprintf(stderr,"       -db  			-   debug\n");
+		fprintf(stderr,"       -vf  			-   next argument is a variable file\n");
+		fprintf(stderr,"       <variable>=<value>   	-   define a variable\n");
+		return 1;
+	}
+	
 	for(i=1;i<argc-1;i++)
 	{
     		switch (arg)
@@ -317,6 +331,21 @@ int main(int argc, char **argv)
 		}
 	}
 	/* last argument is the input file */
+	if( access(argv[argc-1], F_OK ) == -1 ) 
+	{
+		PrintHeader();
+     		Print(NORMAL, "* Input file \"%s\" does not exist",argv[argc-1]);
+		fprintf(stderr,"USAGE:\n%s [options/variable] <inputfile>\n", argv[0]);
+		fprintf(stderr,"optional argument can be:\n");
+		fprintf(stderr,"       -q   			-   quiet\n");
+		fprintf(stderr,"       -n   			-   normal\n");
+		fprintf(stderr,"       -v   			-   verbose\n");
+		fprintf(stderr,"       -db  			-   debug\n");
+		fprintf(stderr,"       -vf  			-   next argument is a variable file\n");
+		fprintf(stderr,"       <variable>=<value>   	-   define a variable\n");
+		DestroyExprEval();
+		return 1;	
+	}	
 	PrintHeader();
      	Print(NORMAL, "* Parsing file \"%s\"",argv[argc-1]);
 	if (var_count)

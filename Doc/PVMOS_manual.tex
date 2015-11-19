@@ -215,52 +215,64 @@ Keyword & Description \\
 Keyword & Description \\
 \hline\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{move} 	& Move a mesh in x- and y-directions. The command takes three arguments:
+\texttt{mesh\_scalemove} 	& Scale and translate the x- and y- coordinates in a mesh. The coordinates are scaled before translating. The command takes five arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{delta x}, move distance in x-direction
-\item \texttt{delta y}, move distance in y-direction
+\item \texttt{fx}, scaling in x-direction
+\item \texttt{fy}, scaling in y-direction
+\item \texttt{dx}, move in x-direction
+\item \texttt{dy}, move in y-direction
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{rotate} 	& Rotate mesh around a center coordinate. Rotation can only be performed over multiples of 90 degrees. The command takes four arguments:
+\texttt{mesh\_rotate} 	& Rotate mesh around a center coordinate. Rotation can only be performed over multiples of 90 degrees. The command takes four arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x}, x-coordinate of rotation center
-\item \texttt{y},y-coordinate of rotation center
+\item \texttt{y}, y-coordinate of rotation center
 \item \texttt{d}, degrees to rotate over (must be a multiple of 90)
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{flipx} 	& Mirror a mesh in the y-axis. The command takes one argument:
+\texttt{mesh\_flipx} 	& Flip mesh in x direction, i.e. mirror in the central x-coordinate. The command takes one argument:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{flipy} & Mirror a mesh in the x-axis. The command takes one argument:
+\texttt{mesh\_flipx} 	& Flip mesh in y direction, i.e. mirror in the central y-coordinate. The command takes one argument:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{scale} 	& Scale all coordinates in a mesh. The command takes two arguments:
+\texttt{mesh\_boundingbox} 	& Change the mesh bounding box. This argument scales and moves a mesh such that it fits in a specified rectangle (the bounding box). The mesh is either scaled preserving the aspect ratio or without preserving it. The command will set the variables ``Fx'', ``Fy'', ``Dx'', and ``Dy'' which allow you to perform the exact same transformation on other objects using the \texttt{mesh\_scalemove} and the \texttt{poly\_scalemove} commands. The command takes six arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
-\item \texttt{f}, scaling factor
+\item \texttt{x1}, x-coordinate of the lower left corner of the bounding box
+\item \texttt{y1}, y-coordinate of the lower left corner of the bounding box
+\item \texttt{x2}, x-coordinate of the upper right corner of the bounding box
+\item \texttt{y2}, y-coordinate of the upper right corner of the bounding box
+\item \texttt{R}, Argument can be either 0, do not preserve mesh aspect ratio, or 1, preserve mesh aspect ratio. 
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{scalex} 	& Scale all x-coordinates in a mesh. The command takes two arguments:
+\texttt{poly\_scalemove} 	& Scale and translate the x- and y- coordinates in the currently loaded polygon. The coordinates are scaled before translating. The command takes four arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh
-\item \texttt{f}, scaling factor
+\item \texttt{fx}, scaling in x-direction
+\item \texttt{fy}, scaling in y-direction
+\item \texttt{dx}, move in x-direction
+\item \texttt{dy}, move in y-direction
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{scaley} 	& Scale all y-coordinates in a mesh. The command takes two arguments:
+\texttt{poly\_rotate} 	& Rotate the currently loaded polygon around a center coordinate. Rotation can only be performed over multiples of 90 degrees. The command takes three arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh
-\item \texttt{f}, scaling factor
+\item \texttt{x}, x-coordinate of rotation center
+\item \texttt{y}, y-coordinate of rotation center
+\item \texttt{d}, degrees to rotate over (must be a multiple of 90)
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{boundingbox} 	& Change the mesh bounding box. This argument scales and moves a mesh such that it fits in a specified rectangle (the bounding box). The mesh is either scaled preserving the aspect ratio or without preserving it. The command takes six arguments:
+\texttt{poly\_flipx} 	& Flip the currently loaded polygon in x direction, i.e. mirror in the central x-coordinate. The command takes no arguments.\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{poly\_flipy} 	& Flip the currently loaded polygon in y direction, i.e. mirror in the central y-coordinate. The command takes no arguments.\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{poly\_boundingbox} 	& Change the bounding box of the currenmtly loaded polygon. This argument scales and moves a polygon such that it fits in a specified rectangle (the bounding box). The polygon is either scaled preserving the aspect ratio or without preserving it. The command will set the variables ``Fx'', ``Fy'', ``Dx'', and ``Dy'' which allow you to perform the exact same transformation on other objects using the \texttt{mesh\_scalemove} and the \texttt{poly\_scalemove} commands. The command takes five arguments:
 \begin{enumerate}
-\item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x1}, x-coordinate of the lower left corner of the bounding box
 \item \texttt{y1}, y-coordinate of the lower left corner of the bounding box
 \item \texttt{x2}, x-coordinate of the upper right corner of the bounding box
