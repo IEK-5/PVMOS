@@ -581,6 +581,47 @@ void PrintMesh(char *fn, mesh *M, int *selected)
 		
 	fclose(f);
 }
+void SurfDefPlot(char *fn, mesh *M, double x1, double y1, double x2, double y2, int Nx, int Ny)
+{
+
+	int i,j, ln_y=0, ln_x=0, notinmesh;
+	double x,y, x_step, y_step;
+	node *N;
+	FILE *f;
+	if ((f=fopen(fn,"w"))==NULL)
+	{
+		Warning("Cannot open %s for writing\n", fn);
+		return;
+	}
+		
+	PrintFileHeader(f);
+	fprintf(f, "# Loacal Area Definition\n");
+	fprintf(f, "# x [cm]\ty [cm]\tArea-id\n");
+	
+	x_step=(x2-x1)/((double)Nx);
+	y_step=(y2-y1)/((double)Ny);
+	x=x1;
+	for (i=0;i<=Nx;i++)
+	{
+		y=y1;
+		for (j=0;j<=Ny;j++)
+		{	
+			ln_y=FindPos(*M, ln_y, x, y, &notinmesh);
+			N=SearchNode(*M, ln_y);
+			if (!notinmesh)
+				fprintf(f,"%e %e %d\n", x, y, N->P);
+			if (j==0)
+				ln_x=ln_y;
+			y+=y_step;
+			
+		}
+		fprintf(f,"\n");
+		ln_y=ln_x;
+		x+=x_step;
+	}
+	fclose(f);
+}
+
 void PrintSurfDef(char *fn, mesh *M, int *selected)
 {
 	int i;

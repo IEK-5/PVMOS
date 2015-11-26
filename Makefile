@@ -9,7 +9,7 @@ obj_util=md5.o
 
 CC=gcc
 target=pvmos
-VERSION=0.79
+VERSION=0.80
 
 
 CFLAGS=-Ofast -flto -Wall -fPIC
@@ -27,8 +27,9 @@ WITH_LIBMATHEVAL=""
 # Realloc performance in windows apears to be poor compared to the gllibc version, I measure a fairly consistent factor 10 difference.
 # The public domain code for dlmalloc is a good drop in replacement for the malloc family of functions. This predecessor 
 # of glibc's malloc functions works fine on windows. Performance is similar to the standard glibc allocator on both windows and 
-# linux systems. Use the WITH_DLMALLOC variable to compile PVMOS with dlmalloc. Recommended for windows.
-WITH_DLMALLOC=""
+# linux systems. Use the WITH_DLMALLOC variable to compile PVMOS with dlmalloc. Recommended for windows. If I ever make PVMOS 
+# multi-threaded I might have to take the ptmalloc2 code instead
+# WITH_DLMALLOC=""
 
 ifdef WITH_DLMALLOC
 	MALLOC_O=malloc-2.8.6.o
@@ -43,6 +44,7 @@ install: pvmos doc
 utils.o: utils.c mesh2d.h utils.h
 	$(CC) $(CFLAGS)   -c -o utils.o -DVERSION=\"$(VERSION_)\" utils.c
 malloc-2.8.6.o:
+# I had problems using link time optimizations with this one so I left out the lto flag.
 	$(CC) -O3  -Wall -fPIC  -c -o malloc-2.8.6.o malloc-2.8.6.c
 main.o: parse.h main.c main.h
 ifdef OPENBLAS

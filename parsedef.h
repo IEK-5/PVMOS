@@ -90,6 +90,7 @@ typedef enum {
 	SURFJPLOT,
 	SURFVJPLOT,
 	SURFEPLOT,
+	SURFDEFPLOT,
 	LOAD_POLY,
 	DEF_POLY,
 	SELECT_RECT,
@@ -219,6 +220,7 @@ const KeyWord KeyTable[] =
 	{"surfJplot", SURFJPLOT},
 	{"surfVjplot", SURFVJPLOT},
 	{"surfEplot", SURFEPLOT},
+	{"surfAreaplot", SURFDEFPLOT},
 	{"load_poly", LOAD_POLY},
 	{"define_poly", DEF_POLY},
 	{"select_rect", SELECT_RECT},
@@ -289,4 +291,49 @@ const KeyWord KeyTable[] =
 	{"debug",DEBUGCOMMAND},
       	{NULL, NONE}
 };
+
+typedef enum {
+	MV_NELEC,	/* number of electrodes */
+	MV_NEL,		/* number of elements */
+	MV_NAREA, 	/* number of areas */
+	MV_NVA,		/* number of simulated voltages */
+	MV_EL_XY,	/* element at coordinate (x,y) */
+	MV_VEL_I, 	/* potential at element i in electrode k */
+	MV_AREA_I,	/* i-th area name */
+	MV_IV_V,	/* estimate current I at voltage V */
+	MV_VI_I,	/* estimate current V at current I */
+	MV_V_I,		/* i-th applied voltage */
+	MV_I_I,		/* i-th total current */
+	MV_X_EL,	/* x coordinate of element (i) */
+	MV_Y_EL,	/* y coordinate of element (i) */
+	MV_NONE
+	
+} PRSMESHVAR;
+/* Keyword to key mapping struct */
+typedef struct {
+	const char *name;
+	PRSMESHVAR PAR;
+} MV_KeyWord;
+
+
+/* The keyword table mapping keywords to keys */
+/* Order matters if several keywords start the same, e.g. "Vel" and "V", you must start with "Vel" so that it is not misinterpreted as "V" */
+const MV_KeyWord MV_KeyTable[] =
+{
+      	{"Nelec", MV_NELEC},
+      	{"Nel", MV_NEL},
+	{"Narea", MV_NAREA}, 	/* number of areas */
+	{"Nva", MV_NVA},		/* number of simulated voltages */
+	{"el", MV_EL_XY},	/* element at coordinate (x,y) */
+	{"Vel", MV_VEL_I}, 	/* potential at element i in electrode k */
+	{"area", MV_AREA_I},	/* i-th area name */
+	{"IV", MV_IV_V},	/* estimate current I at voltage V */
+	{"VI", MV_VI_I},	/* estimate current V at current I */
+	{"V", MV_V_I},		/* i-th applied voltage */
+	{"I", MV_I_I},		/* i-th total current */
+	{"X", MV_X_EL},		/* element at coordinate (x,y) */
+	{"Y", MV_Y_EL},		/* element at coordinate (x,y) */
+      	{NULL, MV_NONE}
+};
+
 

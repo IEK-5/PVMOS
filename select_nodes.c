@@ -826,6 +826,6 @@ int * SelectArea(mesh M, int *sel_nodes, char *name)
 				sel_nodes=AddToList(sel_nodes, M.nodes[i].id);
 	}	
 	if (sel_nodes[0]==0)
-		Warning("No nodes selected in RectSelectNodes\n");
+		Warning("No nodes selected in SelectArea\n");
 	return sel_nodes;		
 }

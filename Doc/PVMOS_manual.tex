@@ -283,7 +283,7 @@ Keyword & Description \\
 \multicolumn{2}{l}{\textsc{Selecting Elements}} \\*
 \hline
 Keyword & Description \\
-\texttt{select\_rect}	& Select a rectangular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the rectangle. If the latter is not desired use deselect first. The command takes five arguments:
+\texttt{select\_rect}	& Select a rectangular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the rectangle. If the latter is not desired use deselect first. All select commands set the variable "Nsel" to the number of selected elements. The command takes five arguments:
 \begin{enumerate}
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
@@ -292,7 +292,7 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_rect\_contour}	& Select the contour of a rectangle in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the rectangle. If the latter is not desired use deselect first. The command takes six arguments:
+\texttt{select\_rect\_contour}	& Select the contour of a rectangle in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the rectangle. If the latter is not desired use deselect first. All select commands set the variable "Nsel" to the number of selected elements. The command takes six arguments:
 \begin{enumerate}
 \item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
 \item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
@@ -302,7 +302,7 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_circ}	& Select a circular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. The command takes four arguments:
+\texttt{select\_circ}	& Select a circular area in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. All select commands set the variable "Nsel" to the number of selected elements. The command takes four arguments:
 \begin{enumerate}
 \item \texttt{x\_c}, center x-coordinate of the selected circle
 \item \texttt{y\_c}, center y-coordinate of the selected circle
@@ -310,7 +310,7 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_circ\_contour}	& Select the contour of a circle in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. The command takes five arguments:
+\texttt{select\_circ\_contour}	& Select the contour of a circle in a mesh. If currently nodes are already selected in the mesh, the command selects the subset of selected nodes within the circle. If the latter is not desired use deselect first. All select commands set the variable "Nsel" to the number of selected elements. The command takes five arguments:
 \begin{enumerate}
 \item \texttt{x\_c}, center x-coordinate of the selected circle
 \item \texttt{y\_c}, center y-coordinate of the selected circle
@@ -319,12 +319,12 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements within the polygon. If the latter is not desired use deselect first. If a polygon circles an element more than once the node is selected if the node is circled an uneven number of times. This allows one to define polygon areas with holes. To make a hole, define one outer part of the polygon and one inner part and have a break between these tho parts, i.e. the two parts should not be connected by a line segment, (see \texttt{load\_poly} and \texttt{loaddefine\_poly}). The command takes one argument.
+\texttt{select\_poly}	& Select an area within a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements within the polygon. If the latter is not desired use deselect first. All select commands set the variable "Nsel" to the number of selected elements. If a polygon circles an element more than once the node is selected if the node is circled an uneven number of times. This allows one to define polygon areas with holes. To make a hole, define one outer part of the polygon and one inner part and have a break between these tho parts, i.e. the two parts should not be connected by a line segment, (see \texttt{load\_poly} and \texttt{loaddefine\_poly}). The command takes one argument.
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. If no line segment is present between two seubsequent coordinates in the polygon (i.e. a break in the polygon), no nodes are selected between these coordinates. The command takes three arguments.
+\texttt{select\_poly\_contour}	& Select an area around a polygon-contour. In order to use this command you must first load or define a polygon from file with the \texttt{load\_poly} or \texttt{define\_poly} commands. If currently elements are already selected in the mesh, the command selects the subset of selected elements near to the polygon. If the latter is not desired use deselect first. All select commands set the variable "Nsel" to the number of selected elements. This command is often useful to refine the mesh along the polygon before using \texttt{select\_poly} to assign elements to a new area. It may also be useful to define things such as cracks. If no line segment is present between two seubsequent coordinates in the polygon (i.e. a break in the polygon), no nodes are selected between these coordinates. The command takes three arguments.
 \begin{enumerate}
 \item \texttt{distance}, Distance from the polygon
 \item \texttt{loop}, Argument takes either 0 (not looped) or 1 (looped). In looped modus the last point in the polygon is connected to the first point.
@@ -639,6 +639,19 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
 \item \texttt{RI}, Boolean, if true the internal series resistance is considers (i.e., consider bias dependent collection of the diode due to an internal series resistance)
 \end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{surfAreaplot}		& Export the area definition. Unlike the \texttt{print}-commands like \texttt{printdef} the data is mapped to a regular mesh. The command takes seven arguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x1}, x-coordinate of the lower left corner of the selected rectangle
+\item \texttt{y1}, y-coordinate of the lower left corner of the selected rectangle
+\item \texttt{x2}, x-coordinate of the upper right corner of the selected rectangle
+\item \texttt{y2}, y-coordinate of the upper right corner of the selected rectangle
+\item \texttt{Nx}, Number of points in the regular mesh along the x-direction
+\item \texttt{Ny}, Number of points in the regular mesh along the y-direction
+\item \texttt{file-name}, file-name to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \multicolumn{2}{l}{\textsc{Manipulating local properties}} \\*
 \hline
 Keyword & Description \\
@@ -1022,6 +1035,24 @@ In addition libmatheval defines the following constants:
 \end{itemize}
 
 Note that function and constant names cannot be redefined as a variable. 
+
+Sometimes it is useful to access data related to a mesh. To access data from a mesh object you can place an expression relating to a mesh between curly brackets. The syntax is as follows: \{\textless mesh-name\textgreater.\textless data-field\textgreater\}. The following data-fields are available:
+\begin{itemize}
+\item{} \texttt{Nel} - Number of elements in the mesh
+\item{} \texttt{Nelec} - Number of electrodes
+\item{} \texttt{Narea} - Number or areas
+\item{} \texttt{Nva} - Number of solutions
+\item{} \texttt{area(\textless i\textgreater)} - Returns the area name with index i, where i is an integer between 0 and Narea
+\item{} \texttt{el(\textless x\textgreater,\textless y\textgreater)} - Returns the element id number at position $(x,y)$
+\item{} \texttt{X(\textless i\textgreater)} - Returns the central x-coordinate of the element with id i
+\item{} \texttt{Y(\textless i\textgreater)} - Returns the central x-coordinate of the element with id i
+\item{} \texttt{V(\textless i\textgreater)} - Returns the i-th simulated voltage, the index is in order of simulation
+\item{} \texttt{I(\textless i\textgreater)} - Returns the i-th simulated current, the index in in order of simulation
+\item{} \texttt{VI(\textless I\textgreater)} - Estimates the voltage at an injected current of $I$ A 
+\item{} \texttt{IV(\textless V\textgreater)} - Estimates the current at an applied voltage of $V$ V
+\item{} \texttt{Vel(\textless i\textgreater, \textless j\textgreater, \textless k\textgreater)} - Returns the voltage for element index i, electrode index j and simulation index k
+\end{itemize}
+Both expression types may be mixed and nested.
 
 \section{\label{mkpvmosmesh}The PVMOS-mesh package for GNU Octave}
 The GNU Octave package PVMOS-mesh allows you to crate and save meshies in binary format for use in PVMOS. GNU Octave is a versatile Matlab-like program. Linking to Octave allows you to, for example, use GNU Octave's ability to work with bitmap images when creating a mesh for a given problem. In general GNU Octave is very good for creating and manipulating matrices. The PVMOS library allows you to create meshes in PVMOS for which the mesh topology can be represented as a matrix, i.e. the elements must be organized in rows and columns. This disallows sub-grids, however, it does allow you to vary the width and height of the rows and columns, i.e. a rudimentary variable mesh can be created. 

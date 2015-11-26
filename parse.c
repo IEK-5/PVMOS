@@ -70,156 +70,6 @@
 
 /* parsing utility functions */
 
-/* lookup a word (name) in the keyword table (AKeyTable) */
-static PRSDEF LookupKey (char *name,  const KeyWord * AKeyTable)
-{
-      unsigned int len;
-      len=strlen(name);
-      for (; AKeyTable->name; AKeyTable++)
-      {
-      	    if(strlen(AKeyTable->name)==len)
-	    	if (strncmp (name, AKeyTable->name, len) == 0)
-			break;
-      }
-      return AKeyTable->PAR;
-}
-
-/* Find the beginning of the next word in a string (line) */
-/* i.e. skip whitespace until we hit a non whitespace character or reach the end of the string */
-/* returns either a pointer to the first character of the next word or NULL if we've reached the end of the string  */
-static char * Begin (char *line)
-{
-	/* returns a pointer to the beginning of a word, NULL if end is reached */
-	while(isspace((*line)) && *line)
-		line++; 
-	if (*line)
-		return line;
-	else
-		return NULL;
-}
-/* Find the end of the current word in a string (line) */
-/* i.e. skip non-whitespace character untill we reach whitespace of the end of the string */
-/* returns a pointer to the first white space character or null-character */
-static char * End (char *line)
-{
-	/* returns a pointer to the end of a word */
-	while(!isspace((*line)) && *line)
-		line++;
-	return line;
-}
-
-/* copies one word from begin to word */
-/* begin should point to the next word in a string */
-/* the function returns a poiinter to the next word in the string  */
-static char *GetWord (char *begin, char *word)
-{
-	char *end, *be;
-	int parseExp=1;
-	if(!begin)
-	{
-		*word='\0';
-		return NULL;
-	}
-	end=End(begin);	
-	word=strncpy(word,begin,end-begin);
-	word[end-begin]='\0';
-	begin=Begin(end);
-	
-	/* check for expressions as part of the word */
-	/* we support nested expressions */
-	while (parseExp)
-	{
-		/* we search backwards from the end for the last '[' */
-		be=word+strlen(word);
-		
-		while ((be>=word)&&(*be!='['))
-			be--;
-		if (be>=word)
-		{
-			/* we have a '[', find the matching ']' and substitute the expression in the word with its result */
-			char *ee, *expr, *res, *p, *q;
-			ee=be;
-			while ((*ee)&&(*ee!=']'))
-				ee++;
-			if (!(*ee))
-				Error("No matching \"]\" found\n");
-			
-			expr=malloc(MAXSTRLEN*sizeof(char));
-			res=malloc(MAXSTRLEN*sizeof(char));
-			expr=strncpy(expr,be+1,ee-be-1);
-			expr[ee-be-1]='\0';
-			
-			if (ExprEval(expr, res)) 
-				Error("Failed to evaluate expression: \"%s\"\n", expr);
-			else
-			{
-				p=res+strlen(res);
-				q=ee+1;
-				while ((*q)&&(p-res+be-word<MAXSTRLEN))
-				{
-					*p=*q;
-					q++;
-					p++;
-				}
-				*p='\0';
-				p=res;
-				while (*p)
-				{
-					*be=*p;
-					be++;
-					p++;
-				}
-				*be='\0';
-			}
-			free(expr);
-			free(res);
-		}
-		else
-			/* we have no '[', no more expression in the word */
-			parseExp=0;
-	}
-	return begin;
-}
-
-static char *GetWord_noexp (char *begin, char *word)
-{
-	char *end;
-	if(!begin)
-	{
-		*word='\0';
-		return NULL;
-	}
-	end=End(begin);	
-	word=strncpy(word,begin,end-begin);
-	word[end-begin]='\0';
-	begin=Begin(end);
-	return begin;
-}
-
-
-static char **GetArgs (char **begin, int Nw)
-{
-	char ** res;
-	int i;
-	res=malloc((Nw+1)*sizeof(char *));
-	for (i=0;i<Nw;i++)
-	{
-		res[i]=malloc((MAXSTRLEN)*sizeof(char));
-		(*begin)=GetWord ((*begin), res[i]);
-		if(res[i][0]=='\0')
-			return NULL;	
-	}
-	return res;
-}
-
-void FreeArgs (char **res, int Nw)
-{
-	int i;
-	for (i=0;i<Nw;i++)
-		free(res[i]);
-	free(res);
-}
-
 /* looks up a mesh by its name in the meshes array */
 /* a mesh vbariable consists of
 	1: a name
@@ -346,9 +196,10 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=RectSelectNodes(x1, y1, x2, y2, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectRectNodes: No elements selected, try selecting a larger area or refine the mesh first");
+		Warning("In SelectRectNodes: No elements selected, try selecting a larger area or refine the mesh first");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
+	DefineVar("Nsel", (double)MV->nodes[0]);
 }
 void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, double y1, double x2, double y2, double d)
 {
@@ -360,9 +211,10 @@ void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, d
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=RectContourSelectNodes(x1, y1, x2, y2, d, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectRectContourNodes: No elements selected, try selecting a larger area or refine the mesh first");
+		Warning("In SelectRectContourNodes: No elements selected, try selecting a larger area or refine the mesh first");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
+	DefineVar("Nsel", (double)MV->nodes[0]);
 }
 /* select circular area in a mesh variable */
 /* Input: 
@@ -385,9 +237,10 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=CircSelectNodes(x, y, r, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectCircNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+		Warning("In SelectCircNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
+	DefineVar("Nsel", (double)MV->nodes[0]);
 }
 void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, double y, double r,double d)
 {
@@ -399,9 +252,10 @@ void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, d
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=CircContourSelectNodes(x, y, r, d, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectCircContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+		Warning("In SelectCircContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
+	DefineVar("Nsel", (double)MV->nodes[0]);
 }
 /* select area enclosed by a polygon in a mesh variable */
 /* Input: 
@@ -422,9 +276,10 @@ void SelectPolyNodes (char *name,  meshvar * meshes, int Nm, polygon P)
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=PolySelectNodes(P, MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectPolyNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+		Warning("In SelectPolyNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
+	DefineVar("Nsel", (double)MV->nodes[0]);
 }
 void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, double d, int loop)
 {
@@ -436,9 +291,10 @@ void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, d
 		Print(NORMAL,"            -->  Making sub-selection");
 	MV->nodes=PolyContourSelectNodes(d, P, loop,MV->M, MV->nodes);
 	if (MV->nodes[0]==0)
-		Error("In SelectPolyContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
+		Warning("In SelectPolyContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
+	DefineVar("Nsel", (double)MV->nodes[0]);
 }
 
 
@@ -462,9 +318,11 @@ void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
 		Print(NORMAL,"            -->  Making sub-selection %s", name+i+1);
 	MV->nodes=SelectArea(MV->M, MV->nodes, name+i+1);
 	if (MV->nodes[0]==0)
-		Error("In SelectAreaNodes: No elements selected.\n");
+		Warning("In SelectAreaNodes: No elements selected.\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
+	DefineVar("Nsel", (double)MV->nodes[0]);
+	
 }
 
 /* looks up an area within a mesh by its name in the meshes array */
@@ -495,6 +353,543 @@ meshvar *LookupMeshArea (char *name,  meshvar * meshes, int Nm, int *P)
 	name[i]='.';
 	return MV;
 }
+
+
+/* parsing utility functions */
+
+/* lookup a word (name) in the keyword table (AKeyTable) */
+static PRSDEF LookupKey (char *name,  const KeyWord * AKeyTable)
+{
+      unsigned int len;
+      len=strlen(name);
+      for (; AKeyTable->name; AKeyTable++)
+      {
+      	    if(strlen(AKeyTable->name)==len)
+	    	if (strncmp (name, AKeyTable->name, len) == 0)
+			break;
+      }
+      return AKeyTable->PAR;
+}
+
+
+/* Find the beginning of the next word in a string (line) */
+/* i.e. skip whitespace until we hit a non whitespace character or reach the end of the string */
+/* returns either a pointer to the first character of the next word or NULL if we've reached the end of the string  */
+static char * Begin (char *line)
+{
+	/* returns a pointer to the beginning of a word, NULL if end is reached */
+	while(isspace((*line)) && *line)
+		line++; 
+	if (*line)
+		return line;
+	else
+		return NULL;
+}
+/* Find the end of the current word in a string (line) */
+/* i.e. skip non-whitespace character untill we reach whitespace of the end of the string */
+/* returns a pointer to the first white space character or null-character */
+static char * End (char *line)
+{
+	/* returns a pointer to the end of a word */
+	while(!isspace((*line)) && *line)
+		line++;
+	return line;
+}
+
+static PRSMESHVAR LookupMeshVar (char *name,  const MV_KeyWord * AKeyTable)
+{
+      unsigned int len;
+      for (; AKeyTable->name; AKeyTable++)
+      {
+      	    len=strlen(AKeyTable->name);
+      	    if(len<MAXSTRLEN)
+	    	if (strncmp (name, AKeyTable->name, len) == 0)
+			break;
+      }
+      return AKeyTable->PAR;
+}
+static char **GetMeshVarArgs (char *expr, int Nw)
+{
+	char ** res;
+	char *p, *q, c;
+	int i;
+	res=malloc((Nw+1)*sizeof(char *));
+	p=expr;
+	while ((*p)&&(*p!='('))
+		p++;
+	if (*p!='(')
+		Error("In EvalMeshVar: Expected a string of the form <mesh_name>.<var_name>(..,..), got %s\n", expr);
+	for (i=0;i<Nw;i++)
+	{
+		res[i]=malloc((MAXSTRLEN)*sizeof(char));
+		p++;	
+		q=p;
+		while ((*p)&&(*p!=',')&&(*p!=')'))
+			p++;
+		
+		if (*p)
+		{
+			c=*p;
+			*p='\0';
+			strncpy(res[i],q,(p-q+1));
+			*p=c;
+		}
+		else
+			Error("In EvalMeshVar: Expected a string of the form <mesh_name>.<var_name>(..,..), got %s\n", expr);
+		
+	}
+	return res;
+}
+
+
+void FreeArgs (char **res, int Nw);
+static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
+{
+	char * p;
+	mesh *M;
+	PRSMESHVAR var;
+	p=expr;
+	while((*p)&&(*p!='.'))
+		p++;	
+	if (*p!='.')
+		Error("In EvalMeshVar: Expected a string of the form <mesh_name>.<var_name>, got %s\n", expr);
+	*p='\0';			
+	M=FetchMesh(expr, meshes, Nm);
+	if (!M)
+		Error("In EvalMeshVar: mesh %s does not exist\n",expr);
+	*p='.';
+	p++;	
+	var=LookupMeshVar (p,  MV_KeyTable);
+	switch(var)
+	{
+		case MV_NELEC:
+			/* number of electrodes */
+			snprintf(res, MAXSTRLEN-1, "%d", M->Nel);
+			return 0;
+		case MV_NEL:
+			/* number of elements */
+			snprintf(res, MAXSTRLEN-1, "%d", M->Nn);
+			return 0;
+		case MV_NAREA:		
+			/* number of areas */
+			snprintf(res, MAXSTRLEN-1, "%d", M->Na);
+			return 0;
+		case MV_NVA:
+			/* number of applied voltages simulated */
+			snprintf(res, MAXSTRLEN-1, "%d", M->res.Nva);
+			return 0;
+		case MV_EL_XY:
+		{
+			/* return the element id at (x,y) */
+			char **args;
+			double x, y;
+			int notinmesh, id;
+			
+			
+			args=GetMeshVarArgs (expr, 2);
+			
+			x=atof(args[0]);
+			y=atof(args[1]);
+			id=FindPos(*M, 0, x, y, &notinmesh);
+			
+			if (notinmesh)
+			{
+				Warning("In EvalMeshVar: Position (%e,%e) is not in the mesh\n", x, y);
+				*res='\0';
+			}
+			else
+				snprintf(res, MAXSTRLEN-1, "%d", id);
+			FreeArgs(args,2);
+			return 0;
+		}
+		case MV_X_EL:		
+		{
+			/* return the element id at (x,y) */
+			char **args;
+			int i;
+			
+			
+			args=GetMeshVarArgs (expr, 1);
+			
+			i=atoi(args[0]);
+			
+			if ((i<0)||(i>=M->Nn))
+			{
+				Warning("In EvalMeshVar: Element index %d out of range (0..%d)\n", i, M->Nn);
+				*res='\0';
+			}
+			else		
+				snprintf(res, MAXSTRLEN-1, "%e", (M->nodes[i].x1+M->nodes[i].x2)/2);
+			FreeArgs(args,1);
+			return 0;
+		}
+		case MV_Y_EL:		
+		{
+			/* return the element id at (x,y) */
+			char **args;
+			int i;
+			
+			
+			args=GetMeshVarArgs (expr, 1);
+			
+			i=atoi(args[0]);
+			
+			if ((i<0)||(i>=M->Nn))
+			{
+				Warning("In EvalMeshVar: Element index %d out of range (0..%d)\n", i, M->Nn);
+				*res='\0';
+			}
+			else		
+				snprintf(res, MAXSTRLEN-1, "%e", (M->nodes[i].y1+M->nodes[i].y2)/2);
+			FreeArgs(args,1);
+			return 0;
+		}				
+		case MV_AREA_I:		
+		{
+			/* return the area name for index i */
+			char **args;
+			int id;
+			
+			
+			args=GetMeshVarArgs (expr, 1);
+			
+			id=atoi(args[0]);
+			if ((id>=0)&&(id<M->Na))
+				snprintf(res, MAXSTRLEN-1, "%s", M->P[id].name);	
+			else
+			{
+				Warning("In EvalMeshVar: area index %d out of range (0..%d)\n", id, M->Na-1);
+				*res='\0';
+			}
+			FreeArgs(args,1);
+			return 0;
+		}		
+		case MV_V_I:			
+		{
+			/* return the i-th applied voltage */
+			char **args;
+			int id;
+			
+			
+			args=GetMeshVarArgs (expr, 1);
+			
+			id=atoi(args[0]);
+			if ((id>=0)&&(id<M->res.Nva))
+				snprintf(res, MAXSTRLEN-1, "%e", M->res.Va[id]);	
+			else
+			{
+				Warning("In EvalMeshVar: simulation index %d out of range (0..%d)\n", id, M->res.Nva-1);
+				*res='\0';
+			}
+			FreeArgs(args,1);
+			return 0;
+		}	
+		case MV_I_I:		
+		{
+			/* return the i-th applied voltage */
+			char **args;
+			int id;
+			
+			
+			args=GetMeshVarArgs (expr, 1);
+			
+			id=atoi(args[0]);
+			if ((id>=0)&&(id<M->res.Nva))
+				snprintf(res, MAXSTRLEN-1, "%e", M->res.I[id]);	
+			else
+			{
+				Warning("In EvalMeshVar: simulation index %d out of range (0..%d)\n", id, M->res.Nva-1);
+				*res='\0';
+			}
+			FreeArgs(args,1);
+			return 0;
+		}
+		case MV_VI_I:
+		{
+			/* return the i-th applied voltage */
+			char **args;
+			double x;
+			double *V, *I;
+			int i;
+			
+			args=GetMeshVarArgs (expr, 1);
+			x=atof(args[0]);
+			if (M->res.Nva==0)
+			{
+				Warning("In EvalMeshVar: no simulated IV data available, cannot estimate voltage @ %e A\n", x);
+				*res='\0';			
+				FreeArgs(args,1);
+				return 0;
+			
+			}
+			
+			
+			if (M->res.Nva==1)
+			{
+			
+				snprintf(res, MAXSTRLEN-1, "%e", M->res.Va[0]);				
+				FreeArgs(args,1);
+				return 0;
+			}
+			
+			V=malloc((M->res.Nva+1)*sizeof(double));
+			I=malloc((M->res.Nva+1)*sizeof(double));
+			
+			for (i=0;i<M->res.Nva;i++)
+			{
+				V[i]=M->res.Va[i];
+				I[i]=M->res.I[i];
+			}
+			
+			BubbleSortJV(M->res.Nva, I, V);
+			if (I[0]>x)
+				snprintf(res, MAXSTRLEN-1, "%e", V[0]+(x-I[0])*(V[1]-V[0])/(I[1]-I[0]));	
+			else
+			{
+				i=0;
+				while(i<M->res.Nva-1)
+				{
+					if (x==I[i])
+						break;
+					if ((x-I[i])*(x-I[i+1])<0)
+						break;
+					i++;				
+				}
+				if (x==I[i])
+					snprintf(res, MAXSTRLEN-1, "%e", V[i]);
+				else
+					snprintf(res, MAXSTRLEN-1, "%e", V[i]+(x-I[i])*(V[i+1]-V[i])/(I[i+1]-I[i]));
+				
+			}
+			free(V);
+			free(I);
+			
+			FreeArgs(args,1);
+			return 0;
+		
+		}
+		case MV_IV_V:	
+		{
+			/* return the i-th applied voltage */
+			char **args;
+			double x;
+			double *V, *I;
+			int i;
+			
+			args=GetMeshVarArgs (expr, 1);
+			x=atof(args[0]);
+			if (M->res.Nva==0)
+			{
+				Warning("In EvalMeshVar: no simulated IV data available, cannot estimate current @ %e V\n", x);
+				*res='\0';			
+				FreeArgs(args,1);
+				return 0;
+			
+			}
+			
+			
+			if (M->res.Nva==1)
+			{
+			
+				snprintf(res, MAXSTRLEN-1, "%e", M->res.Va[0]);				
+				FreeArgs(args,1);
+				return 0;
+			}
+			
+			V=malloc((M->res.Nva+1)*sizeof(double));
+			I=malloc((M->res.Nva+1)*sizeof(double));
+			
+			for (i=0;i<M->res.Nva;i++)
+			{
+				V[i]=M->res.Va[i];
+				I[i]=M->res.I[i];
+			}
+			
+			BubbleSortJV(M->res.Nva, V, I);
+			if (V[0]>x)
+				snprintf(res, MAXSTRLEN-1, "%e", I[0]+(x-V[0])*(I[1]-I[0])/(V[1]-V[0]));	
+			else
+			{
+				i=0;
+				while(i<M->res.Nva-1)
+				{
+					if (x==V[i])
+						break;
+					if ((x-V[i])*(x-V[i+1])<0)
+						break;
+					i++;				
+				}
+				if (x==V[i])
+					snprintf(res, MAXSTRLEN-1, "%e", I[i]);
+				else
+					snprintf(res, MAXSTRLEN-1, "%e", I[i]+(x-V[i])*(I[i+1]-I[i])/(V[i+1]-V[i]));
+				
+			}
+			free(V);
+			free(I);
+			
+			FreeArgs(args,1);
+			return 0;
+		
+		}
+		case MV_VEL_I:
+		{
+			/* return the voltage for element i, electrode j and simulation index k (i,j,k) */
+			char **args;
+			int i,j,k;
+			
+			
+			args=GetMeshVarArgs (expr, 3);
+			
+			i=atoi(args[0]);
+			j=atoi(args[1]);
+			k=atoi(args[2]);
+			
+			if ((i>=0)&&(i<M->Nn)&&(j>=0)&&(j<M->Nel)&&(k>=0)&&(k<M->res.Nva))
+				snprintf(res, MAXSTRLEN-1, "%e",  M->res.Vn[k][j][i]);
+			else
+			{
+				if ((i<0)||(i>=M->Nn))
+					Warning("In EvalMeshVar: Element index %d out of range (0..%d)\n", i, M->Nn);				
+				if ((j<0)||(j>=M->Nel))
+					Warning("In EvalMeshVar: Electrode index %d out of range (0..%d)\n", j, M->Nel);				
+				if ((k<0)||(k>=M->res.Nva))
+					Warning("In EvalMeshVar: simulation index %d out of range (0..%d)\n", k, M->res.Nva-1);				
+				*res='\0';
+			}
+				
+			FreeArgs(args,3);
+			return 0;
+		}
+		case MV_NONE:
+		default:
+			Error("In EvalMeshVar: Variable name \"%s\"  not recognized\n",expr);
+			return 1;
+		
+	}
+
+}
+/* copies one word from begin to word */
+/* begin should point to the next word in a string */
+/* the function returns a poiinter to the next word in the string  */
+static char *GetWord (char *begin, char *word, meshvar * meshes, int Nm)
+{
+	char *end, *be;
+	int parseExp=1;
+	if(!begin)
+	{
+		*word='\0';
+		return NULL;
+	}
+	end=End(begin);	
+	word=strncpy(word,begin,end-begin);
+	word[end-begin]='\0';
+	begin=Begin(end);
+	
+	/* check for expressions as part of the word */
+	/* we support nested expressions */
+	while (parseExp)
+	{
+		/* we search backwards from the end for the last '[' */
+		be=word+strlen(word);
+		
+		while ((be>=word)&&(*be!='[')&&(*be!='{'))
+			be--;
+		if (be>=word)
+		{
+			/* we have a '[', find the matching ']' and substitute the expression in the word with its result */
+			char *ee, *expr, *res, *p, *q;
+			int fail;
+			ee=be;
+			/* in the ASCII table the matching bracket is always 2 places further, hence (*be)+2 */
+			while ((*ee)&&(*ee!=(*be)+2))
+				ee++;
+			if (!(*ee))
+				Error("No matching \"%c\" found\n", (*be)+2);
+			
+			expr=malloc(MAXSTRLEN*sizeof(char));
+			res=malloc(MAXSTRLEN*sizeof(char));
+			expr=strncpy(expr,be+1,ee-be-1);
+			expr[ee-be-1]='\0';
+			if (*be=='[')
+				fail=ExprEval(expr, res);
+			else
+				fail=EvalMeshVar(expr, res, meshes, Nm);
+				
+			if (fail)
+				Error("Failed to evaluate expression: \"%s\"\n", expr);
+			else
+			{
+				p=res+strlen(res);
+				q=ee+1;
+				while ((*q)&&(p-res+be-word<MAXSTRLEN))
+				{
+					*p=*q;
+					q++;
+					p++;
+				}
+				*p='\0';
+				p=res;
+				while (*p)
+				{
+					*be=*p;
+					be++;
+					p++;
+				}
+				*be='\0';
+			}
+			free(expr);
+			free(res);
+		}
+		else
+			/* we have no '[', no more expression in the word */
+			parseExp=0;
+	}
+	return begin;
+}
+
+static char *GetWord_noexp (char *begin, char *word)
+{
+	char *end;
+	if(!begin)
+	{
+		*word='\0';
+		return NULL;
+	}
+	end=End(begin);	
+	word=strncpy(word,begin,end-begin);
+	word[end-begin]='\0';
+	begin=Begin(end);
+	return begin;
+}
+
+
+static char **GetArgs (char **begin, int Nw, meshvar * meshes, int Nm)
+{
+	char ** res;
+	int i;
+	res=malloc((Nw+1)*sizeof(char *));
+	for (i=0;i<Nw;i++)
+	{
+		res[i]=malloc((MAXSTRLEN)*sizeof(char));
+		(*begin)=GetWord ((*begin), res[i], meshes, Nm);
+		if(res[i][0]=='\0')
+			return NULL;	
+	}
+	return res;
+}
+
+void FreeArgs (char **res, int Nw)
+{
+	int i;
+	for (i=0;i<Nw;i++)
+		free(res[i]);
+	free(res);
+}
+
+
+
+
 #define LOOPALLOCBLOCK 5
 /* the parse routine, parses the commands in a file */
 void Parse (char *file)
@@ -529,6 +924,7 @@ void Parse (char *file)
 	last_pos=ftell(f);
     	fgets(line, MAXSTRLEN-1, f);
 	
+	DefineVar("Nsel", 0.0);
 	tic = clock();
 	while(feof(f)==0)
 	{
@@ -539,7 +935,7 @@ void Parse (char *file)
 			begin=Begin(line);
 			while(begin)
 			{
-				begin=GetWord (begin, word);
+				begin=GetWord (begin, word, Meshes, Nm);
 				key=LookupKey (word,  KeyTable);
 				switch(key)
 				{
@@ -551,7 +947,7 @@ void Parse (char *file)
 						char **args;
 						char *name;
 						int Nx, Ny, len;
-						args=GetArgs (&begin, 7);
+						args=GetArgs (&begin, 7, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;	
 						Print(NORMAL,"* line %3d: Creating new mesh %s", line_nr, args[6]);
@@ -576,7 +972,7 @@ void Parse (char *file)
 						char **args;
 						mesh *M;
 						/* read next word and process, if no next word trow an error */
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Adding column to the right side of mesh %s", line_nr,args[1]);	
@@ -598,7 +994,7 @@ void Parse (char *file)
 						char **args;
 						mesh *M;
 						/* read next word and process, if no next word trow an error */
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Adding row to the top side of mesh %s", line_nr,args[1]);	
@@ -620,7 +1016,7 @@ void Parse (char *file)
 						char **args;
 						mesh *M;
 						/* read next word and process, if no next word trow an error */
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Adding column to the left side of mesh %s", line_nr,args[1]);	
@@ -642,7 +1038,7 @@ void Parse (char *file)
 						char **args;
 						mesh *M;
 						/* read next word and process, if no next word trow an error */
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Adding row to the bottom side of mesh %s", line_nr,args[1]);	
@@ -664,7 +1060,7 @@ void Parse (char *file)
 						int len;
 						/* read next word and process, if no next word trow an error */
 						
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Removing mesh %s", line_nr, word);
@@ -686,7 +1082,7 @@ void Parse (char *file)
 						int len;
 						mesh *M1, *M2;
 						/* read next word and process, if no next word trow an error */
-						args=GetArgs (&begin, 5);
+						args=GetArgs (&begin, 5, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Joining mesh %s and mesh %s to %s", line_nr,args[2],args[3],args[4]);	
@@ -716,7 +1112,7 @@ void Parse (char *file)
 						int len;
 						mesh *M1, *M2;
 						/* read next word and process, if no next word trow an error */
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Joining mesh %s and mesh %s to %s", line_nr,args[1],args[2],args[3]);	
@@ -746,7 +1142,7 @@ void Parse (char *file)
 						int len;
 						mesh *M1, *M2;
 						/* read next word and process, if no next word trow an error */
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;	
 						Print(NORMAL,"* line %3d: Joining mesh %s and mesh %s to %s", line_nr,args[1],args[2],args[3]);	
@@ -776,7 +1172,7 @@ void Parse (char *file)
 						char **args;
 						mesh *M;
 						
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Duplicating mesh %s and storing duplicate in %s",line_nr, args[0], args[1]);
@@ -795,7 +1191,7 @@ void Parse (char *file)
 					case ADDEL:
 					{
 						meshvar *MV;
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Adding an electrode to mesh %s",line_nr, word);
@@ -811,7 +1207,7 @@ void Parse (char *file)
 					case SPLITX:
 					{
 						meshvar *MV;
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
@@ -838,7 +1234,7 @@ void Parse (char *file)
 					case SPLITY:
 					{
 						meshvar *MV;
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
@@ -865,7 +1261,7 @@ void Parse (char *file)
 					case SPLITXY:
 					{
 						meshvar *MV;
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
@@ -892,7 +1288,7 @@ void Parse (char *file)
 					case SPLITLONG:
 					{
 						meshvar *MV;
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
@@ -921,7 +1317,7 @@ void Parse (char *file)
 						meshvar *MV;
 						double dx, dy;
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -956,7 +1352,7 @@ void Parse (char *file)
 						meshvar *MV;
 						char **args;
 						double fx,fy, dx, dy;
-						args=GetArgs (&begin, 5);
+						args=GetArgs (&begin, 5, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -980,7 +1376,7 @@ void Parse (char *file)
 						char **args;
 						double x,y;
 						int d;
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1006,7 +1402,7 @@ void Parse (char *file)
 						char **args;
 						double xx1, yy1, xx2, yy2;
 						
-						args=GetArgs (&begin, 1);
+						args=GetArgs (&begin, 1, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1026,7 +1422,7 @@ void Parse (char *file)
 						meshvar *MV;
 						char **args;
 						double xx1, yy1, xx2, yy2;
-						args=GetArgs (&begin, 1);
+						args=GetArgs (&begin, 1, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1048,7 +1444,7 @@ void Parse (char *file)
 						double x1,x2,y1,y2;
 						double fx, fy, dx, dy;
 						int FixR;
-						args=GetArgs (&begin, 6);
+						args=GetArgs (&begin, 6, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1082,7 +1478,7 @@ void Parse (char *file)
 					{	
 						char **args;
 						double fx,fy, dx, dy;
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1104,7 +1500,7 @@ void Parse (char *file)
 						char **args;
 						double x,y;
 						int d;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1149,7 +1545,7 @@ void Parse (char *file)
 						double x1,x2,y1,y2;
 						double fx, fy, dx, dy;
 						int FixR;
-						args=GetArgs (&begin, 5);
+						args=GetArgs (&begin, 5, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 											
@@ -1187,7 +1583,7 @@ void Parse (char *file)
 						double d;
 						int loop;
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1216,7 +1612,7 @@ void Parse (char *file)
 						meshvar *MV;
 						double d,x,y,r;
 						char **args;
-						args=GetArgs (&begin, 5);
+						args=GetArgs (&begin, 5, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1241,7 +1637,7 @@ void Parse (char *file)
 						meshvar *MV;
 						double d,x1,y1,x2, y2;
 						char **args;
-						args=GetArgs (&begin, 6);
+						args=GetArgs (&begin, 6, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						
@@ -1265,7 +1661,7 @@ void Parse (char *file)
 					case SIMPLIFY_MESH:
 					{
 						meshvar *MV;
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
@@ -1284,7 +1680,7 @@ void Parse (char *file)
 						char *name;
 						mesh Mnew;
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -1304,7 +1700,7 @@ void Parse (char *file)
 					{
 						mesh *M;						
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -1324,7 +1720,7 @@ void Parse (char *file)
 					{
 						meshvar *MV;						
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -1343,7 +1739,7 @@ void Parse (char *file)
 					{
 						meshvar *MV;					
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print connections in mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1361,7 +1757,7 @@ void Parse (char *file)
 					{
 						meshvar *MV;					
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print area definition per node in mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1378,7 +1774,7 @@ void Parse (char *file)
 					{
 						meshvar *MV;					
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print node potentials in mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1395,7 +1791,7 @@ void Parse (char *file)
 					{
 						meshvar *MV;			
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print solar cell parameters for mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1410,7 +1806,7 @@ void Parse (char *file)
 					{
 						meshvar *MV;			
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print simulated I-V pairs of mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1426,7 +1822,7 @@ void Parse (char *file)
 						meshvar *MV;			
 						char **args;
 						double x,y;
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print simulated probe voltages of mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1443,7 +1839,7 @@ void Parse (char *file)
 					{
 						meshvar *MV;			
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print simulated I-V pairs of mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1458,7 +1854,7 @@ void Parse (char *file)
 					{
 						mesh *M;				
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print parameters per area in mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1478,7 +1874,7 @@ void Parse (char *file)
 						char **args;
 						double x, y, Vstart, Vend;
 						int Nstep, el;
-						args=GetArgs (&begin, 8);
+						args=GetArgs (&begin, 8, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print local JV characteristics in mesh %s to file %s",line_nr,args[0], args[7]);
@@ -1508,7 +1904,7 @@ void Parse (char *file)
 						int el, Nx, Ny, RI;
 						double Va, x1, x2, y1, y2;					
 						char **args;
-						args=GetArgs (&begin, 11);
+						args=GetArgs (&begin, 11, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Export differential collected Currtent Density in mesh %s to file %s",line_nr,args[0], args[1]);
@@ -1540,7 +1936,7 @@ void Parse (char *file)
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
-						args=GetArgs (&begin, 9);
+						args=GetArgs (&begin, 9, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Export potentials from mesh %s to file %s",line_nr,args[0], args[8]);
@@ -1577,7 +1973,7 @@ void Parse (char *file)
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
-						args=GetArgs (&begin, 9);
+						args=GetArgs (&begin, 9, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Export power density from mesh %s  to file %s",line_nr,args[0], args[8]);
@@ -1613,7 +2009,7 @@ void Parse (char *file)
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
-						args=GetArgs (&begin, 9);
+						args=GetArgs (&begin, 9, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Export current densities from mesh %s to file %s",line_nr,args[0], args[8]);
@@ -1650,7 +2046,7 @@ void Parse (char *file)
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
-						args=GetArgs (&begin, 9);
+						args=GetArgs (&begin, 9, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Export junction voltages from mesh %s to file %s",line_nr,args[0], args[8]);
@@ -1687,7 +2083,7 @@ void Parse (char *file)
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
-						args=GetArgs (&begin, 9);
+						args=GetArgs (&begin, 9, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Export electric fields from mesh %s to file %s",line_nr,args[0], args[8]);
@@ -1718,10 +2114,38 @@ void Parse (char *file)
 						FreeArgs (args, 9);	
 						break;
 					}
+					case SURFDEFPLOT:
+					{
+						mesh *M;
+						double x1, y1, x2, y2;
+						int Nx, Ny;				
+						char **args;
+						args=GetArgs (&begin, 8, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Export area definition from mesh %s to file %s",line_nr,args[0], args[7]);
+							
+								
+						x1=atof(args[1]);
+						y1=atof(args[2]);
+						x2=atof(args[3]);
+						y2=atof(args[4]);
+						
+						Nx=atoi(args[5]);	
+						Ny=atoi(args[6]);
+																	
+						M=FetchMesh (args[0],  Meshes, Nm);
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						SurfDefPlot(args[7], M, x1, y1, x2, y2, Nx, Ny);
+							
+						FreeArgs (args, 8);	
+						break;
+					}
 					/********************************* Secion Node Selection */
 					case LOAD_POLY:
 					{		
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;	
 						Print(NORMAL, "* line %3d: Load polygon from file %s",line_nr,word);
@@ -1761,11 +2185,11 @@ void Parse (char *file)
 							begin=Begin(line);
 							if((begin)&&((*begin)!='#'))
 							{
-								GetWord (begin, word);
+								GetWord (begin, word, Meshes, Nm);
 								key=LookupKey (word,  KeyTable);
 								if (key==DEF_POLY)
 									break;
-								args=GetArgs (&begin, 2);
+								args=GetArgs (&begin, 2, Meshes, Nm);
 								P.x[P.N]=atof(args[0]);
 								P.y[P.N]=atof(args[1]);
 								P.N++;
@@ -1800,7 +2224,7 @@ void Parse (char *file)
 							free(P.y);
 							free(P.BR);
 						}
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						Print(NORMAL, "            -->  Polygon with %d segments defined",P.N);
 						break;
 					}		
@@ -1808,7 +2232,7 @@ void Parse (char *file)
 					{			
 						char **args;
 						int go=0;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						Print(NORMAL, "* line %3d: while-loop (%s %s %s)",line_nr, args[0], args[1], args[2]);
 						if (strncmp(args[1], ">=",2)==0)
 							go=(atof(args[0])>=atof(args[2]));
@@ -1896,7 +2320,7 @@ void Parse (char *file)
 					{			
 						char **args;
 						int go=0;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						Print(NORMAL, "* line %3d: If statement (%s %s %s)",line_nr, args[0], args[1], args[2]);
 						if (strncmp(args[1], ">=",2)==0)
 							go=(atof(args[0])>=atof(args[2]));
@@ -1988,7 +2412,7 @@ void Parse (char *file)
 					{
 						double x1,x2,y1,y2;			
 						char **args;
-						args=GetArgs (&begin, 5);
+						args=GetArgs (&begin, 5, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Make rectangular selection of elements in mesh %s", line_nr, args[4]);
@@ -2005,7 +2429,7 @@ void Parse (char *file)
 					{
 						double x1,x2,y1,y2, d;			
 						char **args;
-						args=GetArgs (&begin, 6);
+						args=GetArgs (&begin, 6, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Make selection of elements near a rectangular contour in mesh %s", line_nr, args[5]);
@@ -2023,7 +2447,7 @@ void Parse (char *file)
 					{
 						double x,y,r;			
 						char **args;
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Make circular selection of elements in mesh %s", line_nr, args[3]);
@@ -2039,7 +2463,7 @@ void Parse (char *file)
 					{
 						double x,y,r, d;			
 						char **args;
-						args=GetArgs (&begin, 5);
+						args=GetArgs (&begin, 5, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Make selection of elements near a circular contour in mesh %s", line_nr, args[4]);
@@ -2054,7 +2478,7 @@ void Parse (char *file)
 					}
 					case SELECT_POLY:
 					{
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Make poly-selection of elements in mesh %s", line_nr, word);
@@ -2066,7 +2490,7 @@ void Parse (char *file)
 						double d;	
 						int loop=0;		
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -2080,7 +2504,7 @@ void Parse (char *file)
 					case SELECT_AREA:
 					{						
 
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Make area selection of elements in mesh %s", line_nr, word);
@@ -2090,7 +2514,7 @@ void Parse (char *file)
 					case INVERTSELECT:
 					{
 						meshvar *MV;
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
@@ -2115,7 +2539,7 @@ void Parse (char *file)
 					case DESELECT:
 					{
 						meshvar *MV;
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMesh (word,  Meshes, Nm);
@@ -2133,7 +2557,7 @@ void Parse (char *file)
 						meshvar *MV;
 						int P;
 						
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;								
 						MV=LookupMeshArea (word,  Meshes, Nm, &P);
@@ -2161,7 +2585,7 @@ void Parse (char *file)
 					{
 						meshvar *MV;
 						
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;				
 						MV=LookupMesh (word,  Meshes, Nm);
@@ -2189,7 +2613,7 @@ void Parse (char *file)
 						int P, el;
 						double R;		
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 										
@@ -2226,7 +2650,7 @@ void Parse (char *file)
 						double R;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -2316,7 +2740,7 @@ void Parse (char *file)
 						int P, el;
 						double R;		
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 													
@@ -2350,7 +2774,7 @@ void Parse (char *file)
 						double R;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -2439,7 +2863,7 @@ void Parse (char *file)
 						int P, el;
 						double R;	
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 													
@@ -2476,7 +2900,7 @@ void Parse (char *file)
 						double R;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -2565,7 +2989,7 @@ void Parse (char *file)
 						int P, el;
 						polygon JV;							
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 												
@@ -2615,7 +3039,7 @@ void Parse (char *file)
 						polygon JV;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -2743,7 +3167,7 @@ void Parse (char *file)
 						meshvar *MV;
 						int P, el;						
 						char **args;
-						args=GetArgs (&begin, 8);
+						args=GetArgs (&begin, 8, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -2789,7 +3213,7 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						double J01,J02,Jph,Rs,Rsh,Eg;
-						args=GetArgs (&begin, 8);
+						args=GetArgs (&begin, 8, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -2908,7 +3332,7 @@ void Parse (char *file)
 						meshvar *MV;
 						int P, el;						
 						char **args;
-						args=GetArgs (&begin, 8);
+						args=GetArgs (&begin, 8, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 								
@@ -2951,7 +3375,7 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						double J01,nid1,Jph,Rs,Rsh,Eg;
-						args=GetArgs (&begin, 8);
+						args=GetArgs (&begin, 8, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3067,7 +3491,7 @@ void Parse (char *file)
 						meshvar *MV;
 						int P, el;						
 						char **args;
-						args=GetArgs (&begin, 11);
+						args=GetArgs (&begin, 11, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 								
@@ -3111,7 +3535,7 @@ void Parse (char *file)
 						meshvar *MV;
 						int P, el;						
 						char **args;
-						args=GetArgs (&begin, 12);
+						args=GetArgs (&begin, 12, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 								
@@ -3155,7 +3579,7 @@ void Parse (char *file)
 						int el;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 11);
+						args=GetArgs (&begin, 11, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3271,7 +3695,7 @@ void Parse (char *file)
 						int el;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 12);
+						args=GetArgs (&begin, 12, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3387,7 +3811,7 @@ void Parse (char *file)
 						int P, el;
 						double R;						
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 								
@@ -3436,7 +3860,7 @@ void Parse (char *file)
 						double R;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 3);
+						args=GetArgs (&begin, 3, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3559,7 +3983,7 @@ void Parse (char *file)
 						int P;
 						double T;						
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 												
@@ -3590,7 +4014,7 @@ void Parse (char *file)
 						double T;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3678,7 +4102,7 @@ void Parse (char *file)
 						meshvar *MV;
 						int P;						
 						char **args;
-						args=GetArgs (&begin, 1);
+						args=GetArgs (&begin, 1, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
@@ -3708,7 +4132,7 @@ void Parse (char *file)
 						meshvar *MV;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 1);
+						args=GetArgs (&begin, 1, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3798,7 +4222,7 @@ void Parse (char *file)
 						meshvar *MV;
 						int P;					
 						char **args;
-						args=GetArgs (&begin, 1);
+						args=GetArgs (&begin, 1, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
@@ -3828,7 +4252,7 @@ void Parse (char *file)
 						meshvar *MV;
 						char *area;		
 						char **args;
-						args=GetArgs (&begin, 1);
+						args=GetArgs (&begin, 1, Meshes, Nm);
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3912,7 +4336,7 @@ void Parse (char *file)
 					}				
 					/********************************* Solving*/		
 					case MAXITER:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting maximum number of iterations to %s",line_nr, word);							
@@ -3924,7 +4348,7 @@ void Parse (char *file)
 						}
 						break;		
 					case TOLV:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;	
 						Print(NORMAL,"* line %3d: Setting absolute voltage tolerance to %s",line_nr, word);							
@@ -3936,7 +4360,7 @@ void Parse (char *file)
 						}
 						break;		
 					case RELTOLV:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;	
 						Print(NORMAL,"* line %3d: Setting relative voltage tolerance to %s",line_nr, word);							
@@ -3948,7 +4372,7 @@ void Parse (char *file)
 						}
 						break;		
 					case TOLKCL:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;	
 						Print(NORMAL,"* line %3d: Setting absolute KCL tolerance to %s",line_nr, word);							
@@ -3960,7 +4384,7 @@ void Parse (char *file)
 						}
 						break;		
 					case RELTOLKCL:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting relative KCL tolerance to %s",line_nr, word);								
@@ -3972,7 +4396,7 @@ void Parse (char *file)
 						}
 						break;
 					case NLINSEARCH:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting number of steps for a linear search in the Newton direction to %s",line_nr, word);								
@@ -3984,7 +4408,7 @@ void Parse (char *file)
 						}
 						break;	
 					case GMINSTEP:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting number of Gmin steps to %s (Gmin stepping is triggered at convergence problems)",line_nr, word);								
@@ -3996,7 +4420,7 @@ void Parse (char *file)
 						}
 						break;		
 					case GMINSTART:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting number of Gmin start iterations to %s",line_nr, word);								
@@ -4008,7 +4432,7 @@ void Parse (char *file)
 						}
 						break;	
 					case GMINMAX:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting maximum Gmin value to %s",line_nr, word);								
@@ -4020,7 +4444,7 @@ void Parse (char *file)
 						}
 						break;	
 					case GMINFAC:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting Gmin stepping factor to %s",line_nr, word);								
@@ -4032,7 +4456,7 @@ void Parse (char *file)
 						}
 						break;	
 					case GMIN:
-						begin=GetWord (begin, word);
+						begin=GetWord (begin, word, Meshes, Nm);
 						if(word[0]=='\0')
 							goto premature_end;
 						Print(NORMAL,"* line %3d: Setting Gmin to %s",line_nr, word);								
@@ -4049,7 +4473,7 @@ void Parse (char *file)
 						double Vstart, Vend;
 						int Nstep;				
 						char **args;
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -4073,7 +4497,7 @@ void Parse (char *file)
 						double tol_v, tol_i;
 						int Niter;				
 						char **args;
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -4097,7 +4521,7 @@ void Parse (char *file)
 						double tol_v, tol_i;
 						int Niter;			
 						char **args;
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -4120,7 +4544,7 @@ void Parse (char *file)
 						double Va, rel_th;
 						int Na;				
 						char **args;
-						args=GetArgs (&begin, 4);
+						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 							
@@ -4151,7 +4575,7 @@ void Parse (char *file)
 					case EXPR_DEF:	
 					{	
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL,"* line %3d: defining \"%s=%s\"",line_nr, args[0], args[1]);	
@@ -4162,7 +4586,7 @@ void Parse (char *file)
 					case EXPR_IFDEF:	
 					{	
 						char **args;
-						args=GetArgs (&begin, 2);
+						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						if (!IsDefined(args[0]))
@@ -4181,7 +4605,7 @@ void Parse (char *file)
 						meshvar *MV;
 						char **args;
 						int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
-						args=GetArgs (&begin, 1);
+						args=GetArgs (&begin, 1, Meshes, Nm);
 						Print(NORMAL,"* line %3d: defining solar cell parameters according to mesh %s",line_nr, args[0]);				
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
@@ -4237,7 +4661,7 @@ void Parse (char *file)
 						meshvar *MV;
 						char **args;
 						double x1, x2, y1, y2;
-						args=GetArgs (&begin, 1);
+						args=GetArgs (&begin, 1, Meshes, Nm);
 						Print(NORMAL,"* line %3d: defining bounding box parameters for mesh %s",line_nr, args[0]);				
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
