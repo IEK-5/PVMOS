@@ -1188,6 +1188,25 @@ void Parse (char *file)
 						FreeArgs (args, 2);
 						break;					
 					}
+					case CLEANMESH:
+					{
+						int nc;
+						char **args;
+						mesh *M;
+						
+						args=GetArgs (&begin, 1, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
+						Print(NORMAL, "* line %3d: Cleaning up unused areas in mesh %s",line_nr, args[0]);
+						
+						M=FetchMesh (args[0],  Meshes, Nm);							
+						if (!M)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);											
+						nc=DeleteUnusedProperties(M);
+						Print(NORMAL,"            ---> %d areas removed, mesh now contains %d areas",nc, M->Na);	
+						FreeArgs (args, 1);
+						break;					
+					}
 					case ADDEL:
 					{
 						meshvar *MV;
@@ -1895,6 +1914,26 @@ void Parse (char *file)
 						Print(NORMAL, "* line %3d: Position (%e,%e), inter electrode index %d",line_nr,x,y,el);
 						PrintLocalJV(args[7], *M, x, y, el, Vstart, Vend, Nstep);
 						FreeArgs (args, 8);	
+						break;
+					}
+					case SAVEVARS:
+					{
+						int j;					
+						char **args;
+						FILE *varf;
+						args=GetArgs (&begin, 1, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
+						
+						if ((varf=fopen(args[0],"w"))==NULL)
+							Warning("Warning: Cannot open file %s on line %d, cannot save variables\n", args[0], line_nr);
+						else
+						{
+							for (j=0;j<var_count;j++)
+								fprintf(varf, "%s\t=\t%.12e\n", var_names[j], var_values[j]);
+							fclose(varf);
+						}						
+						FreeArgs (args, 1);	
 						break;
 					}
 					case SURFCOLCUR:

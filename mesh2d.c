@@ -662,6 +662,38 @@ void NewProperties(mesh *M, char *name)
 	/* else properties exist, do nothing */
 }
 
+int DeleteUnusedProperties(mesh *M)
+{
+	int i, j;
+	int *Nel;
+	
+	/* first we count how many elements are in which areas */
+	Nel=calloc((M->Na+1), sizeof(int));
+	
+	for (i=0;i<M->Nn;i++)
+		Nel[M->nodes[i].P]++;
+	for (i=0;i<M->Na;i++)
+	{
+		if (Nel[i]==0)
+		{
+			/* area is not in use */
+			Print(NORMAL, "Area %s is not in use, deleting", M->P[i].name);
+			Nel[i]=0;
+			FreeProperties(M->P+i, M->Nel);
+		}
+		else
+			Nel[i]=1;
+	}
+	j=0;
+	for (i=0;i<M->Na;i++)
+	{
+		if (j<i)
+			M->P[j]=M->P[i];
+		j+=Nel[i];
+	}
+	M->Na=j+1;
+	return (i-j);
+}
 
 
 void ReInitResults(mesh *M)

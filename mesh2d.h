@@ -109,6 +109,7 @@ void DuplicateNode(mesh M, node *d, int source_id);
 node *SearchNode(mesh M, int id);
 int FindProperties(mesh M, char *name);
 void NewProperties(mesh * M, char *name);
+int DeleteUnusedProperties(mesh *M);
 void AssignProperties(mesh *M, int *select, int P);
 void AssignPropertiesMesh(mesh *M, int P);
 void AddElectrode(mesh *M);

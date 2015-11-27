@@ -200,11 +200,18 @@ Keyword & Description \\
 \item \texttt{mesh2-name}, Name of the second mesh
 \item \texttt{mesh3-name}, Name of the resulting mesh
 \end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{dupmesh}	& Duplicate a mesh. The command takes 2 arguments:
 \begin{enumerate}
 \item \texttt{mesh1-name}, Name of the mesh to be duplicated
 \item \texttt{mesh2-name}, Name of the resulting copy
 \end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{cleanupmesh}	& Remove unused areas. The command takes 1 argument:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{add\_electrode}	& Adds an electrode to a certain mesh. The command takes one argument:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
@@ -449,9 +456,15 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name to assign to the loaded mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\multicolumn{2}{l}{\textsc{Element-wise export of data}} \\*
+\multicolumn{2}{l}{\textsc{Exporting data}} \\*
 \hline
 Keyword & Description \\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{save\_vars}	& Saves all user defined variables to a file. The command takes one argument:
+\begin{enumerate}
+\item \texttt{file-name}, file-name to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \texttt{printmesh}	& Export the mesh in a manner that is compatible with (probably only) Gnuplot (www.gnuplot.info/). The resulting plot draws the contour of each element in the mesh. If a selection of elements is made for the mesh, only the selected nodes are plotted. The command takes two arguments:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
