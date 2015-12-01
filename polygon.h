@@ -36,13 +36,24 @@
  *                                                               *
  *    Dr. Bart E. Pieters 2015                                   *
  *                                                               *             
- *****************************************************************/                                                                             
-typedef struct meshvar {
-	mesh M;
-	char *name;
-	int *nodes;
-	int setsel;
-	double x1, x2, y1, y2;
-} meshvar;
+ *****************************************************************/  
+#ifndef _HAVE_POLY
+#define _HAVE_POLY
+/* polygon */
+typedef struct polygon {
+	double *x;
+	double *y;
+	int *BR;
+	int N;
+} polygon;
 
-void Parse (char *file);
+void Poly_Rotate(polygon P, double xc, double yc, double deg);
+void Poly_ScaleMove(polygon P, double Fx, double Fy, double Dx, double Dy);
+void Poly_FlipX(polygon P);
+void Poly_FlipY(polygon P);
+void Poly_GetBoundingBox(polygon P,double *x1, double *y1, double *x2, double *y2);
+void Poly_SetBoundingBox(polygon P, double x1, double y1, double x2, double y2, int fixR, double *Fx, double *Fy, double *Dx, double *Dy);
+int IsInPolygon(polygon P, double x, double y);
+int IsNearPolygon(polygon P, double x, double y, double D, int loop);
+polygon ReadPoly(char *fn);
+#endif

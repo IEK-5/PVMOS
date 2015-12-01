@@ -113,6 +113,8 @@ int DeleteUnusedProperties(mesh *M);
 void AssignProperties(mesh *M, int *select, int P);
 void AssignPropertiesMesh(mesh *M, int P);
 void AddElectrode(mesh *M);
+void PurgeResults(mesh *M);
+void PurgeResultAtIndex(mesh *M, int index);
 void SplitNodeX(int id, mesh *M);
 void SplitNodeY(int id, mesh *M);
 void SplitNodeXY(int id, mesh *M);

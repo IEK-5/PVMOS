@@ -1168,6 +1168,7 @@ void AdaptiveSolveVa(mesh *M, double Va, double rel_threshold, int N)
 			free(M->res.Vn[M->res.Nva-2][j]);
 			M->res.Vn[M->res.Nva-2][j]=M->res.Vn[M->res.Nva-1][j];
 		}
+		free(M->res.Vn[M->res.Nva-1]);
 		M->res.I[M->res.Nva-2]=M->res.I[M->res.Nva-1];
 		M->res.Nva--;
 	}

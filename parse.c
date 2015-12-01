@@ -132,6 +132,7 @@ void AddMeshVar (mesh M, char **name,  meshvar ** meshes, int *Nm)
 	(*meshes)[*Nm].nodes=malloc(LISTBLOCK*sizeof(int));
 	(*meshes)[*Nm].nodes[0]=0;
 	(*meshes)[*Nm].setsel=0;
+	GetMeshBB(&M, &((*meshes)[*Nm].x1), &((*meshes)[*Nm].y1), &((*meshes)[*Nm].x2), &((*meshes)[*Nm].y2));
 	(*Nm)++;
 	(*meshes)=realloc((*meshes),((*Nm)+1)*sizeof(meshvar));	
 }
@@ -199,7 +200,7 @@ void SelectRectNodes (char *name,  meshvar * meshes, int Nm, double x1, double y
 		Warning("In SelectRectNodes: No elements selected, try selecting a larger area or refine the mesh first");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
-	DefineVar("Nsel", (double)MV->nodes[0]);
+	
 }
 void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, double y1, double x2, double y2, double d)
 {
@@ -214,7 +215,7 @@ void SelectRectContourNodes (char *name,  meshvar * meshes, int Nm, double x1, d
 		Warning("In SelectRectContourNodes: No elements selected, try selecting a larger area or refine the mesh first");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
-	DefineVar("Nsel", (double)MV->nodes[0]);
+	
 }
 /* select circular area in a mesh variable */
 /* Input: 
@@ -240,7 +241,7 @@ void SelectCircNodes (char *name,  meshvar * meshes,  int Nm, double x, double y
 		Warning("In SelectCircNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
-	DefineVar("Nsel", (double)MV->nodes[0]);
+	
 }
 void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, double y, double r,double d)
 {
@@ -255,7 +256,7 @@ void SelectCircContourNodes (char *name,  meshvar * meshes,  int Nm, double x, d
 		Warning("In SelectCircContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
-	DefineVar("Nsel", (double)MV->nodes[0]);
+	
 }
 /* select area enclosed by a polygon in a mesh variable */
 /* Input: 
@@ -279,7 +280,7 @@ void SelectPolyNodes (char *name,  meshvar * meshes, int Nm, polygon P)
 		Warning("In SelectPolyNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
-	DefineVar("Nsel", (double)MV->nodes[0]);
+	
 }
 void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, double d, int loop)
 {
@@ -294,7 +295,7 @@ void SelectPolyContourNodes (char *name,  meshvar * meshes, int Nm, polygon P, d
 		Warning("In SelectPolyContourNodes: No elements selected, try selecting a larger area or refine the mesh first\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
-	DefineVar("Nsel", (double)MV->nodes[0]);
+	
 }
 
 
@@ -321,7 +322,7 @@ void SelectAreaNodes (char *name,  meshvar * meshes, int Nm)
 		Warning("In SelectAreaNodes: No elements selected.\n");
 	MV->setsel=0;
 	Print(NORMAL,"            -->  %d elements selected",MV->nodes[0]);
-	DefineVar("Nsel", (double)MV->nodes[0]);
+	
 	
 }
 
@@ -447,16 +448,18 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 {
 	char * p;
 	mesh *M;
+	meshvar *MV;
 	PRSMESHVAR var;
 	p=expr;
 	while((*p)&&(*p!='.'))
 		p++;	
 	if (*p!='.')
 		Error("In EvalMeshVar: Expected a string of the form <mesh_name>.<var_name>, got %s\n", expr);
-	*p='\0';			
-	M=FetchMesh(expr, meshes, Nm);
-	if (!M)
+	*p='\0';
+	MV=LookupMesh (expr,  meshes, Nm);
+	if (!MV)
 		Error("In EvalMeshVar: mesh %s does not exist\n",expr);
+	M=&(MV->M);
 	*p='.';
 	p++;	
 	var=LookupMeshVar (p,  MV_KeyTable);
@@ -478,6 +481,101 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			/* number of applied voltages simulated */
 			snprintf(res, MAXSTRLEN-1, "%d", M->res.Nva);
 			return 0;
+		case MV_NSEL:
+			/* number of selected elements */
+			snprintf(res, MAXSTRLEN-1, "%d", MV->nodes[0]);
+			return 0;	
+		case MV_BB_X1:	
+			/* bounding box lower x-coordinate */
+			snprintf(res, MAXSTRLEN-1, "%e", MV->x1);
+			return 0;	
+		case MV_BB_X2:	
+			/* bounding box upper x-coordinate */
+			snprintf(res, MAXSTRLEN-1, "%e", MV->x2);
+			return 0;	
+		case MV_BB_Y1:	
+			/* bounding box lower y-coordinate */
+			snprintf(res, MAXSTRLEN-1, "%e", MV->y1);
+			return 0;	
+		case MV_BB_Y2:	
+			/* bounding box upper y-coordinate */
+			snprintf(res, MAXSTRLEN-1, "%e", MV->y2);
+			return 0;	
+		case MV_ISC:
+		{
+			/* short circuit current */
+			int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
+						
+			SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);
+			if (isc>=0)					
+				snprintf(res, MAXSTRLEN-1, "%e", M->res.I[isc]);
+			else
+			{
+				Warning("In EvalMeshVar: Cannot determine Isc, setting it to 0\n");
+				snprintf(res, MAXSTRLEN-1, "0.0");
+			}
+			return 0;
+		}
+		case MV_VOC:
+		{
+			/* open circuit voltage */
+			int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
+						
+			SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);			
+			if ((ioc_m>=0)||(ioc_p>=0))
+			{
+				
+				if ((ioc_m>=0)&&(ioc_p>=0))
+				{
+					double Voc;
+					Voc=(MV->M.res.Va[ioc_m]*fabs(MV->M.res.I[ioc_p])+MV->M.res.Va[ioc_p]*fabs(MV->M.res.I[ioc_m]))/(fabs(MV->M.res.I[ioc_p])+fabs(MV->M.res.I[ioc_m]));
+					snprintf(res, MAXSTRLEN-1, "%e", Voc);
+				}
+				else
+				{
+					if (ioc_m>=0)
+						snprintf(res, MAXSTRLEN-1, "%e", MV->M.res.Va[ioc_m]);
+					else 
+						snprintf(res, MAXSTRLEN-1, "%e", MV->M.res.Va[ioc_p]);
+				}
+			}
+			else
+			{
+				Warning("In EvalMeshVar: Cannot determine Voc, setting it to 0\n");
+				snprintf(res, MAXSTRLEN-1, "0.0");
+			}
+			return 0;
+		}
+		case MV_IMPP:
+		{
+			/* Maximum Power Point Current */
+			int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
+						
+			SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);		
+			if (imp>=0)
+				snprintf(res, MAXSTRLEN-1, "%e", MV->M.res.I[imp]);
+			else
+			{
+				Warning("In EvalMeshVar: Cannot determine Impp, setting it to 0\n");
+				snprintf(res, MAXSTRLEN-1, "0.0");
+			}
+			return 0;
+		}
+		case MV_VMPP:
+		{
+			/* Maximum Power Point Voltage */
+			int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
+						
+			SolPar(M, &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);		
+			if (imp>=0)
+				snprintf(res, MAXSTRLEN-1, "%e", MV->M.res.Va[imp]);
+			else
+			{
+				Warning("In EvalMeshVar: Cannot determine Vmpp, setting it to 0\n");
+				snprintf(res, MAXSTRLEN-1, "0.0");
+			}	
+			return 0;
+		}
 		case MV_EL_XY:
 		{
 			/* return the element id at (x,y) */
@@ -494,8 +592,8 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			
 			if (notinmesh)
 			{
-				Warning("In EvalMeshVar: Position (%e,%e) is not in the mesh\n", x, y);
-				*res='\0';
+				Warning("In EvalMeshVar: Position (%e,%e) is not in the mesh, returning -1\n", x, y);
+				snprintf(res, MAXSTRLEN-1, "-1");
 			}
 			else
 				snprintf(res, MAXSTRLEN-1, "%d", id);
@@ -504,7 +602,7 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 		}
 		case MV_X_EL:		
 		{
-			/* return the element id at (x,y) */
+			/* return the x coordinate of element id*/
 			char **args;
 			int i;
 			
@@ -515,8 +613,9 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			
 			if ((i<0)||(i>=M->Nn))
 			{
-				Warning("In EvalMeshVar: Element index %d out of range (0..%d)\n", i, M->Nn);
-				*res='\0';
+				Warning("In EvalMeshVar: Element index %d out of range (0..%d), returning NaN\n", i, M->Nn);
+				snprintf(res, MAXSTRLEN-1, "NaN");
+				
 			}
 			else		
 				snprintf(res, MAXSTRLEN-1, "%e", (M->nodes[i].x1+M->nodes[i].x2)/2);
@@ -536,8 +635,8 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			
 			if ((i<0)||(i>=M->Nn))
 			{
-				Warning("In EvalMeshVar: Element index %d out of range (0..%d)\n", i, M->Nn);
-				*res='\0';
+				Warning("In EvalMeshVar: Element index %d out of range (0..%d), returning NaN\n", i, M->Nn);
+				snprintf(res, MAXSTRLEN-1, "NaN");
 			}
 			else		
 				snprintf(res, MAXSTRLEN-1, "%e", (M->nodes[i].y1+M->nodes[i].y2)/2);
@@ -558,12 +657,35 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 				snprintf(res, MAXSTRLEN-1, "%s", M->P[id].name);	
 			else
 			{
-				Warning("In EvalMeshVar: area index %d out of range (0..%d)\n", id, M->Na-1);
-				*res='\0';
+				Warning("In EvalMeshVar: area index %d out of range (0..%d), returning _AREA_NOT_DEFINED_\n", id, M->Na-1);
+				snprintf(res, MAXSTRLEN-1, "_AREA_NOT_DEFINED_");
 			}
 			FreeArgs(args,1);
 			return 0;
-		}		
+		}
+		case MV_I_V:
+		{
+			/* return the i-th applied voltage */
+			char **args;
+			int Vai;
+			double Va;
+			
+			
+			args=GetMeshVarArgs (expr, 1);
+			
+			Va=atof(args[0]);
+			Vai=FindVa(Va, M->res.Va, M->res.Nva);
+			if (M->res.Nva)
+				snprintf(res, MAXSTRLEN-1, "%d", Vai);	
+			else
+			{
+				Warning("In EvalMeshVar: could not determine a simulation index, no simulation results available, returning -1\n");
+				snprintf(res, MAXSTRLEN-1, "-1");
+			}
+			FreeArgs(args,1);
+			return 0;
+		}	
+				
 		case MV_V_I:			
 		{
 			/* return the i-th applied voltage */
@@ -578,8 +700,8 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 				snprintf(res, MAXSTRLEN-1, "%e", M->res.Va[id]);	
 			else
 			{
-				Warning("In EvalMeshVar: simulation index %d out of range (0..%d)\n", id, M->res.Nva-1);
-				*res='\0';
+				Warning("In EvalMeshVar: simulation index %d out of range (0..%d), returning NaN\n", id, M->res.Nva-1);
+				snprintf(res, MAXSTRLEN-1, "NaN");
 			}
 			FreeArgs(args,1);
 			return 0;
@@ -598,8 +720,8 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 				snprintf(res, MAXSTRLEN-1, "%e", M->res.I[id]);	
 			else
 			{
-				Warning("In EvalMeshVar: simulation index %d out of range (0..%d)\n", id, M->res.Nva-1);
-				*res='\0';
+				Warning("In EvalMeshVar: simulation index %d out of range (0..%d), returning NaN\n", id, M->res.Nva-1);
+				snprintf(res, MAXSTRLEN-1, "NaN");
 			}
 			FreeArgs(args,1);
 			return 0;
@@ -616,8 +738,8 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			x=atof(args[0]);
 			if (M->res.Nva==0)
 			{
-				Warning("In EvalMeshVar: no simulated IV data available, cannot estimate voltage @ %e A\n", x);
-				*res='\0';			
+				Warning("In EvalMeshVar: no simulated IV data available, cannot estimate voltage @ %e A, returning NaN\n\n", x);
+				snprintf(res, MAXSTRLEN-1, "NaN");
 				FreeArgs(args,1);
 				return 0;
 			
@@ -680,18 +802,18 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			x=atof(args[0]);
 			if (M->res.Nva==0)
 			{
-				Warning("In EvalMeshVar: no simulated IV data available, cannot estimate current @ %e V\n", x);
-				*res='\0';			
+				Warning("In EvalMeshVar: no simulated IV data available, cannot estimate current @ %e V, returning NaN\n", x);
+				snprintf(res, MAXSTRLEN-1, "NaN");
 				FreeArgs(args,1);
 				return 0;
 			
 			}
 			
 			
-			if (M->res.Nva==1)
+			if (MV->M.res.Nva==1)
 			{
 			
-				snprintf(res, MAXSTRLEN-1, "%e", M->res.Va[0]);				
+				snprintf(res, MAXSTRLEN-1, "%e", MV->M.res.Va[0]);				
 				FreeArgs(args,1);
 				return 0;
 			}
@@ -750,14 +872,88 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			else
 			{
 				if ((i<0)||(i>=M->Nn))
-					Warning("In EvalMeshVar: Element index %d out of range (0..%d)\n", i, M->Nn);				
+					Warning("In EvalMeshVar: Element index %d out of range (0..%d), returning NaN\n", i, M->Nn);				
 				if ((j<0)||(j>=M->Nel))
-					Warning("In EvalMeshVar: Electrode index %d out of range (0..%d)\n", j, M->Nel);				
+					Warning("In EvalMeshVar: Electrode index %d out of range (0..%d), returning NaN\n", j, M->Nel);				
 				if ((k<0)||(k>=M->res.Nva))
-					Warning("In EvalMeshVar: simulation index %d out of range (0..%d)\n", k, M->res.Nva-1);				
-				*res='\0';
+					Warning("In EvalMeshVar: simulation index %d out of range (0..%d), returning NaN\n", k, M->res.Nva-1);
+				snprintf(res, MAXSTRLEN-1, "NaN");	
 			}
 				
+			FreeArgs(args,3);
+			return 0;
+		}
+		case MV_VVEL_VEL:
+		{
+		
+			/* return the i-th applied voltage */
+			char **args;
+			double x;
+			double *V, *Vel;
+			int i,j,k;
+			
+			args=GetMeshVarArgs (expr, 3);
+			i=atoi(args[0]);
+			j=atoi(args[1]);
+			x=atof(args[2]);
+			if (M->res.Nva==0)
+			{
+				Warning("In EvalMeshVar: no simulated IV data available, cannot estimate applied voltage @ element %d voltage %e V in electrode %d\n", i, x, j);
+				*res='\0';			
+				FreeArgs(args,1);
+				return 0;
+			
+			}
+			
+			if (!((i>=0)&&(i<M->Nn)&&(j>=0)&&(j<M->Nel)))
+			{
+				if ((i<0)||(i>=M->Nn))
+					Warning("In EvalMeshVar: Element index %d out of range (0..%d), returning NaN\n", i, M->Nn);				
+				if ((j<0)||(j>=M->Nel))
+					Warning("In EvalMeshVar: Electrode index %d out of range (0..%d), returning NaN\n", j, M->Nel);
+				snprintf(res, MAXSTRLEN-1, "NaN");
+			}
+			
+			if (M->res.Nva==1)
+			{
+			
+				snprintf(res, MAXSTRLEN-1, "%e", M->res.Va[0]);				
+				FreeArgs(args,1);
+				return 0;
+			}
+			
+			V=malloc((M->res.Nva+1)*sizeof(double));
+			Vel=malloc((M->res.Nva+1)*sizeof(double));
+			
+			for (k=0;k<M->res.Nva;k++)
+			{
+				V[k]=M->res.Va[k];
+				Vel[k]=M->res.Vn[k][j][i];
+			}
+			
+			BubbleSortJV(M->res.Nva, Vel, V);
+			if (Vel[0]>x)
+				snprintf(res, MAXSTRLEN-1, "%e", V[0]+(x-Vel[0])*(V[1]-V[0])/(Vel[1]-Vel[0]));	
+			else
+			{
+				i=0;
+				while(i<M->res.Nva-1)
+				{
+					if (x==Vel[i])
+						break;
+					if ((x-Vel[i])*(x-Vel[i+1])<0)
+						break;
+					i++;				
+				}
+				if (x==Vel[i])
+					snprintf(res, MAXSTRLEN-1, "%e", V[i]);
+				else
+					snprintf(res, MAXSTRLEN-1, "%e", V[i]+(x-Vel[i])*(V[i+1]-V[i])/(Vel[i+1]-Vel[i]));
+				
+			}
+			free(V);
+			free(Vel);
+			
 			FreeArgs(args,3);
 			return 0;
 		}
@@ -924,7 +1120,6 @@ void Parse (char *file)
 	last_pos=ftell(f);
     	fgets(line, MAXSTRLEN-1, f);
 	
-	DefineVar("Nsel", 0.0);
 	tic = clock();
 	while(feof(f)==0)
 	{
@@ -970,7 +1165,7 @@ void Parse (char *file)
 					{
 						double dx;
 						char **args;
-						mesh *M;
+						meshvar *MV;
 						/* read next word and process, if no next word trow an error */
 						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
@@ -981,10 +1176,11 @@ void Parse (char *file)
 						dx=atof(args[0]);
 						if (dx<0)
 							Error("* line %3d: Negative length is not allowed\n",line_nr);						
-						M=FetchMesh(args[1], Meshes, Nm);
-						if (!M)
+						MV=LookupMesh(args[1], Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
-						AddColEast(M, dx);
+						AddColEast(&(MV->M), dx);
+						GetMeshBB(&(MV->M), &(MV->x1), &(MV->y1), &(MV->x2), &(MV->y2));
 						FreeArgs (args, 2);
 						break;
 					}
@@ -992,7 +1188,7 @@ void Parse (char *file)
 					{
 						double dy;
 						char **args;
-						mesh *M;
+						meshvar *MV;
 						/* read next word and process, if no next word trow an error */
 						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
@@ -1003,10 +1199,11 @@ void Parse (char *file)
 						dy=atof(args[0]);
 						if (dy<0)
 							Error("* line %3d: Negative length is not allowed\n",line_nr);							
-						M=FetchMesh(args[1], Meshes, Nm);
-						if (!M)
+						MV=LookupMesh(args[1], Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
-						AddRowNorth(M, dy);
+						AddRowNorth(&(MV->M), dy);
+						GetMeshBB(&(MV->M), &(MV->x1), &(MV->y1), &(MV->x2), &(MV->y2));
 						FreeArgs (args, 2);
 						break;
 					}
@@ -1014,7 +1211,7 @@ void Parse (char *file)
 					{
 						double dx;
 						char **args;
-						mesh *M;
+						meshvar *MV;
 						/* read next word and process, if no next word trow an error */
 						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
@@ -1025,10 +1222,11 @@ void Parse (char *file)
 						dx=atof(args[0]);
 						if (dx<0)
 							Error("* line %3d: Negative length is not allowed\n",line_nr);							
-						M=FetchMesh(args[1], Meshes, Nm);
-						if (!M)
+						MV=LookupMesh(args[1], Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
-						AddColWest(M, dx);
+						AddColWest(&(MV->M), dx);
+						GetMeshBB(&(MV->M), &(MV->x1), &(MV->y1), &(MV->x2), &(MV->y2));
 						FreeArgs (args, 2);
 						break;
 					}
@@ -1036,7 +1234,7 @@ void Parse (char *file)
 					{
 						double dy;
 						char **args;
-						mesh *M;
+						meshvar *MV;
 						/* read next word and process, if no next word trow an error */
 						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
@@ -1047,10 +1245,11 @@ void Parse (char *file)
 						dy=atof(args[0]);
 						if (dy<0)
 							Error("* line %3d: Negative length is not allowed\n",line_nr);							
-						M=FetchMesh(args[1], Meshes, Nm);
-						if (!M)
+						MV=LookupMesh(args[1], Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
-						AddRowSouth(M, dy);
+						AddRowSouth(&(MV->M), dy);
+						GetMeshBB(&(MV->M), &(MV->x1), &(MV->y1), &(MV->x2), &(MV->y2));
 						FreeArgs (args, 2);
 						break;
 					}
@@ -1080,7 +1279,7 @@ void Parse (char *file)
 						char *name;
 						char **args;
 						int len;
-						mesh *M1, *M2;
+						meshvar *MV1, *MV2;
 						/* read next word and process, if no next word trow an error */
 						args=GetArgs (&begin, 5, Meshes, Nm);
 						if (args==NULL)
@@ -1090,17 +1289,17 @@ void Parse (char *file)
 														
 						xoff=atof(args[0]);								
 						yoff=atof(args[1]);						
-						M1=FetchMesh(args[2], Meshes, Nm);
-						if (!M1)
+						MV1=LookupMesh(args[2], Meshes, Nm);
+						if (!MV1)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[2]);
-						M2=FetchMesh(args[3], Meshes, Nm);
-						if (!M2)
+						MV2=LookupMesh(args[3], Meshes, Nm);
+						if (!MV2)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[3]);	
 						
 						len=strlen(args[4]);
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,args[4],len+1);
-						AddMeshVar (JoinMeshes(*M1, *M2, xoff, yoff), &name,  &Meshes, &Nm);
+						AddMeshVar (JoinMeshes(MV1->M, MV2->M, xoff, yoff), &name,  &Meshes, &Nm);
 						FreeArgs (args, 5);
 						break;
 					}
@@ -1110,7 +1309,7 @@ void Parse (char *file)
 						char *name;
 						char **args;
 						int len;
-						mesh *M1, *M2;
+						meshvar *MV1, *MV2;
 						/* read next word and process, if no next word trow an error */
 						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
@@ -1118,18 +1317,19 @@ void Parse (char *file)
 						Print(NORMAL,"* line %3d: Joining mesh %s and mesh %s to %s", line_nr,args[1],args[2],args[3]);	
 						
 											
-						yoff=atof(args[0]);						
-						M1=FetchMesh(args[1], Meshes, Nm);
-						if (!M1)
+						yoff=atof(args[0]);					
+						MV1=LookupMesh(args[1], Meshes, Nm);
+						if (!MV1)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
-						M2=FetchMesh(args[2], Meshes, Nm);
-						if (!M2)
+						MV2=LookupMesh(args[2], Meshes, Nm);
+						if (!MV2)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[2]);	
+						
 						
 						len=strlen(args[3]);
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,args[3],len+1);
-						AddMeshVar (JoinMeshes_H(*M1, *M2, yoff), &name,  &Meshes, &Nm);
+						AddMeshVar (JoinMeshes_H(MV1->M, MV2->M, yoff), &name,  &Meshes, &Nm);
 						FreeArgs (args, 4);
 						break;
 					
@@ -1140,7 +1340,7 @@ void Parse (char *file)
 						char *name;
 						char **args;
 						int len;
-						mesh *M1, *M2;
+						meshvar *MV1, *MV2;
 						/* read next word and process, if no next word trow an error */
 						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
@@ -1148,18 +1348,18 @@ void Parse (char *file)
 						Print(NORMAL,"* line %3d: Joining mesh %s and mesh %s to %s", line_nr,args[1],args[2],args[3]);	
 						
 										
-						xoff=atof(args[0]);						
-						M1=FetchMesh(args[1], Meshes, Nm);
-						if (!M1)
+						xoff=atof(args[0]);				
+						MV1=LookupMesh(args[1], Meshes, Nm);
+						if (!MV1)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[1]);
-						M2=FetchMesh(args[2], Meshes, Nm);
-						if (!M2)
+						MV2=LookupMesh(args[2], Meshes, Nm);
+						if (!MV2)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[2]);	
 						
 						len=strlen(args[3]);
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,args[3],len+1);
-						AddMeshVar (JoinMeshes_V(*M1, *M2, xoff), &name,  &Meshes, &Nm);
+						AddMeshVar (JoinMeshes_V(MV1->M, MV2->M, xoff), &name,  &Meshes, &Nm);
 						FreeArgs (args, 4);
 						break;
 					
@@ -1170,17 +1370,17 @@ void Parse (char *file)
 						char *name;
 						mesh Mnew;
 						char **args;
-						mesh *M;
+						meshvar *MV;
 						
 						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Duplicating mesh %s and storing duplicate in %s",line_nr, args[0], args[1]);
 						
-						M=FetchMesh (args[0],  Meshes, Nm);							
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);							
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);											
-						Mnew=DuplicateMesh((*M));						
+						Mnew=DuplicateMesh(MV->M);						
 						len=strlen(args[1]);
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,args[1],len+1);						
@@ -1192,18 +1392,18 @@ void Parse (char *file)
 					{
 						int nc;
 						char **args;
-						mesh *M;
+						meshvar *MV;
 						
 						args=GetArgs (&begin, 1, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Cleaning up unused areas in mesh %s",line_nr, args[0]);
 						
-						M=FetchMesh (args[0],  Meshes, Nm);							
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);							
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);											
-						nc=DeleteUnusedProperties(M);
-						Print(NORMAL,"            ---> %d areas removed, mesh now contains %d areas",nc, M->Na);	
+						nc=DeleteUnusedProperties(&(MV->M));
+						Print(NORMAL,"            ---> %d areas removed, mesh now contains %d areas",nc, MV->M.Na);	
 						FreeArgs (args, 1);
 						break;					
 					}
@@ -1222,6 +1422,60 @@ void Parse (char *file)
 						
 						AddElectrode(&(MV->M));			
 						break;		
+					}
+					case PURGERES:
+					{
+						meshvar *MV;
+						begin=GetWord (begin, word, Meshes, Nm);
+						if(word[0]=='\0')
+							goto premature_end;
+						Print(NORMAL,"* line %3d: Purging all simulated results in mesh %s",line_nr, word);
+													
+						MV=LookupMesh (word,  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr, word);		
+						
+						PurgeResults(&(MV->M));			
+						break;		
+					}
+					case PURGERESI:
+					{
+						int Vai;
+						double Va=0;
+						char **args;
+						meshvar *MV;
+						
+						args=GetArgs (&begin, 2, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
+						
+						MV=LookupMesh (args[0],  Meshes, Nm);							
+						if(!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,word);	
+								
+						if (args[1][0]=='i')
+						{
+							Vai=atoi(args[1]+1);
+							if ((Vai>=0)&&(Vai<MV->M.res.Nva))
+								Va=MV->M.res.Va[Vai];								
+						}
+						else
+						{	
+							Va=atof(args[1]);
+							Vai=FindVa(Va, MV->M.res.Va, MV->M.res.Nva);
+							Va=MV->M.res.Va[Vai];	
+						}
+						if ((Vai<0)||(Vai>=MV->M.res.Nva))
+						{
+							Warning("* line %3d: Result index %d not available, nothing to purge\n",line_nr, Vai);
+						}
+						else
+						{
+							Print(NORMAL, "* line %3d: Purging result for %e V at index %d in mesh %s",line_nr, Va, Vai, args[0]);
+							PurgeResultAtIndex(&(MV->M),Vai);
+						}
+						FreeArgs (args, 2);
+						break;					
 					}
 					case SPLITX:
 					{
@@ -1386,6 +1640,7 @@ void Parse (char *file)
 						dy=atof(args[4]);
 						Print(NORMAL,"* line %3d: Scaling and moving mesh %s, scaling: fx=%e, fy=%e moving: dx=%e dy=%e",line_nr, MV->name, fx,fy, dx,dy);
 						Mesh_ScaleMove(&(MV->M), fx, fy, dx, dy);
+						GetMeshBB(&(MV->M), &(MV->x1), &(MV->y1), &(MV->x2), &(MV->y2));
 						FreeArgs (args, 5);										
 						break;
 					}
@@ -1412,6 +1667,7 @@ void Parse (char *file)
 							
 						Print(NORMAL,"* line %3d: Rotating mesh %s over %d degrees around point (%e, %e)",line_nr, MV->name, d, x,y);
 						RotateMesh(&(MV->M), x, y, d);
+						GetMeshBB(&(MV->M), &(MV->x1), &(MV->y1), &(MV->x2), &(MV->y2));
 						FreeArgs (args, 4);												
 						break;
 					}
@@ -1483,6 +1739,10 @@ void Parse (char *file)
 							Print(NORMAL,"*           Not preserving ascpect ratio");
 						
 						SetMeshBB(&(MV->M), x1, y1, x2, y2, FixR, &fx, &fy, &dx, &dy);
+						MV->x1=x1;
+						MV->y1=y1;
+						MV->x2=x2;
+						MV->y2=y2;
 						Print(NORMAL,"* line %3d: Mesh scaled by fx=%e, fy=%e",line_nr, fx,fy);
 						Print(NORMAL,"* line %3d: Mesh translated by dx=%e, dy=%e",line_nr, dx,dy);
 						Print(NORMAL,"* line %3d: Variables Fx, Fy, Dx, and Dy set accordingly",line_nr);
@@ -1717,7 +1977,7 @@ void Parse (char *file)
 					}
 					case SAVEMESH:
 					{
-						mesh *M;						
+						meshvar *MV;						
 						char **args;
 						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
@@ -1725,11 +1985,11 @@ void Parse (char *file)
 							
 						Print(NORMAL, "* line %3d: Saving mesh %s to file %s",line_nr,args[0], args[1]);
 														
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
-						WriteMesh(args[1],M);
+						WriteMesh(args[1],&(MV->M));
 						FreeArgs (args, 2);						
 						break;
 					}
@@ -1871,25 +2131,25 @@ void Parse (char *file)
 					}
 					case PRINTPARS:
 					{
-						mesh *M;				
+						meshvar *MV;				
 						char **args;
 						args=GetArgs (&begin, 2, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print parameters per area in mesh %s to file %s",line_nr,args[0], args[1]);
 											
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 								
-						PrintPars(args[1], M);
+						PrintPars(args[1], &(MV->M));
 						FreeArgs (args, 2);	
 						break;
 					}
 					case PRINTLOCALJV:
 					{
 						
-						mesh *M;				
+						meshvar *MV;				
 						char **args;
 						double x, y, Vstart, Vend;
 						int Nstep, el;
@@ -1898,21 +2158,21 @@ void Parse (char *file)
 							goto premature_end;
 						Print(NORMAL, "* line %3d: Print local JV characteristics in mesh %s to file %s",line_nr,args[0], args[7]);
 							
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
 						
 						x=atof(args[1]);
 						y=atof(args[2]);
 						el=atoi(args[3]);
-						if ((el<0)||(el>=M->Nel-1))
-							Error("* line %3d: Invalid inter electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, M->Nel-2);
+						if ((el<0)||(el>=MV->M.Nel-1))
+							Error("* line %3d: Invalid inter electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-2);
 						Vstart=atof(args[4]);
 						Vend=atof(args[5]);
 						Nstep=atoi(args[6]);
 						Print(NORMAL, "* line %3d: Position (%e,%e), inter electrode index %d",line_nr,x,y,el);
-						PrintLocalJV(args[7], *M, x, y, el, Vstart, Vend, Nstep);
+						PrintLocalJV(args[7], MV->M, x, y, el, Vstart, Vend, Nstep);
 						FreeArgs (args, 8);	
 						break;
 					}
@@ -1971,7 +2231,7 @@ void Parse (char *file)
 					}
 					case SURFVPLOT:
 					{
-						mesh *M;
+						meshvar *MV;
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
@@ -1987,18 +2247,22 @@ void Parse (char *file)
 						y2=atof(args[4]);
 						
 						Nx=atoi(args[5]);	
-						Ny=atoi(args[6]);	
-						Va=atof(args[7]);
+						Ny=atoi(args[6]);
 																	
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-						
-						Vai=FindVa(Va, M->res.Va, M->res.Nva);
-						if (Vai>=0)
+						if (args[7][0]=='i')
+							Vai=atoi(args[7]+1);
+						else
+						{	
+							Va=atof(args[7]);
+							Vai=FindVa(Va, MV->M.res.Va, MV->M.res.Nva);
+						}
+						if ((Vai>=0)&&(Vai<MV->M.res.Nva))
 						{
-							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
-							SurfVPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
+							Print(NORMAL,"            -->  Using simulation at %e V", MV->M.res.Va[Vai]);
+							SurfVPlot(args[8], &(MV->M), Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
@@ -2008,7 +2272,7 @@ void Parse (char *file)
 					}
 					case SURFPPLOT:
 					{
-						mesh *M;
+						meshvar *MV;
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
@@ -2023,19 +2287,24 @@ void Parse (char *file)
 						y2=atof(args[4]);
 						
 						Nx=atoi(args[5]);	
-						Ny=atoi(args[6]);	
-						Va=atof(args[7]);
+						Ny=atoi(args[6]);
 													
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						if (args[7][0]=='i')
+							Vai=atoi(args[7]+1);
+						else
+						{	
+							Va=atof(args[7]);
+							Vai=FindVa(Va, MV->M.res.Va, MV->M.res.Nva);
+						}
 						
 						
-						Vai=FindVa(Va, M->res.Va, M->res.Nva);
-						if (Vai>=0)
+						if ((Vai>=0)&&(Vai<MV->M.res.Nva))
 						{
-							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
-							SurfPPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
+							Print(NORMAL,"            -->  Using simulation at %e V", MV->M.res.Va[Vai]);
+							SurfPPlot(args[8], &(MV->M), Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present\n", line_nr);	
@@ -2044,7 +2313,7 @@ void Parse (char *file)
 					}
 					case SURFJPLOT:
 					{
-						mesh *M;
+						meshvar *MV;
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
@@ -2060,18 +2329,23 @@ void Parse (char *file)
 						y2=atof(args[4]);
 						
 						Nx=atoi(args[5]);	
-						Ny=atoi(args[6]);	
-						Va=atof(args[7]);
+						Ny=atoi(args[6]);
 																	
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						if (args[7][0]=='i')
+							Vai=atoi(args[7]+1);
+						else
+						{	
+							Va=atof(args[7]);
+							Vai=FindVa(Va, MV->M.res.Va, MV->M.res.Nva);
+						}
 						
-						Vai=FindVa(Va, M->res.Va, M->res.Nva);
-						if (Vai>=0)
+						if ((Vai>=0)&&(Vai<MV->M.res.Nva))
 						{
-							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
-							SurfJPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
+							Print(NORMAL,"            -->  Using simulation at %e V", MV->M.res.Va[Vai]);
+							SurfJPlot(args[8], &(MV->M), Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
@@ -2081,7 +2355,7 @@ void Parse (char *file)
 					}
 					case SURFVJPLOT:
 					{
-						mesh *M;
+						meshvar *MV;
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
@@ -2097,18 +2371,23 @@ void Parse (char *file)
 						y2=atof(args[4]);
 						
 						Nx=atoi(args[5]);	
-						Ny=atoi(args[6]);	
-						Va=atof(args[7]);
+						Ny=atoi(args[6]);
 																	
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
+						if (args[7][0]=='i')
+							Vai=atoi(args[7]+1);
+						else
+						{	
+							Va=atof(args[7]);
+							Vai=FindVa(Va, MV->M.res.Va, MV->M.res.Nva);
+						}
 						
-						Vai=FindVa(Va, M->res.Va, M->res.Nva);
-						if (Vai>=0)
+						if ((Vai>=0)&&(Vai<MV->M.res.Nva))
 						{
-							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
-							SurfVjPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
+							Print(NORMAL,"            -->  Using simulation at %e V", MV->M.res.Va[Vai]);
+							SurfVjPlot(args[8], &(MV->M), Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
@@ -2118,7 +2397,7 @@ void Parse (char *file)
 					}
 					case SURFEPLOT:
 					{
-						mesh *M;
+						meshvar *MV;
 						double x1, y1, x2, y2, Va;
 						int Nx, Ny, Vai;				
 						char **args;
@@ -2134,18 +2413,22 @@ void Parse (char *file)
 						y2=atof(args[4]);
 						
 						Nx=atoi(args[5]);	
-						Ny=atoi(args[6]);	
-						Va=atof(args[7]);
+						Ny=atoi(args[6]);
 																	
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-						
-						Vai=FindVa(Va, M->res.Va, M->res.Nva);
-						if (Vai>=0)
+						if (args[7][0]=='i')
+							Vai=atoi(args[7]+1);
+						else
+						{	
+							Va=atof(args[7]);
+							Vai=FindVa(Va, MV->M.res.Va, MV->M.res.Nva);
+						}
+						if ((Vai>=0)&&(Vai<MV->M.res.Nva))
 						{
-							Print(NORMAL,"            -->  Using simulation at %e V", M->res.Va[Vai]);
-							SurfEPlot(args[8], M, Vai, x1, y1, x2, y2, Nx, Ny);
+							Print(NORMAL,"            -->  Using simulation at %e V", MV->M.res.Va[Vai]);
+							SurfEPlot(args[8], &(MV->M), Vai, x1, y1, x2, y2, Nx, Ny);
 						}
 						else
 							Warning("\n* line %3d: Warning: no data present.\n", line_nr);	
@@ -2155,7 +2438,7 @@ void Parse (char *file)
 					}
 					case SURFDEFPLOT:
 					{
-						mesh *M;
+						meshvar *MV;
 						double x1, y1, x2, y2;
 						int Nx, Ny;				
 						char **args;
@@ -2173,10 +2456,10 @@ void Parse (char *file)
 						Nx=atoi(args[5]);	
 						Ny=atoi(args[6]);
 																	
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-						SurfDefPlot(args[7], M, x1, y1, x2, y2, Nx, Ny);
+						SurfDefPlot(args[7], &(MV->M), x1, y1, x2, y2, Nx, Ny);
 							
 						FreeArgs (args, 8);	
 						break;
@@ -2236,12 +2519,11 @@ void Parse (char *file)
 								{
 									Na+=50;
 									P.x=realloc(P.x, Na*sizeof(double));	
-									P.y=realloc(P.y, Na*sizeof(double));
-									P.BR=AddToList(P.BR, P.N);					
+									P.y=realloc(P.y, Na*sizeof(double));					
 								}
 								FreeArgs (args, 2);
     							}
-							else
+							else if (P.N) /* no use breaking an empty polygon. */
 								P.BR=AddToList(P.BR, P.N);
 							fgets(line, MAXSTRLEN-1, f);
 							line_nr++;							
@@ -2643,6 +2925,7 @@ void Parse (char *file)
 							fflush(stdout);
 							CleanUpMesh(&(MV->M), MV->nodes);
 							MV->nodes[0]=0;
+							GetMeshBB(&(MV->M), &(MV->x1), &(MV->y1), &(MV->x2), &(MV->y2));
 						}					
 						break;
 					}
@@ -4508,7 +4791,7 @@ void Parse (char *file)
 						break;		
 					case SOLVE:
 					{
-						mesh *M;
+						meshvar *MV;
 						double Vstart, Vend;
 						int Nstep;				
 						char **args;
@@ -4517,8 +4800,8 @@ void Parse (char *file)
 							goto premature_end;
 							
 						Print(NORMAL,"* line %3d: Solving potentials in mesh %s",line_nr, args[0]);						
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
 						
@@ -4526,13 +4809,13 @@ void Parse (char *file)
 						Vend=atof(args[2]);
 						Nstep=atoi(args[3]);
 						
-						SolveVa(M, Vstart, Vend, Nstep);
+						SolveVa(&(MV->M), Vstart, Vend, Nstep);
 						FreeArgs (args, 4);
 						break;
 					}	
 					case REFINEOC:
 					{
-						mesh *M;
+						meshvar *MV;
 						double tol_v, tol_i;
 						int Niter;				
 						char **args;
@@ -4541,22 +4824,22 @@ void Parse (char *file)
 							goto premature_end;
 							
 						Print(NORMAL,"* line %3d: Refining open circuit point for mesh %s",line_nr, args[0]);						
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
 						tol_i=atof(args[1]);
 						tol_v=atof(args[2]);
 						Niter=atoi(args[3]);
 						
-						RefineOC(M, tol_i, tol_v, Niter);
+						RefineOC(&(MV->M), tol_i, tol_v, Niter);
 						FreeArgs (args, 4);
 						
 						break;
 					}		
 					case REFINEMPP:
 					{
-						mesh *M;
+						meshvar *MV;
 						double tol_v, tol_i;
 						int Niter;			
 						char **args;
@@ -4565,15 +4848,15 @@ void Parse (char *file)
 							goto premature_end;
 							
 						Print(NORMAL,"* line %3d: Refining maximum power-point for mesh %s",line_nr, args[0]);						
-						M=FetchMesh (args[0],  Meshes, Nm);
-						if (!M)
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if(!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
 						
 						
 						tol_i=atof(args[1]);
 						tol_v=atof(args[2]);
 						Niter=atoi(args[3]);
-						RefineMPP(M, tol_i, tol_v, Niter);
+						RefineMPP(&(MV->M), tol_i, tol_v, Niter);
 						FreeArgs (args, 4);
 						break;
 					}
@@ -4637,84 +4920,6 @@ void Parse (char *file)
 							Print(NORMAL,"* line %3d: variable %s is already defined",line_nr, args[0]);
 							
 						FreeArgs (args, 2);
-						break;
-					}
-					case EXPR_DEF_SOLPAR:	
-					{	
-						meshvar *MV;
-						char **args;
-						int isc, imp_m, imp, imp_p, ioc_m, ioc_p;
-						args=GetArgs (&begin, 1, Meshes, Nm);
-						Print(NORMAL,"* line %3d: defining solar cell parameters according to mesh %s",line_nr, args[0]);				
-						MV=LookupMesh (args[0],  Meshes, Nm);
-						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-						
-						SolPar(&(MV->M), &isc, &imp_m, &imp, &imp_p, &ioc_m, &ioc_p);
-						if (isc>=0)
-						{							
-							Print(NORMAL,"* line %3d: defining \"Isc\" = %e",line_nr,MV->M.res.I[isc]);
-							DefineVar("Isc", MV->M.res.I[isc]);
-						}
-						else
-							Print(NORMAL,"* line %3d: Isc could not be determined",line_nr);
-						if ((ioc_m>=0)||(ioc_p>=0))
-						{
-							
-							if ((ioc_m>=0)&&(ioc_p>=0))
-							{
-								double Voc;
-								Voc=(MV->M.res.Va[ioc_m]*fabs(MV->M.res.I[ioc_p])+MV->M.res.Va[ioc_p]*fabs(MV->M.res.I[ioc_m]))/(fabs(MV->M.res.I[ioc_p])+fabs(MV->M.res.I[ioc_m]));
-								Print(NORMAL,"* line %3d: defining \"Voc\" = %e",line_nr,Voc);
-								DefineVar("Voc", Voc);
-							}
-							else
-							{
-								Print(NORMAL,"* line %3d: Voc cannot be determined, giving it my best guess (which possibly is a very bad estimate)",line_nr);
-								if (ioc_m>=0)
-								{
-									Print(NORMAL,"* line %3d: defining \"Voc\" = %e",line_nr,MV->M.res.Va[ioc_m]);
-									DefineVar("Voc", MV->M.res.Va[ioc_m]);
-								}
-								else 
-								{
-									Print(NORMAL,"* line %3d: defining \"Voc\" = %e",line_nr,MV->M.res.Va[ioc_p]);
-									DefineVar("Voc", MV->M.res.Va[ioc_p]);
-								}
-							}
-						}
-						if (imp>=0)
-						{
-							Print(NORMAL,"* line %3d: defining \"Vmpp\" = %e",line_nr,MV->M.res.Va[imp]);
-							DefineVar("Vmpp", MV->M.res.Va[imp]);
-							Print(NORMAL,"* line %3d: defining \"Impp\" = %e",line_nr,MV->M.res.I[imp]);
-							DefineVar("Impp", MV->M.res.I[imp]);							
-						}
-						else
-							Print(NORMAL,"* line %3d: Maximum power-point could not be determined",line_nr);
-						FreeArgs (args, 1);
-						break;
-					}
-					case EXPR_DEF_BB:	
-					{	
-						meshvar *MV;
-						char **args;
-						double x1, x2, y1, y2;
-						args=GetArgs (&begin, 1, Meshes, Nm);
-						Print(NORMAL,"* line %3d: defining bounding box parameters for mesh %s",line_nr, args[0]);				
-						MV=LookupMesh (args[0],  Meshes, Nm);
-						if (!MV)
-							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
-						GetMeshBB(&(MV->M), &x1, &y1, &x2, &y2);
-						Print(NORMAL,"* line %3d: Mesh bounding box:",line_nr,x1, y1);
-						Print(NORMAL,"*           (x1,y1) = (%e, %e)",x1, y1);
-						Print(NORMAL,"*           (x2,y2) = (%e, %e)",x2, y2);
-						
-						DefineVar("x1", x1);
-						DefineVar("y1", y1);
-						DefineVar("x2", x2);
-						DefineVar("y2", y2);
-						FreeArgs (args, 1);
 						break;
 					}
 					/********************************* Secion verbosity settings*/

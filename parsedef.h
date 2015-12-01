@@ -53,6 +53,8 @@ typedef enum {
 	DUPMESH,
 	CLEANMESH,
 	ADDEL,
+	PURGERES,
+	PURGERESI,
 	SPLITX,
 	SPLITY,
 	SPLITXY,
@@ -149,8 +151,6 @@ typedef enum {
 	TOC,
 	EXPR_DEF,
 	EXPR_IFDEF,
-	EXPR_DEF_SOLPAR,
-	EXPR_DEF_BB,	
 	WHILE,		
 	ENDWHILE,	
 	IF,		
@@ -185,6 +185,8 @@ const KeyWord KeyTable[] =
 	{"dupmesh", DUPMESH},
 	{"cleanupmesh", CLEANMESH},
 	{"add_electrode", ADDEL},
+	{"purge_results", PURGERES},
+	{"purge_result_i", PURGERESI},
 	{"split_x", SPLITX},
 	{"split_y", SPLITY},
 	{"split_xy", SPLITXY},
@@ -281,8 +283,6 @@ const KeyWord KeyTable[] =
 	{"toc", TOC},
 	{"define", EXPR_DEF},
 	{"ifndef", EXPR_IFDEF},
-	{"define_solpar", EXPR_DEF_SOLPAR},
-	{"define_bb", EXPR_DEF_BB},
 	{"while", WHILE},
 	{"endwhile", ENDWHILE},
 	{"if", IF},
@@ -301,15 +301,26 @@ typedef enum {
 	MV_NEL,		/* number of elements */
 	MV_NAREA, 	/* number of areas */
 	MV_NVA,		/* number of simulated voltages */
+	MV_NSEL,	/* number of selected elements */
 	MV_EL_XY,	/* element at coordinate (x,y) */
 	MV_VEL_I, 	/* potential at element i in electrode k */
 	MV_AREA_I,	/* i-th area name */
 	MV_IV_V,	/* estimate current I at voltage V */
 	MV_VI_I,	/* estimate current V at current I */
+	MV_VVEL_VEL,	/* Estimate applied voltage for a certain potential at element i in electrode k */
 	MV_V_I,		/* i-th applied voltage */
+	MV_I_V,		/* applied voltage colsest to voltage V */
 	MV_I_I,		/* i-th total current */
 	MV_X_EL,	/* x coordinate of element (i) */
 	MV_Y_EL,	/* y coordinate of element (i) */
+	MV_BB_X1,	/* bounding box lower x-coordinate */
+	MV_BB_X2,	/* bounding box upper x-coordinate */
+	MV_BB_Y1,	/* bounding box lower y-coordinate */
+	MV_BB_Y2,	/* bounding box upper y-coordinate */
+	MV_ISC,		/* short circuit current */
+	MV_VOC,		/* open circuit voltage */
+	MV_IMPP,	/* Maximum Power Point Current */
+	MV_VMPP,	/* Maximum Power Point Voltage */
 	MV_NONE
 	
 } PRSMESHVAR;
@@ -321,18 +332,29 @@ typedef struct {
 
 
 /* The keyword table mapping keywords to keys */
-/* Order matters if several keywords start the same, e.g. "Vel" and "V", you must start with "Vel" so that it is not misinterpreted as "V" */
+/* Order matters if several keywords start the same. The table muts be sorted to keyword length starting with the longest keywords. */
 const MV_KeyWord MV_KeyTable[] =
 {
       	{"Nelec", MV_NELEC},
-      	{"Nel", MV_NEL},
 	{"Narea", MV_NAREA}, 	/* number of areas */
-	{"Nva", MV_NVA},		/* number of simulated voltages */
-	{"el", MV_EL_XY},	/* element at coordinate (x,y) */
-	{"Vel", MV_VEL_I}, 	/* potential at element i in electrode k */
+	{"Nsel", MV_NSEL},	/* number of selected elements */
 	{"area", MV_AREA_I},	/* i-th area name */
+	{"VVel", MV_VVEL_VEL}, 	/* Estimate applied voltage for a certain potential at element i in electrode k */
+	{"BBx1", MV_BB_X1},	/* bounding box lower x-coordinate */
+	{"BBx2", MV_BB_X2},	/* bounding box upper x-coordinate */
+	{"BBy1", MV_BB_Y1},	/* bounding box lower y-coordinate */
+	{"BBy2", MV_BB_Y2},	/* bounding box upper y-coordinate */
+	{"Impp", MV_IMPP},	/* Maximum Power Point Current */
+	{"Vmpp", MV_VMPP},	/* Maximum Power Point Voltage */
+	{"Isc", MV_ISC},	/* short circuit current */
+	{"Voc", MV_VOC},	/* open circuit voltage */
+      	{"Nel", MV_NEL},	/* number of electrodes */
+	{"Nva", MV_NVA},	/* number of simulated voltages */
+	{"Vel", MV_VEL_I}, 	/* potential at element i in electrode k */
+	{"el", MV_EL_XY},	/* element at coordinate (x,y) */
 	{"IV", MV_IV_V},	/* estimate current I at voltage V */
 	{"VI", MV_VI_I},	/* estimate current V at current I */
+	{"Vi", MV_I_V},		/* applied voltage colsest to voltage V */
 	{"V", MV_V_I},		/* i-th applied voltage */
 	{"I", MV_I_I},		/* i-th total current */
 	{"X", MV_X_EL},		/* element at coordinate (x,y) */

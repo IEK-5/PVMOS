@@ -971,18 +971,10 @@ Keyword & Description \\
 \item \texttt{name}, name of the variable
 \item \texttt{value}, value of the variable
 \end{enumerate}\\
-\texttt{define\_solpar}	&  Determine the solar cell parameters from the simulated IV points for a mesh and define the variables \texttt{Isc}, \texttt{Voc}, \texttt{Impp}, and \texttt{Vmpp}, with their values set accordingly. These variables can be used wherever a numerical value is required (see Section \ref{expressions}). The command takes one argument:
-\begin{enumerate}
-\item \texttt{mesh-name}, name of the mesh
-\end{enumerate}\\
-\texttt{define\_bb}	&  Determine the bounding box of a mesh and store the results in the variables \texttt{x1}, \texttt{y1}, \texttt{x2}, and \texttt{y2}, where (\texttt{x1}, \texttt{y1}) is the coordinate for the lower left corner and (\texttt{x1}, \texttt{y1}) the upper right corner. These variables can be used wherever a numerical value is required (see Section \ref{expressions}). The command takes one argument:
-\begin{enumerate}
-\item \texttt{mesh-name}, name of the mesh
-\end{enumerate}\\
 \hline
 \\
 \end{longtable}
-\subsection{\label{expressions}Variables and expressions}
+\subsection{\label{expressions}Variables, Expressions, and Mesh Data Fields}
 PVMOS also features ``expressions'', which are placed between square brackets, i.e., [\textless expression\textgreater]. You can refer to variables, as defined with the \texttt{define} command (see the previous section), in expressions. Furthermore, PVMOS can evaluate mathematical expressions, provided PVMOS is compiled with libmatheval support. Expressions can be placed anywhere in the PVMOS input file, also as part of a word. Nesting of expressions is also allowed. Perhaps the best way to explain the use of expressions is with a few examples.\\
 Define $N=10$:\\
 \texttt{define N 10} \\
@@ -1049,23 +1041,120 @@ In addition libmatheval defines the following constants:
 
 Note that function and constant names cannot be redefined as a variable. 
 
-Sometimes it is useful to access data related to a mesh. To access data from a mesh object you can place an expression relating to a mesh between curly brackets. The syntax is as follows: \{\textless mesh-name\textgreater.\textless data-field\textgreater\}. The following data-fields are available:
+Sometimes it is useful to access data related to a mesh. To this end a mechanism is implemented to access data in a mesh. The syntax for this mechasims is to place a mesh-object name and a request for a certain data field between curly brackets: \texttt{\{\textless mesh-name\textgreater.\textless data-field\textless(arguments-if-any)\textgreater\textgreater\}}. Some data-fields take arguments (comma separated, between brackets, and without spaces). The following data-fields are available:
+\begin{longtable}{p{0.25\textwidth}p{0.75\textwidth}}
+\multicolumn{2}{l}{\textsc{Mesh-Object Data Fields}} \\*
+\hline
+Data-Field & Description \\
+\hline\\
+\texttt{Nel} 	& Return the number of elements in the mesh
 \begin{itemize}
-\item{} \texttt{Nel} - Number of elements in the mesh
-\item{} \texttt{Nelec} - Number of electrodes
-\item{} \texttt{Narea} - Number or areas
-\item{} \texttt{Nva} - Number of solutions
-\item{} \texttt{area(\textless i\textgreater)} - Returns the area name with index i, where i is an integer between 0 and Narea
-\item{} \texttt{el(\textless x\textgreater,\textless y\textgreater)} - Returns the element id number at position $(x,y)$
-\item{} \texttt{X(\textless i\textgreater)} - Returns the central x-coordinate of the element with id i
-\item{} \texttt{Y(\textless i\textgreater)} - Returns the central x-coordinate of the element with id i
-\item{} \texttt{V(\textless i\textgreater)} - Returns the i-th simulated voltage, the index is in order of simulation
-\item{} \texttt{I(\textless i\textgreater)} - Returns the i-th simulated current, the index in in order of simulation
-\item{} \texttt{VI(\textless I\textgreater)} - Estimates the voltage at an injected current of $I$ A 
-\item{} \texttt{IV(\textless V\textgreater)} - Estimates the current at an applied voltage of $V$ V
-\item{} \texttt{Vel(\textless i\textgreater, \textless j\textgreater, \textless k\textgreater)} - Returns the voltage for element index i, electrode index j and simulation index k
-\end{itemize}
-Both expression types may be mixed and nested.
+\item Input: None
+\item Return Value: Number of elements (integer)
+\end{itemize}\\
+\texttt{Nelec} 	& Return the number of electrodes in the mesh
+\begin{itemize}
+\item Input: None
+\item Return Value: Number of electrodes (integer)
+\end{itemize}\\
+\texttt{Narea} 	& Return the number of areas in the mesh
+\begin{itemize}
+\item Input: None
+\item Return Value: Number of areas in the mesh (integer)
+\end{itemize}\\
+\texttt{Nva} 	& Return the number of simulation results
+\begin{itemize}
+\item Input: None
+\item Return Value: Number of simulated results (integer)
+\end{itemize}\\
+\texttt{Nsel} 	& Return the number of selected elements in the mesh
+\begin{itemize}
+\item Input: None
+\item Return Value: Number of selected elements in the mesh (integer)
+\end{itemize}\\
+\texttt{area(i\_area)} 	& Return the name of the area with index number \texttt{i\_area}
+\begin{itemize}
+\item Input: index number \texttt{i\_area}, where $ 0 \le $\texttt{i\_area}$ < $\texttt{Narea}
+\item Return Value: Name of the area (string), if no area exists with the specified index number the return value is ``\_AREA\_NOT\_DEFINED\_'' (I trust this to be an sufficiently unlikely name of an area).
+\end{itemize}\\
+\texttt{el(x,y)} 	& Return the element index number at the specified coordinate $(x,y)$
+\begin{itemize}
+\item Input: Coorinate $(x,y)$
+\item Return Value: The element index \texttt{i\_el} (integer). Normally the following holds $0 \le $\texttt{i\_el}$ < $\texttt{Nel}. If the coordinate is not in the mesh the return value is -1 
+\end{itemize}\\
+\texttt{X(i\_el)}	& Return the x-coordinate of element \texttt{i\_el}
+\begin{itemize}
+\item Input: Element index number \texttt{i\_el}, where $0 \le $\texttt{i\_el}$ < $\texttt{Nel}
+\item Return Value: The x-coordinate of the specified element, or ``NaN'' if the specified element does not exist
+\end{itemize} \\
+\texttt{Y(i\_el)}	& Return the y-coordinate of element \texttt{i\_el}
+\begin{itemize}
+\item Input: Element index number \texttt{i\_el}, where $0 \le $\texttt{i\_el}$ < $\texttt{Nel}
+\item Return Value: The y-coordinate of the specified element, or ``NaN'' if the specified element does not exist
+\end{itemize}\\
+\texttt{V(i\_sim)}	& Return the applied voltage of the simulation with index \texttt{i\_sim}
+\begin{itemize}
+\item Input: Simulation index number \texttt{i\_sim}, where $0 \le $\texttt{i\_sim}$ < $\texttt{Nva}
+\item Return Value: The applied voltage of the specified simulation, or ``NaN'' if the specified simulation does not exist
+\end{itemize} \\
+\texttt{I(i\_sim)}	& Return the total injected current of the simulation with index \texttt{i\_sim}
+\begin{itemize}
+\item Input: Simulation index number \texttt{i\_sim}, where $0 \le $\texttt{i\_sim}$ < $\texttt{Nva}
+\item Return Value: The ainjected current of the specified simulation, or ``NaN'' if the specified simulation does not exist
+\end{itemize} \\
+\texttt{Vi(V)}		& Return the simulation index with an applied voltage closest to voltage \texttt{V}
+\begin{itemize}
+\item Input: Voltage $V$
+\item Return Value: The simulation index \texttt{i\_sim} (integer). For the simulation index the following holds $0 \le $\texttt{i\_el}$ < $\texttt{Nva}. If no simulation is available the return value is ``-1''
+\end{itemize}\\ 
+\texttt{VI(I)}		& Estimate the applied voltage such that the total injected current equals \texttt{I} A.
+\begin{itemize}
+\item Input: Current $I$ (Ampere)
+\item Return Value: Estimated voltage for which the total current is $I$ or ``NaN'' if the value cannot be determined.
+\end{itemize} \\
+\texttt{IV(V)}		& Estimate the total current at an applied voltage \texttt{V} V. 
+\begin{itemize}
+\item Input: Current $V$ (Volt)
+\item Return Value: Estimated current for an applied volatage $V$ or ``NaN'' if the value cannot be determined.
+\end{itemize} \\
+\texttt{Vel(i\_el,i\_elec,i\_sim)}	& Return the potential in element \texttt{i\_el}, electrode \texttt{i\_elec}, and for simulation with index \texttt{i\_sim}.
+\begin{itemize}
+\item Input: Element index number \texttt{i\_el}, where $0 \le $\texttt{i\_el}$ < $\texttt{Nel}, electrode index number \texttt{i\_elec}, where $0 \le $\texttt{i\_elec}$ < $\texttt{Nelec}, and simulation index number \texttt{i\_sim}, where $0 \le $\texttt{i\_sim}$ < $\texttt{Nva}
+\item Return Value: Voltage for the specified element index, electrode index, and simulation index, or NaN if the requested data is not available
+\end{itemize}\\
+\texttt{VVel(i\_el,i\_elec,V)}	& Estimate the applied voltage such that the potential in element \texttt{i\_el} in electrode \texttt{i\_elec} equals \texttt{V} V
+\begin{itemize}
+\item Input: Element index number \texttt{i\_el}, where $0 \le $\texttt{i\_el}$ < $\texttt{Nel}, electrode index number \texttt{i\_elec}, where $0 \le $\texttt{i\_elec}$ < $\texttt{Nelec}, and the potential $V$ 
+\item Return Value:  Estimated voltage for which the specified potential is equal to $V$ or ``NaN'' if the value cannot be determined.
+\end{itemize}\\
+\texttt{BBx1}		& Return the lower x-coordinate of the mesh bounding box \\
+\texttt{BBx2}		& Return the upper x-coordinate of the mesh bounding box \\
+\texttt{BBy1}		& Return the lower y-coordinate of the mesh bounding box \\
+\texttt{BBy2}		& Return the upper y-coordinate of the mesh bounding box \\
+\texttt{Impp}		& Return the current at the maximum power point.
+\begin{itemize}
+\item Input: None
+\item Return Value: Best estimate of the maximum power point current (Ampere) or 0.0 if the maximum power point cannot be determined.
+\end{itemize} \\
+\texttt{Vmpp}		& Return the voltage at the maximum power point.
+\begin{itemize}
+\item Input: None
+\item Return Value: Best estimate of the maximum power point voltage (Volt) or 0.0 if the maximum power point cannot be determined.
+\end{itemize}\\
+\texttt{Isc}		& Return the short circuit current.
+\begin{itemize}
+\item Input: None
+\item Return Value: Best estimate of the short circuit current (Ampere) or 0.0 if the short circuit point cannot be determined. 
+\end{itemize} \\
+\texttt{Voc}		& Return the open circuit voltage
+\begin{itemize}
+\item Input: None
+\item Return Value: Best estimate of the open circuit voltage (Volt) or 0.0 if the open circuit point cannot be determined. 
+\end{itemize}. \\
+\hline
+\\
+\end{longtable}
+Note that you can use mesh data fields in expressions and vise versa. In addition it is allowed to nest expressions and mesh data fields.
 
 \section{\label{mkpvmosmesh}The PVMOS-mesh package for GNU Octave}
 The GNU Octave package PVMOS-mesh allows you to crate and save meshies in binary format for use in PVMOS. GNU Octave is a versatile Matlab-like program. Linking to Octave allows you to, for example, use GNU Octave's ability to work with bitmap images when creating a mesh for a given problem. In general GNU Octave is very good for creating and manipulating matrices. The PVMOS library allows you to create meshes in PVMOS for which the mesh topology can be represented as a matrix, i.e. the elements must be organized in rows and columns. This disallows sub-grids, however, it does allow you to vary the width and height of the rows and columns, i.e. a rudimentary variable mesh can be created. 

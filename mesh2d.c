@@ -664,39 +664,51 @@ void NewProperties(mesh *M, char *name)
 
 int DeleteUnusedProperties(mesh *M)
 {
-	int i, j;
-	int *Nel;
+	int i, j, Nold;
+	int *Nela;
 	
 	/* first we count how many elements are in which areas */
-	Nel=calloc((M->Na+1), sizeof(int));
-	
+	Nold=M->Na;
+	Nela=calloc((M->Na+1), sizeof(int));	
 	for (i=0;i<M->Nn;i++)
-		Nel[M->nodes[i].P]++;
-	for (i=0;i<M->Na;i++)
+		Nela[M->nodes[i].P]++;
+	
+	/* remove the unused data from the properties array */
+	for (i=0;i<M->Na;i++)            
 	{
-		if (Nel[i]==0)
+		if (Nela[i]==0)
 		{
 			/* area is not in use */
-			Print(NORMAL, "Area %s is not in use, deleting", M->P[i].name);
-			Nel[i]=0;
+			Print(NORMAL, "            Area %s is not in use, deleting", M->P[i].name);
 			FreeProperties(M->P+i, M->Nel);
 		}
 		else
-			Nel[i]=1;
+			Nela[i]=1;
 	}
+	
 	j=0;
 	for (i=0;i<M->Na;i++)
 	{
 		if (j<i)
 			M->P[j]=M->P[i];
-		j+=Nel[i];
+		j+=Nela[i];
+		Nela[i]=j-1; /* Reuse Nela array to map old to new indexes (i.e. Nela[i_old]=i_new), 
+		             note that if Nela[i] was 0 the new value of Nela[i] 
+			     is irrelavant as the index [i] is not used in the mesh */ 
 	}
-	M->Na=j+1;
-	return (i-j);
+	M->Na=j;
+	
+	
+	
+	/* Make sure the elements point to the right area index */	
+	for (i=0;i<M->Nn;i++)
+		M->nodes[i].P=Nela[M->nodes[i].P];
+	free(Nela);
+	return (Nold-M->Na);
 }
 
 
-void ReInitResults(mesh *M)
+void PurgeResults(mesh *M)
 /* re-initializes the results struct. To be used when the mesh changes */
 {
 	int i,j;
@@ -716,6 +728,34 @@ void ReInitResults(mesh *M)
 	M->res.Vn=malloc(sizeof(double **));
 }
 
+void PurgeResultAtIndex(mesh *M, int index)
+/* removes results at one particular index */
+{
+	int i,j;
+	if ((index>=M->res.Nva)||(index<0)) /* index not available, nothing to do */
+		return;
+	j=0;
+	for (i=0;i<M->res.Nva;i++)
+	{
+		if (j!=i)
+		{
+			M->res.Vn[j]=M->res.Vn[i];
+			M->res.Va[j]=M->res.Va[i];
+			M->res.I[j]=M->res.I[i];
+		}
+		if (i==index)
+		{
+			int k;			
+			for (k=0;k<M->Nel;k++)
+				free(M->res.Vn[i][k]);	
+			free(M->res.Vn[i]);
+		}
+		else	
+			j+=(i!=index);
+	}
+	M->res.Nva--;
+}
+
 void AssignProperties(mesh *M, int *select, int P)
 {
 	int j;
@@ -727,7 +767,7 @@ void AssignProperties(mesh *M, int *select, int P)
 		N=SearchNode(*M, select[j]);
 		N->P=P;
 	} 
-	ReInitResults(M);
+	PurgeResults(M);
 }
 
 void AssignPropertiesMesh(mesh *M, int P)
@@ -737,7 +777,7 @@ void AssignPropertiesMesh(mesh *M, int P)
 		Error("Area %d not defined\n", P);
 	for (j=0;j<M->Nn;j++)
 		M->nodes[j].P=P;
-	ReInitResults(M);
+	PurgeResults(M);
 }
 
 void AddElectrode(mesh *M)
@@ -771,7 +811,7 @@ void AddElectrode(mesh *M)
 		M->P[i].conn[M->Nel-2].N=2;			
 	}		
 	
-	ReInitResults(M);
+	PurgeResults(M);
 }
 
 /* Before we start joining meshes together we need to be able to detect whether the meshes overlap */
@@ -923,7 +963,7 @@ mesh JoinMeshes(mesh M1, mesh M2, double xoff, double yoff)
 	free(outl1);
 	free(outl2);
 	free(prop_out);
-	ReInitResults(&res);
+	PurgeResults(&res);
 
 	return res;
 }
@@ -1017,7 +1057,7 @@ mesh JoinMeshes_H(mesh M1, mesh M2, double yoff)
 	free(outl1);
 	free(outl2);
 	free(prop_out);
-	ReInitResults(&res);
+	PurgeResults(&res);
 
 	return res;
 }
@@ -1107,7 +1147,7 @@ mesh JoinMeshes_V(mesh M1, mesh M2, double xoff)
 	free(outl1);
 	free(outl2);
 	free(prop_out);
-	ReInitResults(&res);
+	PurgeResults(&res);
 
 	return res;
 }
@@ -1162,7 +1202,7 @@ void AddRowNorth(mesh *M, double dy)
 	
 
 	free(northend);
-	ReInitResults(M);
+	PurgeResults(M);
 
 }
 
@@ -1215,7 +1255,7 @@ void AddColEast(mesh * M, double dx)
 	
 
 	free(eastend);
-	ReInitResults(M);
+	PurgeResults(M);
 }
 
 void AddRowSouth(mesh *M, double dy)
@@ -1268,7 +1308,7 @@ void AddRowSouth(mesh *M, double dy)
 	
 
 	free(southend);
-	ReInitResults(M);
+	PurgeResults(M);
 
 }
 
@@ -1321,7 +1361,7 @@ void AddColWest(mesh * M, double dx)
 	
 
 	free(westend);
-	ReInitResults(M);
+	PurgeResults(M);
 }
 
 void SplitNodeX(int id, mesh *M)
@@ -1927,7 +1967,7 @@ void CleanUpMesh(mesh *M, int *merged)
 		i++;
 	} */
  	SortMesh(M);
-	ReInitResults(M);
+	PurgeResults(M);
 
 }
 
@@ -1940,12 +1980,12 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	int *list;
 	int MRG;
 	double R, l;	
-	double newx1, newy1, newx2, newy2;
+	double newx1=0, newy1=0, newx2=0, newy2=0;
 	node *N, *Nl;
 	N=SearchNode(*M,id);	
 	/* check east nodes to merge with */
 	j=1;
-	MRG=1;	
+	MRG=(N->east[0]>0);	
 	l=N->y2-N->y1;
 	while ((j<=N->east[0])&&(MRG==1))
 	{
@@ -2048,7 +2088,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	
 	/*north*/	
 	j=1;
-	MRG=1;
+	MRG=(N->north[0]>0);
 	l=N->x2-N->x1;
 	while ((j<=N->north[0])&&(MRG==1))
 	{
@@ -2148,7 +2188,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	
 	/* west */	
 	j=1;
-	MRG=1;
+	MRG=(N->west[0]>0);
 	l=N->y2-N->y1;
 	while ((j<=N->west[0])&&(MRG==1))
 	{
@@ -2251,7 +2291,7 @@ int *Chunkify_node(mesh *M, int id, int * merged)
 	}	
 	/* south */
 	j=1;
-	MRG=1;
+	MRG=(N->south[0]>0);
 	l=N->x2-N->x1;
 	while ((j<=N->south[0])&&(MRG==1))
 	{
@@ -2403,10 +2443,23 @@ void Chunkify_(mesh *M, int J)
 	}
 }
 */
-/* this time we add some true randomness to our mesh simplifier */
+/* add some randomness to our mesh simplifier */
 int Random(int rmin, int rmax)
 {
-	return rmin + (int) (1.0*(rmax-rmin+1) * rand()/(RAND_MAX+1.0) );
+	int R, Rm;
+	
+#ifdef __MINGW32__ 	
+/* mingw always links to this mscrt.dll. On several points this library is less than optimal. 
+   It's memory allocators performs about 10 times slower than glibc's allocator for typical 
+   pvmos use cases and now it turns out rand returns a short int, i.e. it has 32767 possible 
+   values. On windows we'll roll the dice three times to get a integer sized rand. */
+	Rm=(RAND_MAX<<16)+(RAND_MAX<<1)+1;
+	R=(rand()<<16)+(rand()<<1)+rand()%2;
+#else
+	Rm=RAND_MAX;
+	R=rand();
+#endif
+	return rmin + (int) (1.0*(rmax-rmin+1) * (R-1.0)/Rm );
 }
 
 
@@ -2425,11 +2478,12 @@ void Shuffle (int *list)
 {
 	int i;
 	
-	for( i = 2; i <list[0]; i++ ){
+	for( i = 2; i <list[0]; i++ )
+	{
 		int	where;
 		int	temp;
 
-		where = Random(0,32767) % (i-1) + 1;		
+		where = Random(0, list[0]) % (i-1) + 1;		
 		temp = list[where];
 		list[where] = list[i+1];
 		list[i+1] = temp;
@@ -2449,7 +2503,8 @@ int Chunkify_nodes(mesh *M, int *list, int skip, int offset)
 	{
 		merged=Chunkify_node(M, list[i+1], merged);
 		i+=skip;
-		while (IsInList(merged, list[i+1])&&(i<M->Nn))
+/* note: valgrind complains about the next line: jump depends on uninitialized value. The used uninitialized value is list[M->Nn+1] at which point the condition is not true because i = M->Nn, i.e. safe to ignore valgrind's warning */
+		while (IsInList(merged, list[i+1])&&(i<M->Nn)) 
 			i++;
 	}
 	/* cleanup mesh, i.e. remove the merged nodes and sort the node id's */
@@ -2504,6 +2559,7 @@ void Chunkify(mesh *M)
 		i++;
 		Print(DEBUG,"Round %i, %i nodes left",i, M->Nn);
 	}
+	free(list);
 }
 
 	

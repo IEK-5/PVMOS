@@ -60,7 +60,7 @@ printpars pinup pinuppars.dat
 # adaptive_solve takes 4 arguments
 # 1: the mesh 2: applied voltage 3: remeshing factor (between 0-1) 4: number of adaptive 
 # iterations
-split_coarse pinup 0.07
+split_coarse pinup 0.07 0.07
 printmesh pinup pinupmesh2.dat
 adaptive_solve 	pinup 	0.4 	0.3	5
 printmesh pinup pinupmesh3.dat
