@@ -19,7 +19,7 @@
 	 *                                                               *             
 	 *****************************************************************/              
  
-PhotoVoltaic MOdule Simulator (PVMOS) version 0.80-dl
+PhotoVoltaic MOdule Simulator (PVMOS) version 0.81-dl
 ==================================================
 
 PVMOS is an ordinary differential equation solver using finite-differences specifically

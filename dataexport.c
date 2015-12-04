@@ -996,6 +996,7 @@ void PrintProbe(char *fn, mesh *M, double x, double y)
 {
 	int i,k, notinmesh;
 	double **Ex, **Ey, *V;
+	double *Va, *Index;
 	node N;
 	FILE *f;
 	if ((f=fopen(fn,"w"))==NULL)
@@ -1020,22 +1021,36 @@ void PrintProbe(char *fn, mesh *M, double x, double y)
 		Warning("Probe coordinate (%e,%e) is not in the mesh\n", x,y);
 	else
 	{
+		Va=malloc((M->res.Nva+1)*sizeof(double));
+		Index=malloc((M->res.Nva+1)*sizeof(double));
 		for (i=0;i<M->res.Nva;i++)
 		{
+			Va[i]=M->res.Va[i];
+			Index[i]=(double)i;
+		}
+		BubbleSortJV(M->res.Nva, Va, Index);
+		
+		for (i=0;i<M->res.Nva;i++)
+		{
+			int l;
+			l=(int)Index[i];
 			/* compute the electric field in each node for each electrode */
-			Jfield(M, i, NULL, NULL, Ex, Ey);
-			LocalVoltage(M, i, N, Ex, Ey, x, y, V);
-			fprintf(f,"%e",M->res.Va[i]);
+			Jfield(M, l, NULL, NULL, Ex, Ey);
+			LocalVoltage(M, l, N, Ex, Ey, x, y, V);
+			fprintf(f,"%e",M->res.Va[l]);
 			for (k=0;k<M->Nel;k++)
 				fprintf(f," %e",V[k]);
 			fprintf(f,"\n");
 		}
+		free(Va);
+		free(Index);
 	}
 	for (i=0;i<M->Nel;i++)
 	{
 		free(Ex[i]);
 		free(Ey[i]);
 	}
+	
 	free(Ex);
 	free(Ey);
 	free(V);

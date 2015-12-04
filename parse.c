@@ -957,6 +957,84 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			FreeArgs(args,3);
 			return 0;
 		}
+		case MV_V4POINT:
+		{
+			char **args;
+			double x;
+			double *V, *Vel;
+			int i,j,k,l,n;
+			
+			args=GetMeshVarArgs (expr, 5);
+			i=atoi(args[0]);	/*element i*/
+			k=atoi(args[1]);	/*electrode k*/
+			j=atoi(args[2]);	/*element j*/
+			l=atoi(args[3]);	/*electrode l*/
+			x=atof(args[4]);	/*voltage difference*/
+			if (M->res.Nva==0)
+			{
+				Warning("In EvalMeshVar: no simulated IV data available, cannot estimate applied voltage @ element %d voltage %e V in electrode %d\n", i, x, j);
+				*res='\0';			
+				FreeArgs(args,1);
+				return 0;
+			
+			}
+			
+			if (!((i>=0)&&(i<M->Nn)&&(j>=0)&&(j<M->Nn)&&(k>=0)&&(k<M->Nel)&&(l>=0)&&(l<M->Nel)))
+			{
+				if ((i<0)||(i>=M->Nn))
+					Warning("In EvalMeshVar: Element index %d out of range (0..%d), returning NaN\n", i, M->Nn);	
+				if ((j<0)||(j>=M->Nn))
+					Warning("In EvalMeshVar: Element index %d out of range (0..%d), returning NaN\n", j, M->Nn);				
+				if ((k<0)||(k>=M->Nel))
+					Warning("In EvalMeshVar: Electrode index %d out of range (0..%d), returning NaN\n", k, M->Nel);			
+				if ((l<0)||(l>=M->Nel))
+					Warning("In EvalMeshVar: Electrode index %d out of range (0..%d), returning NaN\n", l, M->Nel);
+				snprintf(res, MAXSTRLEN-1, "NaN");
+			}
+			
+			if (M->res.Nva==1)
+			{
+			
+				snprintf(res, MAXSTRLEN-1, "%e", M->res.Va[0]);				
+				FreeArgs(args,1);
+				return 0;
+			}
+			
+			V=malloc((M->res.Nva+1)*sizeof(double));
+			Vel=malloc((M->res.Nva+1)*sizeof(double));
+			
+			for (n=0;n<M->res.Nva;n++)
+			{
+				V[n]=M->res.Va[n];
+				Vel[n]=M->res.Vn[n][k][i]-M->res.Vn[n][l][j];
+			}
+			
+			BubbleSortJV(M->res.Nva, Vel, V);
+			if (Vel[0]>x)
+				snprintf(res, MAXSTRLEN-1, "%e", V[0]+(x-Vel[0])*(V[1]-V[0])/(Vel[1]-Vel[0]));	
+			else
+			{
+				i=0;
+				while(i<M->res.Nva-1)
+				{
+					if (x==Vel[i])
+						break;
+					if ((x-Vel[i])*(x-Vel[i+1])<0)
+						break;
+					i++;				
+				}
+				if (x==Vel[i])
+					snprintf(res, MAXSTRLEN-1, "%e", V[i]);
+				else
+					snprintf(res, MAXSTRLEN-1, "%e", V[i]+(x-Vel[i])*(V[i+1]-V[i])/(Vel[i+1]-Vel[i]));
+				
+			}
+			free(V);
+			free(Vel);
+			
+			FreeArgs(args,5);
+			return 0;
+		}
 		case MV_NONE:
 		default:
 			Error("In EvalMeshVar: Variable name \"%s\"  not recognized\n",expr);
@@ -2104,7 +2182,7 @@ void Parse (char *file)
 						args=GetArgs (&begin, 4, Meshes, Nm);
 						if (args==NULL)
 							goto premature_end;
-						Print(NORMAL, "* line %3d: Print simulated probe voltages of mesh %s to file %s",line_nr,args[0], args[1]);
+						Print(NORMAL, "* line %3d: Print simulated probe voltages of mesh %s to file %s",line_nr,args[0], args[3]);
 						MV=LookupMesh (args[0],  Meshes, Nm);
 						if (!MV)
 							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);
@@ -2195,6 +2273,33 @@ void Parse (char *file)
 						}						
 						FreeArgs (args, 1);	
 						break;
+					}
+					case LOADVARS:
+					{
+						char *vname, *vvalue, *vline; 			
+						char **args;
+						FILE *varf;
+						args=GetArgs (&begin, 1, Meshes, Nm);
+						if ((varf=fopen(args[0],"r"))==NULL)
+							Warning("Warning: Cannot open file %s on line %d, cannot load variables\n", args[0], line_nr);
+						else
+						{
+							while(feof(varf)==0)
+							{
+				
+								vline=GetLine(varf);
+								GetNameValue(vline, &(vname), &(vvalue));
+								if (vname && vvalue)
+								{
+									Print(NORMAL,"* line %3d: defining \"%s=%s\"",line_nr, vname, vvalue);	
+									DefineVar(vname, atof(vvalue));
+								}
+								free(vline);	
+							}
+							fclose(varf);		
+						}
+						FreeArgs (args, 1);
+						break;	
 					}
 					case SURFCOLCUR:
 					case SURFDCOLCUR:
@@ -2973,6 +3078,8 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 3, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3097,6 +3204,8 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 3, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3223,6 +3332,8 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 3, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3362,6 +3473,8 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 3, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3536,6 +3649,8 @@ void Parse (char *file)
 						char **args;
 						double J01,J02,Jph,Rs,Rsh,Eg;
 						args=GetArgs (&begin, 8, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
 							
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
@@ -3698,7 +3813,9 @@ void Parse (char *file)
 						char **args;
 						double J01,nid1,Jph,Rs,Rsh,Eg;
 						args=GetArgs (&begin, 8, Meshes, Nm);
-							
+						if (args==NULL)
+							goto premature_end;
+
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
 							area++;						
@@ -3902,7 +4019,9 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 11, Meshes, Nm);
-							
+						if (args==NULL)
+							goto premature_end;
+
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
 							area++;						
@@ -4018,7 +4137,9 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 12, Meshes, Nm);
-							
+						if (args==NULL)
+							goto premature_end;
+
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
 							area++;						
@@ -4183,7 +4304,9 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 3, Meshes, Nm);
-							
+						if (args==NULL)
+							goto premature_end;
+
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
 							area++;						
@@ -4337,7 +4460,9 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 2, Meshes, Nm);
-							
+						if (args==NULL)
+							goto premature_end;
+
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
 							area++;						
@@ -4455,7 +4580,9 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 1, Meshes, Nm);
-							
+						if (args==NULL)
+							goto premature_end;
+
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
 							area++;						
@@ -4575,7 +4702,9 @@ void Parse (char *file)
 						char *area;		
 						char **args;
 						args=GetArgs (&begin, 1, Meshes, Nm);
-							
+						if (args==NULL)
+							goto premature_end;
+
 						area=args[0];
 						while (((*area)!='.')&&(*(area+1)))
 							area++;						

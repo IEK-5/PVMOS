@@ -2519,7 +2519,9 @@ void Chunkify(mesh *M)
 	int *list;
 	Nold=M->Nn+1; 
 	list=malloc((M->Nn+2)*sizeof(int));
-	J=(int)(2*sqrt((double)M->Nn)/300);
+	/* J=(int)(2*sqrt((double)M->Nn)/300); */
+	J=15;
+	printf("%d %d\n", J, M->Nn/J);
 	if (J>M->Nn/2)
 		J=M->Nn/2;
 	while (skip<J)

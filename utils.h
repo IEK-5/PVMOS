@@ -49,3 +49,6 @@ int ProgressBar(int pcn, int pco, int len, int tics);
 void PrintHeader(void);
 void PrintFileHeader(FILE *f);
 void Disclamer(void);
+
+void GetNameValue(char *string, char **name, char **value);
+char *GetLine(FILE *f);

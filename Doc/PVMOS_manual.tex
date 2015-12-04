@@ -244,7 +244,7 @@ Keyword & Description \\
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{mesh\_flipx} 	& Flip mesh in y direction, i.e. mirror in the central y-coordinate. The command takes one argument:
+\texttt{mesh\_flipy} 	& Flip mesh in y direction, i.e. mirror in the central y-coordinate. The command takes one argument:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \end{enumerate}\\
@@ -547,7 +547,7 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\texttt{printlocalJV}	& Print a JV characteristics for one particular location and one inter-electrode index.This is useful to check the PVMOS diode model. That command takes 8 parameters:
+\texttt{printlocalJV}	& Print a JV characteristics for one particular location and one inter-electrode index.This is useful to check the PVMOS diode model. The command takes 8 parameters:
 \begin{enumerate}
 \item \texttt{mesh-name}, Name of the mesh
 \item \texttt{x}, x-coordinate
@@ -556,6 +556,14 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{Vstart}, Start voltage for the JV characteristics
 \item \texttt{Vend}, End voltage for the JV characteristics
 \item \texttt{Nstep}, Number of voltage steps in the JV characteristics
+\item \texttt{file-name}, file-name to save the data in.
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{print\_probe}	& Print local electrode voltages. This conmmand prints for one specific location the local voltage for every available simulation in every electrode. The ommand takes 4 parameters:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{x}, x-coordinate
+\item \texttt{y}, y-coordinate
 \item \texttt{file-name}, file-name to save the data in.
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -663,6 +671,17 @@ The output file will contain data in columns. The file contains coordinates foll
 \item \texttt{Nx}, Number of points in the regular mesh along the x-direction
 \item \texttt{Ny}, Number of points in the regular mesh along the y-direction
 \item \texttt{file-name}, file-name to save the data in.
+\end{enumerate}\\
+\multicolumn{2}{l}{\textsc{Managing Simulation Results}} \\*
+\texttt{purge\_results}		& Delete all simulation results in a mesh. The command takes one aregument:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\end{enumerate}\\
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\texttt{purge\_result\_i}		& Delete the simulation results at a specified simulation index. The command takes two areguments:
+\begin{enumerate}
+\item \texttt{mesh-name}, Name of the mesh
+\item \texttt{simulation\_index}, Index of the simulation
 \end{enumerate}\\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \multicolumn{2}{l}{\textsc{Manipulating local properties}} \\*
@@ -1122,9 +1141,14 @@ Data-Field & Description \\
 \item Input: Element index number \texttt{i\_el}, where $0 \le $\texttt{i\_el}$ < $\texttt{Nel}, electrode index number \texttt{i\_elec}, where $0 \le $\texttt{i\_elec}$ < $\texttt{Nelec}, and simulation index number \texttt{i\_sim}, where $0 \le $\texttt{i\_sim}$ < $\texttt{Nva}
 \item Return Value: Voltage for the specified element index, electrode index, and simulation index, or NaN if the requested data is not available
 \end{itemize}\\
-\texttt{VVel(i\_el,i\_elec,V)}	& Estimate the applied voltage such that the potential in element \texttt{i\_el} in electrode \texttt{i\_elec} equals \texttt{V} V
+\texttt{VVel(i\_el,i\_elec,Va)}	& Estimate the applied voltage such that the potential in element \texttt{i\_el} in electrode \texttt{i\_elec} equals \texttt{Va} V
 \begin{itemize}
-\item Input: Element index number \texttt{i\_el}, where $0 \le $\texttt{i\_el}$ < $\texttt{Nel}, electrode index number \texttt{i\_elec}, where $0 \le $\texttt{i\_elec}$ < $\texttt{Nelec}, and the potential $V$ 
+\item Input: Element index number \texttt{i\_el}, where $0 \le $\texttt{i\_el}$ < $\texttt{Nel}, electrode index number \texttt{i\_elec}, where $0 \le $\texttt{i\_elec}$ < $\texttt{Nelec}, and the potential $V_a$ 
+\item Return Value:  Estimated voltage for which the specified potential is equal to $V$ or ``NaN'' if the value cannot be determined.
+\end{itemize}\\
+\texttt{V4Pnt(i\_el,i\_elec,}\\\hspace{28pt}\texttt{j\_el,j\_elec,Va)}	& Estimate the applied voltage such that the potential difference between element \texttt{i\_el}, electrode \texttt{i\_elec} and \texttt{j\_el}, electrode \texttt{j\_elec} equals \texttt{Va} V. Where the potential at point i is positive w.r.t point j, i.e. $V(i)-V(j)=V_a$
+\begin{itemize}
+\item Input: Element index number \texttt{i\_el}, where $0 \le $\texttt{i\_el}$ < $\texttt{Nel}, electrode index number \texttt{i\_elec}, where $0 \le $\texttt{i\_elec}$ < $\texttt{Nelec}, Element index number \texttt{j\_el}, where $0 \le $\texttt{j\_el}$ < $\texttt{Nel}, electrode index number \texttt{j\_elec}, where $0 \le $\texttt{j\_elec}$ < $\texttt{Nelec},and the potential $V_a$ 
 \item Return Value:  Estimated voltage for which the specified potential is equal to $V$ or ``NaN'' if the value cannot be determined.
 \end{itemize}\\
 \texttt{BBx1}		& Return the lower x-coordinate of the mesh bounding box \\

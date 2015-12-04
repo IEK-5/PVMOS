@@ -87,6 +87,7 @@ typedef enum {
 	PRINTPARS,
 	PRINTLOCALJV,
 	SAVEVARS,
+	LOADVARS,
 	SURFCOLCUR,
 	SURFDCOLCUR,
 	SURFVPLOT,
@@ -219,6 +220,7 @@ const KeyWord KeyTable[] =
 	{"printpars", PRINTPARS},
 	{"printlocalJV", PRINTLOCALJV},
 	{"save_vars", SAVEVARS},
+	{"load_vars", LOADVARS},
 	{"surfFc", SURFCOLCUR},
 	{"surffc", SURFDCOLCUR},
 	{"surfVplot", SURFVPLOT},
@@ -308,6 +310,7 @@ typedef enum {
 	MV_IV_V,	/* estimate current I at voltage V */
 	MV_VI_I,	/* estimate current V at current I */
 	MV_VVEL_VEL,	/* Estimate applied voltage for a certain potential at element i in electrode k */
+	MV_V4POINT,	/* Estimate applied voltage for a certain potential difference between two elements (i and j) and two electrodes (k and l) */
 	MV_V_I,		/* i-th applied voltage */
 	MV_I_V,		/* applied voltage colsest to voltage V */
 	MV_I_I,		/* i-th total current */
@@ -337,6 +340,7 @@ const MV_KeyWord MV_KeyTable[] =
 {
       	{"Nelec", MV_NELEC},
 	{"Narea", MV_NAREA}, 	/* number of areas */
+	{"V4pnt", MV_V4POINT}, 	/* Estimate applied voltage for a certain potential difference between two elements (i and j) and two electrodes (k and l) */
 	{"Nsel", MV_NSEL},	/* number of selected elements */
 	{"area", MV_AREA_I},	/* i-th area name */
 	{"VVel", MV_VVEL_VEL}, 	/* Estimate applied voltage for a certain potential at element i in electrode k */
