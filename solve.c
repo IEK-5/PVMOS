@@ -1094,17 +1094,18 @@ void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 	Nno=M->Nn;
 	for (i=0;i<Nno;i++)
 	{
+	/*
 		if ((dVx[i]>dvmax)&&(dVy[i]>dvmax))
 			SplitNodeXY(i, M);
 		else if (dVx[i]>dvmax)
 		{
-			/* in general it is not a good idea to get nodes which are very long and thin,
+			 in general it is not a good idea to get nodes which are very long and thin,
 			   as it *can*, depending on the situation, lead to considerable errors in your 
 			   solution. In turn these errors often lead to a situation where nodes are being 
 			   split in one direction over and over again, where the solution gets no more
 			   accurate. For this reason I put a maximum to the ratio. Note that you are still 
 			   free to screw up your mesh by disallowing nodes to be split in one or another 
-			   direction. */
+			   direction. 
 			N1=SearchNode(*M, i);
 			if (((N1->y2-N1->y1)/(N1->x2-N1->x1)>MAXRATIO)&&(M->P[N1->P].SplitY))
 				SplitNodeY(i, M);
@@ -1118,6 +1119,38 @@ void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 				SplitNodeX(i, M);
 			else
 				SplitNodeY(i, M);
+		}
+	*/
+		while ((dVx[i]>dvmax)&&(dVy[i]>dvmax))
+		{
+			SplitNodeXY(i, M);
+			dVx[i]/=2;
+			dVy[i]/=2;			
+		}
+		while (dVx[i]>dvmax)
+		{
+			/* in general it is not a good idea to get nodes which are very long and thin,
+			   as it *can*, depending on the situation, lead to considerable errors in your 
+			   solution. In turn these errors often lead to a situation where nodes are being 
+			   split in one direction over and over again, where the solution gets no more
+			   accurate. For this reason I put a maximum to the ratio. Note that you are still 
+			   free to screw up your mesh by disallowing nodes to be split in one or another 
+			   direction. */
+			N1=SearchNode(*M, i);
+			if (((N1->y2-N1->y1)/(N1->x2-N1->x1)>MAXRATIO)&&(M->P[N1->P].SplitY))
+				SplitNodeY(i, M);
+			else
+				SplitNodeX(i, M);
+			dVx[i]/=2;			
+		}
+		while (dVy[i]>dvmax)
+		{
+			N1=SearchNode(*M, i);
+			if (((N1->x2-N1->x1)/(N1->y2-N1->y1)>MAXRATIO)&&(M->P[N1->P].SplitX))
+				SplitNodeX(i, M);
+			else
+				SplitNodeY(i, M);
+			dVy[i]/=2;		
 		}
 	}
 	
