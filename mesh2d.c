@@ -1693,6 +1693,54 @@ void SplitListWhileCoarse(mesh *M, int *list, double dx, double dy)
 	free(newlist);
 }
 
+void SplitXY_Ntimes(mesh *M, int id, int Nx, int Ny)
+{
+	int i, j=0;
+	int *list_c, *newlist;
+	
+	list_c=malloc(LISTBLOCK*sizeof(int));
+	list_c[0]=1;
+	list_c[1]=id;
+	
+	newlist=malloc(LISTBLOCK*sizeof(int));
+	newlist[0]=0;
+	while (Nx||Ny)
+	{
+		for (i=list_c[0];i>0;i--) 
+		{
+			node *N;
+			N=SearchNode(*M, list_c[i]);
+			if (Nx&&Ny)
+			{
+				SplitNodeXY(list_c[i], M);
+				newlist=AddToList(newlist, list_c[i]);
+				newlist=AddToList(newlist, M->Nn-1);
+				newlist=AddToList(newlist, M->Nn-2);
+				newlist=AddToList(newlist, M->Nn-3);
+			} else
+			{
+				if (Nx)
+					SplitNodeX(list_c[i], M);
+				else
+					SplitNodeY(list_c[i], M);
+					
+				newlist=AddToList(newlist, list_c[i]);
+				newlist=AddToList(newlist, M->Nn-1);			
+			}
+		}
+		free(list_c);
+		list_c=newlist;		
+		newlist=malloc(LISTBLOCK*sizeof(int));
+		newlist[0]=0;
+		if (Nx)
+			Nx--;
+		if (Ny)
+			Ny--;
+	}
+	free(list_c);
+	free(newlist);
+}
+
 /* apply basic geometrical transforms on meshes */
 void Mesh_ScaleMove(mesh *M, double fx, double fy, double dx, double dy)
 {

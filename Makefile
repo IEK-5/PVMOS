@@ -9,11 +9,11 @@ obj_util=md5.o
 
 CC=gcc
 target=pvmos
-VERSION=0.81
+VERSION=0.82
 
 
-CFLAGS=-Ofast -flto -Wall -fPIC
-# CFLAGS=-Og -g -Wall -fPIC
+# CFLAGS=-Ofast -flto -Wall -fPIC
+CFLAGS=-Og -g -Wall -fPIC
 
 
 LFLAGS= -flto -lcholmod -lopenblas-r0.2.14 -lm -lmatheval

@@ -128,6 +128,7 @@ void SplitListY(mesh *M, int *list);
 void SplitListXY(mesh *M, int *list);
 void SplitListLong(mesh *M, int *list);
 void SplitListWhileCoarse(mesh *M, int *list, double dx, double dy);
+void SplitXY_Ntimes(mesh *M, int id, int Nx, int Ny);
 void Mesh_ScaleMove(mesh *M, double fx, double fy, double dx, double dy);
 void RotateMesh(mesh *M, double x, double y, int d);
 void GetMeshBB(mesh *M, double *x1, double *y1, double *x2, double *y2);
