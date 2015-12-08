@@ -60,7 +60,7 @@
 #include "phototransistor.h"
 #define MIN(a,b) ((a)<(b) ? (a):(b))
 #define MAX(a,b) ((a)<(b) ? (b):(a))
-
+#define LN2 6.931471805599453e-01
 NumSet Numeric_Settings={
 	1e-5, 1e-5, 1e-5, 1e-5,
 	25, 10,
@@ -1098,11 +1098,15 @@ void AdaptMesh(mesh *M, int Vai, double rel_threshold)
 	Nno=M->Nn;
 	for (i=0;i<Nno;i++)
 	{
-		int Nx, Ny, go;
+		int Nx=0, Ny=0, go;
 		double dx, dy;
 		N1=SearchNode(*M, i);
-		Nx=dVx[i]/dvmax;
-		Ny=dVy[i]/dvmax;
+		
+		if(dVx[i]>dvmax)
+			Nx=1+(int)(log(dVx[i]/dvmax)/LN2);
+		if(dVy[i]>dvmax)
+			Ny=1+(int)(log(dVy[i]/dvmax)/LN2);
+		
 		do
 		{
 			go=0;
