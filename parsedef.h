@@ -324,6 +324,7 @@ typedef enum {
 	MV_VOC,		/* open circuit voltage */
 	MV_IMPP,	/* Maximum Power Point Current */
 	MV_VMPP,	/* Maximum Power Point Voltage */
+	MV_SURFAREA,	/* Compute surface area of an area*/
 	MV_NONE
 	
 } PRSMESHVAR;
@@ -338,6 +339,7 @@ typedef struct {
 /* Order matters if several keywords start the same. The table muts be sorted to keyword length starting with the longest keywords. */
 const MV_KeyWord MV_KeyTable[] =
 {
+      	{"SurfArea", MV_SURFAREA},
       	{"Nelec", MV_NELEC},
 	{"Narea", MV_NAREA}, 	/* number of areas */
 	{"V4pnt", MV_V4POINT}, 	/* Estimate applied voltage for a certain potential difference between two elements (i and j) and two electrodes (k and l) */

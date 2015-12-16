@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.5.27)  7 DEC 2015 10:10
+This is pdfTeX, Version 3.14159265-2.6-1.40.15 (TeX Live 2014) (preloaded format=pdflatex 2015.5.27)  16 DEC 2015 17:09
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -445,26 +445,26 @@ Overfull \hbox (8.0pt too wide) in alignment at lines 1064--1149
  []
 
 
-Overfull \hbox (8.0pt too wide) in alignment at lines 1149--1180
+Overfull \hbox (8.0pt too wide) in alignment at lines 1149--1185
  [] [] 
  []
 
 [24] [25]
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table II on input line 1180.
+(longtable)                in table II on input line 1185.
 
 
 Overfull \vbox (1.14983pt too high) has occurred while \output is active []
 
 
 [26]
-Underfull \hbox (badness 10000) in paragraph at lines 1186--1188
+Underfull \hbox (badness 10000) in paragraph at lines 1191--1193
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1186--1188
+Underfull \hbox (badness 10000) in paragraph at lines 1191--1193
 
  []
 
@@ -472,60 +472,60 @@ Underfull \hbox (badness 10000) in paragraph at lines 1186--1188
 File: Octave_PVMOS_Mesh_Topology.pdf Graphic file (type pdf)
 
 <use Octave_PVMOS_Mesh_Topology.pdf>
-Package pdftex.def Info: Octave_PVMOS_Mesh_Topology.pdf used on input line 1202
+Package pdftex.def Info: Octave_PVMOS_Mesh_Topology.pdf used on input line 1207
 .
 (pdftex.def)             Requested size: 203.99689pt x 190.31042pt.
 
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table IV on input line 1220.
+(longtable)                in table IV on input line 1225.
 
 
-Underfull \hbox (badness 2096) in paragraph at lines 1236--1237
+Underfull \hbox (badness 2096) in paragraph at lines 1241--1242
 []|\OT1/cmr/m/n/9 Photo-current den-sity for the mod-els ONED,
  []
 
 
 Package longtable Warning: Column widths have changed
-(longtable)                in table VI on input line 1260.
+(longtable)                in table VI on input line 1265.
 
 [27] [28 <./Octave_PVMOS_Mesh_Topology.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 1263--1266
+Underfull \hbox (badness 10000) in paragraph at lines 1268--1271
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1263--1266
+Underfull \hbox (badness 10000) in paragraph at lines 1268--1271
 
  []
 
 [29]
-Underfull \hbox (badness 10000) in paragraph at lines 1267--1269
+Underfull \hbox (badness 10000) in paragraph at lines 1272--1274
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1267--1269
+Underfull \hbox (badness 10000) in paragraph at lines 1272--1274
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1275--1278
+Underfull \hbox (badness 10000) in paragraph at lines 1280--1283
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1275--1278
+Underfull \hbox (badness 10000) in paragraph at lines 1280--1283
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1275--1278
+Underfull \hbox (badness 10000) in paragraph at lines 1280--1283
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1275--1278
+Underfull \hbox (badness 10000) in paragraph at lines 1280--1283
 
  []
 
@@ -567,7 +567,7 @@ t/fonts/type1/public/amsfonts/cm/cmti9.pfb></usr/share/texlive/texmf-dist/fonts
 /amsfonts/cm/cmtt9.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/
 uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/helvetic/uhvro8a.pfb>
 
-Output written on PVMOS_manual.pdf (32 pages, 422313 bytes).
+Output written on PVMOS_manual.pdf (32 pages, 422529 bytes).
 PDF statistics:
  303 PDF objects out of 1000 (max. 8388607)
  200 compressed objects within 2 object streams

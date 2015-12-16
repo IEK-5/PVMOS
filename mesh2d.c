@@ -1695,7 +1695,7 @@ void SplitListWhileCoarse(mesh *M, int *list, double dx, double dy)
 
 void SplitXY_Ntimes(mesh *M, int id, int Nx, int Ny)
 {
-	int i, j=0;
+	int i;
 	int *list_c, *newlist;
 	
 	list_c=malloc(LISTBLOCK*sizeof(int));
@@ -1708,8 +1708,6 @@ void SplitXY_Ntimes(mesh *M, int id, int Nx, int Ny)
 	{
 		for (i=list_c[0];i>0;i--) 
 		{
-			node *N;
-			N=SearchNode(*M, list_c[i]);
 			if (Nx&&Ny)
 			{
 				SplitNodeXY(list_c[i], M);
@@ -2567,9 +2565,7 @@ void Chunkify(mesh *M)
 	int *list;
 	Nold=M->Nn+1; 
 	list=malloc((M->Nn+2)*sizeof(int));
-	/* J=(int)(2*sqrt((double)M->Nn)/300); */
-	J=15;
-	printf("%d %d\n", J, M->Nn/J);
+	J=(int)(2*sqrt((double)M->Nn)/300);
 	if (J>M->Nn/2)
 		J=M->Nn/2;
 	while (skip<J)

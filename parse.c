@@ -1035,6 +1035,28 @@ static int EvalMeshVar(char *expr, char *res, meshvar * meshes, int Nm)
 			FreeArgs(args,5);
 			return 0;
 		}
+		case MV_SURFAREA:
+		{
+			char **args;
+			double S=0;
+			int i, P;
+			
+			args=GetMeshVarArgs (expr, 1);
+			
+			P=FindProperties(MV->M, args[0]);
+			if (P<0)
+				snprintf(res, MAXSTRLEN-1, "0.0");
+			else
+			{
+				for (i=0;i<M->Nn;i++)
+					if (M->nodes[i].P==P)
+						S+=(M->nodes[i].x2-M->nodes[i].x1)*(M->nodes[i].y2-M->nodes[i].y1);
+				snprintf(res, MAXSTRLEN-1, "%e",S);				
+			}			
+			FreeArgs(args,1);
+			return 0;
+			
+		}
 		case MV_NONE:
 		default:
 			Error("In EvalMeshVar: Variable name \"%s\"  not recognized\n",expr);
@@ -3090,6 +3112,9 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
+
 							
 						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel))
@@ -3216,6 +3241,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 							
 						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel))
@@ -3344,6 +3371,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 							
 						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel))
@@ -3485,6 +3514,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 						
 						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel-1))
@@ -3661,6 +3692,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 							
 						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel))
@@ -3825,6 +3858,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 							
 						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel))
@@ -4031,6 +4066,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 							
 						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel))
@@ -4316,6 +4353,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 							
 						el=atoi(args[1]);
 						if ((el<0)||(el>=MV->M.Nel-1))
@@ -4472,6 +4511,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 											
 						T=atof(args[1]);
 						
@@ -4592,6 +4633,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 													
 												
 						if (MV->nodes[0]==0)
@@ -4714,6 +4757,8 @@ void Parse (char *file)
 						(*(area-1))='\0';	
 											
 						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
 													
 												
 						if (MV->nodes[0]==0)
