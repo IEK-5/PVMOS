@@ -1,44 +1,8 @@
-This example shows how one can generate a complicated geometry using images
-and GNU Octave. To use GNU Octave for this purpose you need mkpvmosmesh.oct,
-which is a library that allows GNU Octave to write PVMOS meshes. To obtain 
-mkpvmosmesh.oct you need to first install GNU Octave. GNU Octave should 
-provide the mkoctfile command. After installing GNU Octave you should be able 
-to compile mkpvmosmesh.oct by typing "make mkpvmosmesh" in the source 
-directory. 
-
-
 RUNNING THE EXAMPLE:
-To run this example copy mkpvmosmesh.oct to this directory. After that 
-execute from the commandline:
+To run this example first install the pvmos-mesh package.
+After that run generate_mesh.m within octave, e.g. within octave
+run "source generate_mesh.m". Alternatively you can execute from 
+the commandline:
 octave generate_mesh
 This should result in a PVMOS mesh in the file "pinupmesh.bin".
 After this you can execute pvmos with the pinup.mos input file.
-
-WHAT HAPPENS:
-The octave script generate_mesh.m takes a series of images (the png files
-in this directory images) and from that creates a regular mesh for PVMOS 
-where the areas in the mesh are based on the images. For more details you 
-can study the generate_mesh.m script. In this example this generates a metal 
-wrap through solar cell with the so called pinup design (ref to ECN patent).
-The mesh will describe the solar cell including the contacting foil that 
-contacts the cell from the back. The mesh is defined in a rather high 
-resolution (the images are about 4M pixels for a 10x10 cm^2 cell, i.e., 
-pixels of about 50x50 µm^2).
-
-The PVMOS script loads the mesh generated in Octave. In this case the mesh 
-is rather large. This has the advantage that the mesh is rather detailed but
-as the mesh is regular, it also leads to many redundant nodes. To remedy this
-and thereby speed up the simulation we can try to simplify the mesh. PVMOS
-includes a function to simplify meshes. This simplification algorithm
-tries to group nodes belonging to the same area into larger rectangular 
-nodes. This way the resolution of the problem definition is not affected but 
-the removal of redundant nodes makes the mesh about a factor 20 smaller. 
-Unfortunately the simplification algorithm only tries to preserve the 
-resolution of the problem definition (i.e. it preserved the local properties 
-everywhere in the mesh) and does not concern itself with the quality of the 
-solution of the simulations. The resulting mesh is thus topo coarse for an
-accurate solution of the potentials in the mesh. For this reason we use 
-adaptive meshing after simplifying the mesh. The adaptive meshing increases 
-the number of elements in the mesh again but this time only more elements are 
-created where more elements are needed.  
-

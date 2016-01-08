@@ -1,7 +1,7 @@
 ###################################################################################################
-# In this example we create an 8x8 cm a-Si:H mini module with several defects.
+# In this example we create an 8x8 cm a-Si:H mini module with a defect.
 ###################################################################################################
-# define geomatry
+# define geometry
 define Nc	8
 define wc	0.958
 define wp1	8e-3
@@ -23,10 +23,11 @@ define Rf 	5
 define Rb	0.1
 
 # shunt
-define rsh 0.02
+define Rshunt 0.00001
+define rsh 	0.02
 # half way into the third cell
-define xsh [8e-3+2.5*(wc+wp1+2*wda+wp2+wp3)]
-define ysh [l/2]
+define xsh 	[8e-3+2.5*(wc+wp1+2*wda+wp2+wp3)]
+define ysh 	[l/2]
 
 ###################################################################################################
 # create the meshes. The following meshes are created
@@ -134,7 +135,7 @@ joinmesh_h	0.0 	cell_p1dap2da	p3	cell
 # The last mesh is cell stripe including dead area. We can easily series connect several cells 
 # by joining several instances of the last mesh in a row. We can clean up things
 ###################################################################################################
-# remove meshes
+# remove meshes we do not need
 rm  cell_a
 rm  p1
 rm  da
@@ -145,14 +146,18 @@ rm cell_p1dap2
 rm cell_p1dap2da	
 
 # make the series connection
-# resultmesh:
+# copy the cell mesh to the result mesn (res):
 dupmesh cell res
 
 define i 0
 while [i] < [Nc-1]
+# create a backup copy of the result mesh
 	dupmesh res dummy
+# remove the current result mesh
 	rm res
+# join the backup with the cell mesh and store in the result mesh
 	joinmesh_h 	0.0 dummy cell res
+# delete the backup copy
 	rm dummy
 	define i [i+1]
 endwhile
@@ -170,32 +175,43 @@ joinmesh_h 0.0 		cpcells		cn	minimodule
 # First we create a new area with the defect properties
 set_Rel		minimodule.shunt 	0 	[Rf]
 set_Rel		minimodule.shunt 	1 	[Rb]
-set_R		minimodule.shunt 	0 	0.00001
+set_R		minimodule.shunt 	0 	[Rshunt]
 
-define rsh 0.02
-define Rc 0.5
-define Nc 2
-define a [(Rc/rsh)^(1/(Nc+1))]
-define i [Nc]
+
+###################################################################################################
+# Create a finer mesh in several concentric circles around the defect
+###################################################################################################
+# nc is the number of concentric circles around the defect
+define nc 2
+# each ring a factor 'a' smaller then the previous one
+define a 3
+define i [nc]
+
 while [i] > 0
+# compute the radius of the circle
 	define Rc [rsh*a^(i+1)]
+# resolve the circles in the mesh (with an accurycy of 10%)
 	resolve_circ minimodule [Rc/10] [xsh] [ysh] [Rc] 
+# select elements within the circle
 	select_circ [xsh] [ysh] [Rc] minimodule
+# refine the selected elements (10 elements along the radius of the circle)
 	split_coarse minimodule [Rc/10] [Rc/10]
 	define i [i-1]
 endwhile
+
+# add the shunt in the center
 resolve_circ minimodule [rsh/20] [xsh] [ysh] [rsh] 
 select_circ [xsh] [ysh] [rsh] minimodule
 assign_properties minimodule.shunt 
 deselect minimodule
 
+# Finished with the definition of the device
 printmesh minimodule mesh0.dat
 printarea minimodule defs.dat
 printpars minimodule pars.dat
 
-
-adaptive_solve 	minimodule 	5 	0.3	2
-printmesh minimodule mesh1.dat
+# adaptive_solve 	minimodule 	5 	0.3	3
+# printmesh minimodule mesh1.dat
 
 solve minimodule 0 8 21
 refine_oc minimodule 1e-6 1e-6 5
@@ -203,6 +219,7 @@ refine_mpp minimodule 1e-6 1e-6 10
 
 surfVplot minimodule 0 0 8 8 600 600 {minimodule.Vmpp} minimoduleVmpp.dat
 surfVplot minimodule 0 0 8 8 600 600 {minimodule.Voc} minimoduleVoc.dat
+surfVplot minimodule 0 0 8 8 600 600 5 minimodule5.dat
 surfVplot minimodule 0 0 8 8 600 600 0 minimodule0.dat
 printIV minimodule IV_minimodule.dat
 print_solpar minimodule solpar_minimodule.dat

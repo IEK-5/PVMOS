@@ -1,0 +1,255 @@
+################################# PVMOS Example
+# A conventional multi-crystalline p-type full-area rear-alloyed cell with screen-printed metallization.
+# Parameters according to:
+# [1] A. Fell et al. "Input Parameters for the Simulation of Silicon Solar Cells in 2014", IEEE Journal of Photovoltaics, vol. 5, nr. 4, pp 1250--1263, 2015
+#################################
+
+##########Parametrization: Geometry
+#	L	-	15.6		cm	- wafer edge length
+#	Wf	-	60e-4		cm	- Finger width
+#	Wb	-	0.13		cm	- Bus bar width
+#	Nf	-	75			- Number of fingers
+#	Nb	-	3			- Number of bus bars
+#	Tb	-	0.02		cm	- height of the contacting areas (at the abus bar ends a small rectangle is contacted to an external voltage 
+#						  source)
+#	E	-	0.1		cm	- edge width 
+#	Pitchf	-	(computed)	cm	- Finger pitch
+#################################
+define L	15.6
+define Wf	60e-4
+define Wb	0.13
+define Nf	75
+define Nb	3
+define Tb	0.02
+define E	0.1
+define Pitchf	[(L-2*E-Wf)/(Nf-1)]
+
+##########Parametrization: Electrical
+# 	Isc		-	8.558		A	- The total cell short circuit current. We will compute the short circuit current density grom this
+#	Jsc_c		-	(computed)	A/cm2	- Cell Short Circuit Current Density (computed from active area and short circuit current from [1]) Will be computed later in this script.
+#	Jsc_m		-	0		A/cm2	- Metal Short Circuit Current Density (assumed)
+#	J0		-	1.06e-12	A/cm2	- Saturation Current Density (fittet to match Voc in [1])
+#	nid		-	1		-	- Diode ideality factor (assumed)
+#	Eg		- 	1.12		eV	- Si Bandgap (standard)
+# 	Rs 		-	5e.3		Ohm cm2	- diode model series resistance (rear metal contact resistance from [1])
+# 	Rsh 		-	1e5		Ohm cm2	- diode model shunt resistance (high enough to not affect the simulation)
+#	Re		-	75		Ohm	- Emitter sheet resistance [1]
+#	Rbb		-	86e-6		Ohm	- Tabbing wire, sheet resistance (assume 0.2mm thick pure copper with 1.72 x 10-8 Ohm m). Note: this resistance is neglected in [1]
+#	Rf		-	3.75e-3		Ohm	- Finger sheet resistance (resistivity 4.5 µOhm cm, 12 µm high [1])
+#	Rr		-	1.17e-2		Ohm	- Rear contact sheet resistance (resistivity 25µOhm cm, 30µm high [1]). Note: this resistance is neglected in [1]
+#	Rc_f		-	2e-3		Ohm cm2	- Contact resistance emitter-metal [1]
+#	Rvp		-	1e-10 		Ohm cm2	- Contact resistsnce positive contact (small enough not to matter)
+#	Rvn		-	1e-10		Ohm cm2	- Contact resistance ground contact (small enough not to matter)
+#########
+define Isc 8.558
+define J0 1.06e-12
+define Jsc_m 0
+define nid 1
+define Eg 1.12
+define Rs 5e-3
+define Rsh 1e5
+
+define Re 75
+define Rbb 86e-10
+define Rf 3.75e-3
+define Rr 1.17e-10
+
+define Rc_f 2e-3
+define Rvp 1e-10
+define Rvn 1e-10
+
+save_vars CellPars.dat
+################################# Create a rectilinear mesh to fit the geometry
+# We start with one single element at the lower left corner
+# The width is the cell edge the height is the height of 
+# the contacting areas at the busbar positions
+##### the lower left corner element
+newmesh		[0] [0]	[E]	[Tb]	1 1 cell
+
+
+##### Create All Areas
+set_R cell.busbar 0 1
+set_R cell.finger 0 1
+set_R cell.cp 0 1
+set_R cell.cn 0 1
+
+##### Create the bottom row
+# we add columns untill the cells spans the whole cell width
+# each column width is chosen such that the element boundaries
+# coincide with the x-coordinates of some geometric boundaries,
+# notably the beginning and end x-coordinates of the vertical 
+# fingers and the bus bars
+
+# distance between bus bars (center to center)
+define lf [L/Nb]
+
+
+addcol_right	[Wf] cell
+addcol_right	[lf/2-E-Wb/2-Wf] cell
+addcol_right	[Wb] cell
+addcol_right	[lf-Wb] cell
+addcol_right	[Wb] cell
+addcol_right	[lf-Wb] cell
+addcol_right	[Wb] cell
+addcol_right	[lf/2-E-Wb/2-Wf] cell
+addcol_right	[Wf] cell
+addcol_right	[E] cell
+
+###### Create the n-contact at the busbars at the bottom
+# we select the elements there where the busbars are to create small contact areas
+define i 0
+define x [lf/2-Wb/2]
+while [i] < [Nb]	
+	select_rect	[x] 0	[x+Wb]	[Tb]	cell
+	assign_properties cell.cn
+	deselect cell
+	define x [x+lf]
+	define i [i+1]
+endwhile
+
+###### Add second row, cell
+addrow_top	[E-Tb] cell
+###### Put the busbars in
+# there where the busbars are the cn area was extended
+# we need to change that to bus bar
+select_rect {cell.BBx1} [Tb] {cell.BBx2}  {cell.BBy2} cell
+select_area cell.cn
+assign_properties cell.busbar
+deselect cell
+
+###### Put in the first Nf-1 fingers
+define j 0
+while [j] < [Nf-1]
+	addrow_top	[Wf] cell
+	addrow_top	[Pitchf-Wf] cell
+	# finger at the bottom
+	select_rect	[E] [{cell.BBy2}-Pitchf] [L-E] [{cell.BBy2}-Pitchf+Wf] cell
+	select_area	cell.cell
+	assign_properties cell.finger
+	deselect cell
+	if [j] == 0
+		# vertical finger left
+		select_rect	[E] [{cell.BBy2}-Pitchf] [E+Wf] [{cell.BBy2}] cell
+		assign_properties cell.finger
+		deselect cell
+		# vertical finger right
+		select_rect	[L-E-Wf] [{cell.BBy2}-Pitchf] [L-E] [{cell.BBy2}] cell
+		assign_properties cell.finger
+		deselect cell
+	endif
+	define j [j+1]
+endwhile
+####### The last finger and the edge to the top
+addrow_top	[Wf] cell
+addrow_top	[E-Tb] cell
+# finger at the bottom
+select_rect	[E] [{cell.BBy2}-E+Tb-Wf] [L-E] [{cell.BBy2}-E+Tb] cell
+select_area	cell.cell
+assign_properties cell.finger
+deselect cell
+# remove vertical finger left
+select_rect	[E] [{cell.BBy2}-E+Tb-Wf] [E+Wf] [{cell.BBy2}] cell
+assign_properties cell.cell
+deselect cell
+# remove vertical finger right
+select_rect	[L-E-Wf] [{cell.BBy2}-E+Tb-Wf] [L-E] [{cell.BBy2}] cell
+assign_properties cell.cell
+deselect cell
+# put in the last row
+addrow_top	[Tb] cell
+select_rect	0 [{cell.BBy2}-Tb]	[L]	{cell.BBy2} cell
+select_area	cell.busbar
+assign_properties cell.cp
+deselect cell
+simplify cell
+
+############################### Geometry is done!
+printarea cell area.dat
+
+############################### Parametrization
+# add the thrid electrode
+add_electrode cell
+
+##### The standard cell area 
+# Only the cell area contributes to the short circuit current, we compute the short current density from Isc and the active cell Area
+define Jsc_c [Isc/{cell.SurfArea(cell)}]
+set_Rel		cell.cell	0	[Rr]
+set_1DJV 	cell.cell	0	[J0] 	[nid] 	[Jsc_c] [Rs] [Rsh]	[Eg]
+set_Rel		cell.cell	1	[Re]
+set_R		cell.cell	1	1e20
+set_Rel		cell.cell	2	1e20
+
+
+##### The fingers
+set_Rel		cell.finger	0	[Rr]
+set_1DJV 	cell.finger	0	[J0] 	[nid] 	[Jsc_m] [Rs] [Rsh]	[Eg]
+set_Rel		cell.finger	1	[Re]
+set_R		cell.finger	1	[Rc_f]
+set_Rel		cell.finger	2	[Rf]
+
+
+##### The bus bars/tabbing wire
+set_Rel		cell.busbar	0	[Rbb]
+set_1DJV 	cell.busbar	0	[J0] 	[nid] 	[Jsc_m] [Rs] [Rsh]	[Eg]
+set_Rel		cell.busbar	1	[Re]
+set_R		cell.busbar	1	[Rc_f]
+set_Rel		cell.busbar	2	[Rbb]
+
+##### The Contacts
+set_Rel		cell.cp		0	[Rr]
+set_1DJV 	cell.cp		0	[J0] 	[nid] 	[Jsc_m]	[Rs] [Rsh]	[Eg]
+set_Rel		cell.cp		1	[Re]
+set_R		cell.cp		1	[Rc_f]
+set_Rel		cell.cp		2	[Rbb]
+set_Rvp		cell.cp		0	[Rvp]
+
+set_Rel		cell.cn		0	[Rr]
+set_1DJV 	cell.cn		0	[J0] 	[nid] 	[Jsc_m] [Rs] [Rsh]	[Eg]
+set_Rel		cell.cn		1	[Re]
+set_R		cell.cn		1	[Rc_f]
+set_Rel		cell.cn		2	[Rbb]
+set_Rvn		cell.cn		2	[Rvn]
+############################## end of parametrization
+
+###################################################################################################
+# Optional: Define a shading pattern
+###################################################################################################
+# With all that building integrated PV where is the graffitti going to go?
+# It may just happen that some misfit under the name Banksy paints a rat on your solar cell! 
+#
+# We first load a polygon from a file describing the graffiti. 
+load_poly graffiti.dat
+
+# The graffiti will shade the solar cell beneath it so we make an area "shade"
+set_Rel		cell.shade	0	[Rr]
+set_1DJV 	cell.shade	0	[J0] 	[nid] 	0 [Rs] [Rsh]	[Eg]
+set_Rel		cell.shade	1	[Re]
+set_R		cell.shade	1	1e20
+set_Rel		cell.shade	2	1e20
+
+# the mesh it rather coarse in many places so we better first refine the mesh around the polygon.
+resolve_poly cell 0.001 1 
+
+# Using still the same polygon we select all elements within the polygon
+select_poly cell
+
+# These elemens will be shaded. This only affects the area cell so we make a sub-selection for 
+# the area cell
+select_area cell.cell
+
+# those elements are assigned to the area shade
+assign_properties 	cell.shade
+deselect cell
+simplify cell
+###################################################################################################
+
+
+############################## Calculating stuff
+# prepare the mesh
+# at least 3 elements between fingers (actually 4 as there is now exactly one element between the fingers)
+split_coarse cell [Pitchf] [(Pitchf-Wf)/3] 
+
+adaptive_solve 	cell 	0.0 	0.4	3
+solve 		cell 	0	0.65	14
+surfVplot	cell	{cell.BBx1}	{cell.BBy1}	{cell.BBx2}	{cell.BBy2} 1000 1000 0.5 Pot_05.dat
+printIV 	cell IV.dat

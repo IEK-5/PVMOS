@@ -1,16 +1,15 @@
 ################################################################################################
 # This example demonstrates the simulation of a metal wrap-through solar cell design
-# The simulation uses a mesh generated within GNU Octave using the mkpvmosmesh.oct
-# library, which allowy one to write PVMOS meshes from within Octave. In this case Octave
-# is used to generate the mesh with a rather complicated metalization pattern from a series
-# of images which indicate the various areas. For more details on the Octave script please
-# refer to the file "generate_mesh.m".
+# The simulation uses a mesh generated within GNU Octave using the pvmos-mesh extension,
+# which allowy one to write rectilinear PVMOS meshes from within Octave. Here we create a metal
+# wrap through design using images to define the geometry. For more details on the Octave script 
+# take a look at "generate_mesh.m".
 # In this file we will load the mesh and subsequently simplify it to reduce the number of 
 # elements in the mesh. After simplifying the mesh we continue with the simulation of it.
 ################################################################################################
 # To load the mesh generated within octave we use the loadmesh command
 # It takes 2 arguments: 1: the binary mesh file 2: name of the mesh
-loadmesh pinupmesh2.bin pinup
+loadmesh pinupmesh.bin pinup
 
 ################################################################################################
 # The mesh created within Octave is a regular mesh. In general regular meshes have redundant 
@@ -20,61 +19,32 @@ loadmesh pinupmesh2.bin pinup
 # The simplify command takes as an agrument the mesh that needs to be simplified
 simplify pinup
 
-#################################################################################################
-## If you expect to do more work on a single structure it is often useful to save the mesh. 
-## You could uncomment the next line if you want to save the simplified mesh. Likewise you can
-## uncomment the loadmesh command to load the mesh (in the latter case all commands above should
-## be commented out.
-#################################################################################################
-## savemesh takes two arguments: 1: the mesh to be saved and 2: the file to which it should be 
-## written.
-## savemesh pinup pinupmesh_simplified.bin
-## loadmesh pinupmesh_simplified.bin pinup
-#
-#
-#################################################################################################
-## To inspect the correctness of the mesh we print out some data
-#################################################################################################
-## printmesh dumps the outline of every node to a file for plotting with gnuplot
-## It takes 2 arguments: 1: the mesh 2: file to save the data to
-#printmesh pinup pinupmesh.dat
-#
-#################################################################################################
-## printsurf makes a surface plot for plotting with gnuplot where one can inspevct which elements 
-## belong to which area
-## It takes 2 arguments: 1: the mesh 2: file to save the data to
-#printarea pinup pinupdefs.dat
-#
-#################################################################################################
-## printpars prints all area properties for all area's in a mesh. In combination with the 
-## command you can see which properties apply to which areas
-## It takes 2 arguments: 1: the mesh 2: file to save the data to
-#printpars pinup pinuppars.dat
-#
-#
-#################################################################################################
-## The simplify command reduces the number of elements but does not consider the accuracy of the 
-## simulation. In order to make an accurate simulation we do several rounds in which we adapt
-## the mesh to simulated results.
-#################################################################################################
-## adaptive_solve takes 4 arguments
-## 1: the mesh 2: applied voltage 3: remeshing factor (between 0-1) 4: number of adaptive 
-## iterations
-#split_coarse pinup 0.07 0.07
-#printmesh pinup pinupmesh2.dat
-#adaptive_solve 	pinup 	0.4 	0.3	5
-#printmesh pinup pinupmesh3.dat
-#
-#################################################################################################
-## Now the mesh should lead to accurae results, we so an IV characteristics
-#################################################################################################
-## solve takes 4 arguments
-## 1: the mesh 2: start voltage 3: end voltage 4: number of steps
-#solve pinup 0 1.0 1 
-#surfVjplot pinup 0 0 10 10 200 200 0.5 pinupVj_05.dat
-#surfVplot pinup 0 0 10 10 200 200 0.5 pinupV_05.dat
-##surfPplot pinup 0 0 10 10 200 200 0.5 pinupP_05.dat
-#surfVjplot pinup 0 0 10 10 200 200 0.0 pinupVj_00.dat
-#surfVplot pinup 0 0 10 10 200 200 0.0 pinupV_00.dat
-#surfPplot pinup 0 0 10 10 200 200 0.0 pinupP_00.dat
-#printIV pinup pinupIV.dat
+################################################################################################
+# To inspect the correctness of the mesh we print out some data
+################################################################################################
+printmesh pinup pinupmesh.dat
+printarea pinup pinupdefs.dat
+printpars pinup pinuppars.dat
+
+
+################################################################################################
+# The simplify command reduces the number of elements but does not consider the accuracy of the 
+# simulation. In order to make an accurate simulation we do several rounds in which we adapt
+# the mesh to simulated results.
+################################################################################################
+# splot all elements with edge lengths larger then 0.07 cm (in x and y direction)
+split_coarse pinup 0.07 0.07
+adaptive_solve 	pinup 	0.4 	0.3	2
+printmesh pinup pinupmesh2.dat
+
+################################################################################################
+# Finally we solve something
+################################################################################################
+solve pinup 0 1.0 11 
+surfVjplot pinup 0 0 10 10 200 200 0.5 pinupVj_05.dat
+surfVplot pinup 0 0 10 10 200 200 0.5 pinupV_05.dat
+surfPplot pinup 0 0 10 10 200 200 0.5 pinupP_05.dat
+surfVjplot pinup 0 0 10 10 200 200 0.0 pinupVj_00.dat
+surfVplot pinup 0 0 10 10 200 200 0.0 pinupV_00.dat
+surfPplot pinup 0 0 10 10 200 200 0.0 pinupP_00.dat
+printIV pinup pinupIV.dat

@@ -91,5 +91,5 @@ Ny=length(Area_Index(:,1))
 % make a 10x10 cm^2 mesh
 x=0:10/Nx:10;
 y=0:10/Ny:10;
-mkpvmosmesh(Na, Nel, Area_Index, AreaDef, x, y, "pinupmesh2.bin")
+mkpvmosmesh(Na, Nel, Area_Index, AreaDef, x, y, "pinupmesh.bin")
 
