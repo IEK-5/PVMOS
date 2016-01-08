@@ -85,9 +85,9 @@ meshhash.h: mesh2d.h mesh2d.c MeshHasher.c list.o utils.o md5.o diode.o phototra
 	# is a special target for that, .DELETE_ON_ERROR. Include it to make sure mesh2d.c is never compiled with
 	# the dummy meshhash.h 
 .DELETE_ON_ERROR:
-mkpvmosmesh: mkpvmosmesh.pkg
+pvmos-mesh: pvmos-mesh.pkg
 	octave --eval "pkg install pvmos-mesh-$(VERSION).tar.gz"
-mkpvmosmesh.pkg: mesh2d.c utils.c list.c main.h mesh2d.h utils.h list.h meshhash.h phototransistor.h diode.h  phototransistor.c diode.c 
+pvmos-mesh.pkg: mesh2d.c utils.c list.c main.h mesh2d.h utils.h list.h meshhash.h phototransistor.h diode.h  phototransistor.c diode.c 
 	mkdir -p pvmos-mesh-$(VERSION)/src
 	mkdir -p pvmos-mesh-$(VERSION)/inst
 	cp PVMOS_*.m pvmos-mesh-$(VERSION)/inst/
@@ -99,7 +99,7 @@ mkpvmosmesh.pkg: mesh2d.c utils.c list.c main.h mesh2d.h utils.h list.h meshhash
 	echo "Date: $(shell date)" >> pvmos-mesh-$(VERSION)/DESCRIPTION
 	echo "Author: B.E.Pieters" >> pvmos-mesh-$(VERSION)/DESCRIPTION
 	echo "Maintainer: B.E.Pieters" >> pvmos-mesh-$(VERSION)/DESCRIPTION
-	echo "Categories: Create PVMOS meshes in Octave >>mkpvmosxmesh" >>  pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Categories: Create rectilinear PVMOS meshes in Octave" >>  pvmos-mesh-$(VERSION)/DESCRIPTION
 	echo "Title: pvmos-mesh" >> pvmos-mesh-$(VERSION)/DESCRIPTION
 	echo "Description: A mesh generator for PVMOS" >> pvmos-mesh-$(VERSION)/DESCRIPTION
 	echo "License: GPLv3+" >> pvmos-mesh-$(VERSION)/DESCRIPTION
