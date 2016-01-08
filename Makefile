@@ -16,7 +16,7 @@ VERSION=0.82
 CFLAGS=-Og -g -Wall -fPIC
 
 
-LFLAGS= -flto -lcholmod -lopenblas-r0.2.14 -lm -lmatheval
+LFLAGS= -flto -lcholmod -lopenblas-r0.2.15 -lm -lmatheval
 # if linking to OpenBLAS we need to set the numthreads to 1
 # Comment this if you are not using OpenBLAS or believe OpenBLAS should run on more threads (at least for OpenBLAS version 0.2.13 this is a bad idea)
 # Seems that perhaps newer versions fix this problem, will test sometime...
