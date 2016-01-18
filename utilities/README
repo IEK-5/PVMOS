@@ -1,15 +1,3 @@
-inkscape_extractpath:
-An extension for inkscape to export coordinates of a path, naturally in a 
-format that PVMOS can undersand. To this end the path must be a polygon, 
-i.e. only straight line segments between nodes, no bezier curves. 
-Inkscape often applies all sorts of transformation on a path. This script,
-however, is rather dumb so it does not correct the coordinates  for these
-transformations and just spits out the data it finds in the path data 
-structure. This means the script outputs coordinates in what are 
-effectively arbitrary units. This is where the next utility comes in 
-handy.
-
-
 polytransform:
 utility to transform the polygon data from the inkscape extension to the 
 units you want. 
