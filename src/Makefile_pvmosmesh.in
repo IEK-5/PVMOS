@@ -1,0 +1,29 @@
+VERSION=0.83
+srcdir=SRCDIR
+pvmos-mesh.pkg: $(srcdir)/mkpvmosmesh.cc $(srcdir)/mesh2d.c $(srcdir)/utils.c $(srcdir)/list.c $(srcdir)/main.h $(srcdir)/mesh2d.h $(srcdir)/utils.h $(srcdir)/list.h $(srcdir)/meshhash.h $(srcdir)/phototransistor.h $(srcdir)/diode.h  $(srcdir)/phototransistor.c $(srcdir)/diode.c config.h
+	mkdir -p pvmos-mesh-$(VERSION)/src
+	mkdir -p pvmos-mesh-$(VERSION)/inst
+	cp $(srcdir)/PVMOS_*.m pvmos-mesh-$(VERSION)/inst/
+	cp $(srcdir)/mkpvmosmesh.cc $(srcdir)/diode.c $(srcdir)/diode.h $(srcdir)/phototransistor.c $(srcdir)/phototransistor.h $(srcdir)/mesh2d.c $(srcdir)/utils.c $(srcdir)/list.c $(srcdir)/main.h $(srcdir)/mesh2d.h $(srcdir)/utils.h $(srcdir)/list.h $(srcdir)/meshhash.h config.h pvmos-mesh-$(VERSION)/src/
+	echo "VERSION=$(VERSION)" > pvmos-mesh-$(VERSION)/src/Makefile
+	echo "CC=gcc" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "CFLAGS=-Ofast -flto -Wall -fPIC" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "mkpvmosmesh: mesh2d.o utils.o list.o main.h diode.o phototransistor.o" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "	mkoctfile -v  mkpvmosmesh.cc mesh2d.o utils.o list.o diode.o phototransistor.o" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "utils.o: utils.c mesh2d.h utils.h config.h" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "mesh2d.o: mesh2d.h mesh2d.c utils.h" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "list.o: list.c utils.h" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "diode.o: diode.c diode.h" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "phototransistor.o: phototransistor.c phototransistor.h" >> pvmos-mesh-$(VERSION)/src/Makefile
+	echo "Name: pvmos-mesh" > pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Version: $(VERSION)" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Date: $(shell date)" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Author: B.E.Pieters" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Maintainer: B.E.Pieters" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Categories: Create rectilinear PVMOS meshes in Octave" >>  pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Title: pvmos-mesh" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "Description: A mesh generator for PVMOS" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "License: GPLv3+" >> pvmos-mesh-$(VERSION)/DESCRIPTION
+	echo "The GPLv3+ applies to all files in thic package" > pvmos-mesh-$(VERSION)/COPYING
+	tar -zcvf pvmos-mesh-$(VERSION).tar.gz pvmos-mesh-$(VERSION)
+	rm -rf  pvmos-mesh-$(VERSION)

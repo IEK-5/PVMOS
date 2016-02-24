@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+   <_name>Extract Poly</_name>
+   <id>org.bart.filter.extractpoly</id>
+       <dependency type="executable" location="extensions">extractpoly.py</dependency>
+       <dependency type="executable" location="extensions">inkex.py</dependency>
+       <param name="flatness" type="float" min="0.0" max="1000.0" _gui-text="Flatness:">10.0</param>
+       <param name="filepath" type="string" _gui-text="Path & file to save data:">polygon.dat</param>
+       <param name="unit" type="enum" _gui-text="Length unit:">
+          <_item value="1cm">Centimeters (cm)</_item>
+          <_item value="1ft">Feet (ft)</_item>
+          <_item value="1in">Inches (in)</_item>
+          <_item value="1m">Meters (m)</_item>
+          <_item value="1mm">Millimeters (mm)</_item>
+          <_item value="1pc">Picas (pc)</_item>
+          <_item value="1pt">Points (pt)</_item>
+          <_item value="1px">Pixels (px)</_item>
+       </param>
+   <effect needs-live-preview="false">
+          <object-type>path</object-type>
+              <effects-menu>
+                  <submenu _name="Export"/>
+              </effects-menu>
+   </effect>
+   <script>
+       <command reldir="extensions" interpreter="python">extractpoly.py</command>
+   </script>
+</inkscape-extension>
