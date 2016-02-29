@@ -1,0 +1,131 @@
+Wed Feb 24 14:51:40 2016
+    Version 0.83
+    
+    switched to the autotools build system in the hope to make things more portable (at least in the POSIX world)
+    
+    new and improved inkscape extension for exporting polygons for use in PVMOS
+    
+    added function to integrare the surface area of a certain area
+    
+    Changed adaptive meshing routines to allow elements to be split several times in one run 
+    
+    added load_vars and save_vars commands
+    
+    added mechanism to expose data fields within a mesh to the scripting
+    environment. Using this system you can now
+    - access solar cell parameters (replaces the now obsolute define_solpar command)
+    - get the mesh bounding box
+    - access Simulation results by index number. 
+    - delete simulation results by index number
+    added cleanupmesh command to remove unused areas
+    
+    Made it such that selecting elements sets a variable Nel. In combination
+    with if statements it is possible to only operate on a selection if there
+    were elements selected. This also means that making an empty selection
+    will not throw an error anymore.
+    
+    Added polygon operations like scaling and rotation
+    
+    Matched the scaling rotation and move operations to meshes to match
+    the syntax for polygons
+    
+    Improved performance for the windows version by replacing the default malloc routines
+    by Doug Lea's dlmalloc. Seems to not work with all mingw versions though. The latest 
+    mingw versions (gcc version 5.2) produce code which either does not work or runs slow.
+
+    Added while loops and if/else statements.
+
+    Possibility to invert a selection of elements    
+    
+    Command to delete elements from a mesh
+    
+    added routines and commands to add rows and columns to a mesh.
+    The routines take one side of a mesh, which must be straight
+    (i.e. vertical or horizontal) and adds one element to each
+    element on that side. Properties are copied. Meshes should not
+    have holes. This change allows creating rectilinear meshes
+
+    Many bugfixes
+    
+Fri Sep 25 17:57:43 2015
+    Version 0.74:
+    
+    added phototransistor model
+    
+    Changed binary format to:
+    	- improve error checking and error messages
+	- Automatically check compatibility of a binary mesh file
+    
+    Created a proper GNU Octave package "pvmos-mesh" for the mkpvmosmesh code
+    
+    Updated mkpvmosmesh to work with Octave 4.0
+    
+    mkpvmosmesh can now create rectilinear meshes
+    
+    Added routines to compute the photocurrent collection efficiency.
+    
+    Improved convergence in difficult cases
+
+    added command for exporting local JV characteristics
+    
+    added print_solpar
+
+    Added commands to determine certain operating points
+    refine_oc		-	finds Voc
+    refine_mpp		-	finds mpp
+    
+    Define variables with the solar cell parameters using define_solpar
+
+    Added variables and expressiosn using libmatheval
+    
+    Implemented a fallback expression evaluator without libmatheval which only evaluates plain variables.
+
+    added functionality to export the junction voltage for one and two diode models
+
+    added transform routines for meshes like rotating ans scaling. Implemented are:
+	
+    Added commands to change properties for selected elements only. This command creates new areas as needed.
+    
+    improved support for polygons, now with holes and such
+    
+    Created the printInIp commands (integrated current densities over selected elements to the extrenal contacts), seperate from printIV.
+    
+    added tic and toc commands to time operations
+
+    Added functions to resolve contours to a given precision
+    
+    added export functions for current densities and electric fields
+    
+    added possibility to define polygons within the PVMOS input file
+    
+    the print XX commands now only print data on selected elements
+
+Sun Nov 9 15:31:51 2014
+    Version 0.52
+    
+    Changed selection routines to be able to select a sub-set of the selected nodes
+    
+    Added a function to select nodes per area (very useful in combination with the first point)
+
+    Added the remove meshvar command to delete obsolete meshes (saves memory)
+
+    added mkpvmosmesh, an octave library for writing PVMOS meshes
+
+    added variable number of electrodes, i.e. PVMOS is a full 3D solver now!
+    this should enable:
+    - 3D simulations of conduction in a thick electrode
+    - simulation of tandem devices with conductive contacts between the component cells
+      including e.g. shunts oon only one component cell
+    - inperfections in electrode on electrode systems (e.g. metal grids with fingers
+      which are disconnected from the base electrode)
+    folowing has been implemented:
+    	- I can add electrodes in a mesh
+    	- Specify electrode properties and inter-electrode connections
+    	- all electrodes can be connected to the positive node or ground
+
+    changed the initialization of the solution vector from previous data, saves some work in solving the system in some cases
+
+    added deselect to deselect a selection within a mesh
+
+Tue Jun 10 17:04:52 2014
+    first public commit

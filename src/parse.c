@@ -168,12 +168,16 @@ void RemoveMeshVar (char **name,  meshvar ** meshes, int *Nm)
 		(*meshes)[i].M=(*meshes)[i+1].M;
 		(*meshes)[i].name=(*meshes)[i+1].name;
 		(*meshes)[i].nodes=(*meshes)[i+1].nodes;
+		(*meshes)[i].setsel=(*meshes)[i+1].setsel;
+		(*meshes)[i].x1=(*meshes)[i+1].x1;
+		(*meshes)[i].y1=(*meshes)[i+1].y1;
+		(*meshes)[i].x2=(*meshes)[i+1].x2;
+		(*meshes)[i].y2=(*meshes)[i+1].y2;
 	}
 	
 	(*Nm)--;
 	(*meshes)=realloc((*meshes),((*Nm)+1)*sizeof(meshvar));	
 }
-
 
 /* select rectangular area in a mesh variable */
 /* Input: 
@@ -1399,7 +1403,9 @@ void Parse (char *file)
 						len=strlen(args[4]);
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,args[4],len+1);
-						AddMeshVar (JoinMeshes(MV1->M, MV2->M, xoff, yoff), &name,  &Meshes, &Nm);
+						AddMeshVar (JoinMeshes(MV1->M, MV2->M, xoff, yoff), &name,  &Meshes, &Nm);	
+						MV1=LookupMesh(name, Meshes, Nm);						
+						GetMeshBB(&(MV1->M), &(MV1->x1), &(MV1->y1), &(MV1->x2), &(MV1->y2));
 						FreeArgs (args, 5);
 						break;
 					}
@@ -1429,7 +1435,9 @@ void Parse (char *file)
 						len=strlen(args[3]);
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,args[3],len+1);
-						AddMeshVar (JoinMeshes_H(MV1->M, MV2->M, yoff), &name,  &Meshes, &Nm);
+						AddMeshVar (JoinMeshes_H(MV1->M, MV2->M, yoff), &name,  &Meshes, &Nm);	
+						MV1=LookupMesh(name, Meshes, Nm);						
+						GetMeshBB(&(MV1->M), &(MV1->x1), &(MV1->y1), &(MV1->x2), &(MV1->y2));
 						FreeArgs (args, 4);
 						break;
 					
@@ -1459,7 +1467,9 @@ void Parse (char *file)
 						len=strlen(args[3]);
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,args[3],len+1);
-						AddMeshVar (JoinMeshes_V(MV1->M, MV2->M, xoff), &name,  &Meshes, &Nm);
+						AddMeshVar (JoinMeshes_V(MV1->M, MV2->M, xoff), &name,  &Meshes, &Nm);	
+						MV1=LookupMesh(name, Meshes, Nm);						
+						GetMeshBB(&(MV1->M), &(MV1->x1), &(MV1->y1), &(MV1->x2), &(MV1->y2));
 						FreeArgs (args, 4);
 						break;
 					
@@ -1485,6 +1495,8 @@ void Parse (char *file)
 						name=malloc((len+2)*sizeof(char));
 						name=strncpy(name,args[1],len+1);						
 						AddMeshVar (Mnew, &name,  &Meshes, &Nm);
+						MV=LookupMesh(name, Meshes, Nm);						
+						GetMeshBB(&(MV->M), &(MV->x1), &(MV->y1), &(MV->x2), &(MV->y2));
 						FreeArgs (args, 2);
 						break;					
 					}
