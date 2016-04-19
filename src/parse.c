@@ -1198,7 +1198,7 @@ void Parse (char *file)
 	char *line, *word, c;
 	char *begin;
 	meshvar * Meshes;
-	int Nm=0, k;
+	int Nm=0, k, ExitPVMOS=1;
 	int line_nr=1;
 	int *loop_line_nr;
 	long int *loop_stack, last_pos; 
@@ -1225,7 +1225,7 @@ void Parse (char *file)
     	fgets(line, MAXSTRLEN-1, f);
 	
 	tic = clock();
-	while(feof(f)==0)
+	while((feof(f)==0)&&ExitPVMOS)
 	{
     		k=sscanf(line, " %c", &c);
 		if((k!=-1)&&(c!='#'))
@@ -3457,6 +3457,136 @@ void Parse (char *file)
 						FreeArgs (args, 3);					
 						break;
 					}
+					case SET_RVG:
+					{
+						meshvar *MV;
+						int P, el;
+						double R;	
+						char **args;
+						args=GetArgs (&begin, 3, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
+													
+						MV=LookupMeshArea (args[0],  Meshes, Nm, &P);
+						if (P<0)
+						{
+							char *area;
+							area=args[0];
+							while ((*area)!='.')
+								area++;
+							area++;
+							Print(NORMAL,"* line %3d: Creating new area definition %s",line_nr, args[0]);
+							P=MV->M.Na;
+							NewProperties(&(MV->M), area);
+						}	
+						
+						el=atoi(args[1]);
+						
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);
+							
+						Print(NORMAL,"* line %3d: Setting Rvg for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[P].name, args[2]);
+														
+						R=atof(args[2]);
+						MV->M.P[P].Rvg[el]=R;
+						FreeArgs (args, 3);	
+						break;
+					}
+					case SET_SEL_RVG:
+					{
+						
+						meshvar *MV;
+						int el;
+						double R;
+						char *area;		
+						char **args;
+						args=GetArgs (&begin, 3, Meshes, Nm);
+						if (args==NULL)
+							goto premature_end;
+							
+						area=args[0];
+						while (((*area)!='.')&&(*(area+1)))
+							area++;						
+						area++;	
+						if (!(*area))
+							Error("* line %3d: Expecting area indication in the form <mesh>.<area_modifier>\n", line_nr);
+						(*(area-1))='\0';	
+											
+						MV=LookupMesh (args[0],  Meshes, Nm);
+						if (!MV)
+							Error("* line %3d: Mesh \"%s\" does not exist\n",line_nr,args[0]);	
+							
+						el=atoi(args[1]);
+						if ((el<0)||(el>=MV->M.Nel))
+							Error("* line %3d: Invalid electrode index: Index %i is not in the valid range of 0 %i\n", line_nr, el, MV->M.Nel-1);					
+						R=atof(args[2]);
+						
+												
+						if (MV->nodes[0]==0)
+						{
+							/* all nodes */
+							/* change R_el for all areas */
+							int a;
+							for (a=0;a<MV->M.Na;a++)
+							{
+								Print(NORMAL,"* line %3d: Setting Rvg for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[a].name, args[2]);
+								MV->M.P[a].Rvg[el]=R;
+								
+							}
+						}
+						else
+						{
+							/* create new area for all areas in selection and assign elements to it */
+							/* add_area to the area names */
+							int E, a, l1, l2;
+							int *AreaList;
+							char *newarea;
+							newarea=malloc(MAXSTRLEN*sizeof(char));
+							AreaList=malloc(LISTBLOCK*sizeof(int));
+							AreaList[0]=0;
+							for (E=1;E<=MV->nodes[0];E++)
+							{
+								a=MV->M.nodes[MV->nodes[E]].P;
+								if (!MV->setsel)
+								{
+									/* create new area string */
+									l1=strlen(MV->M.P[a].name);
+									l2=strlen(area);
+									if (l1+l2>MAXSTRLEN)
+										Error("* line %3d: New area-name exceeds %d characters\n", line_nr, MAXSTRLEN);	
+										
+									strncpy(newarea, MV->M.P[a].name,l1);
+									strncpy(newarea+l1, area,l2+1);								
+									a=FindProperties(MV->M, newarea);
+									if (a<0)
+									{
+										/* create new area */
+										Print(NORMAL,"* line %3d: Creating new area %s.%s",line_nr, MV->name, newarea);
+										a=MV->M.Na;
+										MV->M.Na++;
+										MV->M.P=realloc(MV->M.P, (MV->M.Na+1)*sizeof(local_prop));
+										DuplicateProperties(&(MV->M), MV->M.P+a, MV->M.P+MV->M.nodes[MV->nodes[E]].P);
+										MV->M.P[a].name=realloc(MV->M.P[a].name, (strlen(newarea)+2)*sizeof(char));
+										strncpy(MV->M.P[a].name, newarea,strlen(newarea)+1);
+									}
+									/* assign element to area */
+									MV->M.nodes[MV->nodes[E]].P=a;
+								}
+								AreaList=AddToList(AreaList, a);
+								
+							}
+							MV->setsel=1;
+							for (a=1;a<=AreaList[0];a++)
+							{
+								Print(NORMAL,"* line %3d: Setting Rvg for electrode %d in %s.%s to %s",line_nr, el, MV->name, MV->M.P[AreaList[a]].name, args[2]);
+								MV->M.P[AreaList[a]].Rvg[el]=R;
+							}							
+							free(newarea);
+							free(AreaList);
+						}	
+						FreeArgs (args, 3);					
+						break;
+					}
 					case SET_JV:
 					{
 						meshvar *MV;
@@ -4620,7 +4750,7 @@ void Parse (char *file)
 							NewProperties(&(MV->M), area);	
 						}
 														
-						Print(NORMAL,"* line %3d: Setting initial temperature in %s to %s",line_nr, args[0], args[1]);
+						Print(NORMAL,"* line %3d: Setting ground-level potential in %s to %s",line_nr, args[0], args[1]);
 						Vg=atof(args[1]);
 						
 						MV->M.P[P].Vg=Vg;
@@ -4660,7 +4790,7 @@ void Parse (char *file)
 							int a;
 							for (a=0;a<MV->M.Na;a++)
 							{
-								Print(NORMAL,"* line %3d: Setting initial temperature in %s.%s to %s",line_nr, MV->name, MV->M.P[a].name, args[1]);
+								Print(NORMAL,"* line %3d: Setting ground-level potential in %s.%s to %s",line_nr, MV->name, MV->M.P[a].name, args[1]);
 								MV->M.P[a].Vg=Vg;
 								
 							}
@@ -4712,7 +4842,7 @@ void Parse (char *file)
 							MV->setsel=1;
 							for (a=1;a<=AreaList[0];a++)
 							{
-								Print(NORMAL,"* line %3d: Setting initial temperature in %s.%s to %s",line_nr, MV->name, MV->M.P[AreaList[a]].name, args[1]);
+								Print(NORMAL,"* line %3d: Setting ground-level potential in %s.%s to %s",line_nr, MV->name, MV->M.P[AreaList[a]].name, args[1]);
 								MV->M.P[AreaList[a]].Vg=Vg;
 							}							
 							free(newarea);
@@ -5248,6 +5378,10 @@ void Parse (char *file)
 					case _DEBUG:
 						if(!fixverb)
 							verbose=DEBUG;
+						break;
+					case EXIT:
+						Print(NORMAL,"* line %3d: Exit command encountered",line_nr);					
+						ExitPVMOS=0;
 						break;
 					case DEBUGCOMMAND:
 						/* I sometimes insert things here for testing purposes,  it is not intended for normal use */

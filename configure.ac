@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT(PVMOS, 0.83, b.pieters@fz-juelich.de)
+AC_INIT(PVMOS, 0.84, b.pieters@fz-juelich.de)
 AM_INIT_AUTOMAKE()
 AC_CONFIG_SRCDIR([src/mesh2d.c])
 AC_CONFIG_HEADERS([src/config.h])

@@ -112,6 +112,7 @@ typedef enum {
 	SET_REL,
 	SET_RVP,
 	SET_RVN,
+	SET_RVG,
 	SET_JV,
 	SET_2DJV,
 	SET_1DJV,
@@ -125,6 +126,7 @@ typedef enum {
 	SET_SEL_REL,
 	SET_SEL_RVP,
 	SET_SEL_RVN,
+	SET_SEL_RVG,
 	SET_SEL_JV,
 	SET_SEL_2DJV,
 	SET_SEL_1DJV,
@@ -162,7 +164,8 @@ typedef enum {
 	_QUIET,
 	_NORMAL,
 	_VERBOSE,
-	_DEBUG,
+	_DEBUG,	
+	EXIT,	
 	DEBUGCOMMAND,
 	NONE
 } PRSDEF;
@@ -247,6 +250,7 @@ const KeyWord KeyTable[] =
 	{"set_Rel", SET_REL},
 	{"set_Rvp", SET_RVP},
 	{"set_Rvn", SET_RVN},
+	{"set_Rvg", SET_RVG},
 	{"set_JV", SET_JV},
 	{"set_2DJV", SET_2DJV},
 	{"set_1DJV", SET_1DJV},
@@ -260,6 +264,7 @@ const KeyWord KeyTable[] =
 	{"set_sel_Rel", SET_SEL_REL},
 	{"set_sel_Rvp", SET_SEL_RVP},
 	{"set_sel_Rvn", SET_SEL_RVN},
+	{"set_sel_Rvg", SET_SEL_RVG},
 	{"set_sel_JV", SET_SEL_JV},
 	{"set_sel_2DJV", SET_SEL_2DJV},
 	{"set_sel_1DJV", SET_SEL_1DJV},
@@ -298,6 +303,7 @@ const KeyWord KeyTable[] =
 	{"out_normal",_NORMAL},
 	{"out_verbose",_VERBOSE},
 	{"out_debug",_DEBUG},
+	{"exit", EXIT},
 	{"debug",DEBUGCOMMAND},
       	{NULL, NONE}
 };
