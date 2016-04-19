@@ -5379,6 +5379,10 @@ void Parse (char *file)
 						if(!fixverb)
 							verbose=DEBUG;
 						break;
+					case PAUSE:
+						Print(NORMAL,"* line %3d: Execution paused, press ENTER to continue",line_nr);					
+						getchar();
+						break;
 					case EXIT:
 						Print(NORMAL,"* line %3d: Exit command encountered",line_nr);					
 						ExitPVMOS=0;

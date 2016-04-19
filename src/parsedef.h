@@ -165,6 +165,7 @@ typedef enum {
 	_NORMAL,
 	_VERBOSE,
 	_DEBUG,	
+	PAUSE,
 	EXIT,	
 	DEBUGCOMMAND,
 	NONE
@@ -303,6 +304,7 @@ const KeyWord KeyTable[] =
 	{"out_normal",_NORMAL},
 	{"out_verbose",_VERBOSE},
 	{"out_debug",_DEBUG},
+	{"pause", PAUSE},
 	{"exit", EXIT},
 	{"debug",DEBUGCOMMAND},
       	{NULL, NONE}
