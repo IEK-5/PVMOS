@@ -32,11 +32,11 @@ malloc-2.8.6.o:
 endif
 
 if PVMOSMESH
-dist_pkgdata_DATA = pvmos-mesh-$(VERSION).tar.gz
+dist_pkgdata_DATA = octave-pvmos-mesh-$(VERSION).0.tar.gz
 Makefile_pvmosmesh: $(srcdir)/Makefile_pvmosmesh.in
 	sed 's|SRCDIR|'$(srcdir)'|g' $(srcdir)/Makefile_pvmosmesh.in > Makefile_pvmosmesh
 
-pvmos-mesh-$(VERSION).tar.gz: meshhash.h Makefile_pvmosmesh
+octave-pvmos-mesh-$(VERSION).0.tar.gz: meshhash.h Makefile_pvmosmesh
 	sed -i 's/^VERSION[^\n]\+/VERSION=$(VERSION)/g' Makefile_pvmosmesh; \
 	make -f Makefile_pvmosmesh
 endif

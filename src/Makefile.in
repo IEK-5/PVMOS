@@ -160,7 +160,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-am__dist_pkgdata_DATA_DIST = pvmos-mesh-$(VERSION).tar.gz
+am__dist_pkgdata_DATA_DIST = octave-pvmos-mesh-$(VERSION).0.tar.gz
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -329,7 +329,7 @@ MeshHasher_SOURCES = md5.c md5.h mesh2d.c mesh2d.h  utils.c utils.h list.c list.
 
 # my somewhat hackish solution to getting dmalloc compiled and linked to
 @DMALLOC_TRUE@pvmos_LDADD = malloc-2.8.6.o
-@PVMOSMESH_TRUE@dist_pkgdata_DATA = pvmos-mesh-$(VERSION).tar.gz
+@PVMOSMESH_TRUE@dist_pkgdata_DATA = octave-pvmos-mesh-$(VERSION).0.tar.gz
 all: $(BUILT_SOURCES) config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -719,7 +719,7 @@ MeshHasher$(EXEEXT): $(MeshHasher_SOURCES) utils.o list.o md5.o diode.o phototra
 @PVMOSMESH_TRUE@Makefile_pvmosmesh: $(srcdir)/Makefile_pvmosmesh.in
 @PVMOSMESH_TRUE@	sed 's|SRCDIR|'$(srcdir)'|g' $(srcdir)/Makefile_pvmosmesh.in > Makefile_pvmosmesh
 
-@PVMOSMESH_TRUE@pvmos-mesh-$(VERSION).tar.gz: meshhash.h Makefile_pvmosmesh
+@PVMOSMESH_TRUE@octave-pvmos-mesh-$(VERSION).0.tar.gz: meshhash.h Makefile_pvmosmesh
 @PVMOSMESH_TRUE@	sed -i 's/^VERSION[^\n]\+/VERSION=$(VERSION)/g' Makefile_pvmosmesh; \
 @PVMOSMESH_TRUE@	make -f Makefile_pvmosmesh
 
