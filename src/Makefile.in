@@ -210,7 +210,7 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(top_srcdir)/depcomp
+	$(top_srcdir)/depcomp TODO
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -344,9 +344,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign src/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/Makefile
+	  $(AUTOMAKE) --foreign src/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -711,8 +711,8 @@ MeshHasher$(EXEEXT): $(MeshHasher_SOURCES) utils.o list.o md5.o diode.o phototra
 	echo '#define _HAS_MESHHASH' > meshhash.h
 	echo 'int NMESHHASH=1;' >> meshhash.h
 	echo 'unsigned char MESHHASH[] = { 0 };' >> meshhash.h
-	$(CC) -Og -g -Wall -fPIC -lm   -c -o mesh2d.o $(srcdir)/mesh2d.c
-	$(CC) -Og -g -Wall -fPIC -lm -g -Wall  -o MeshHasher mesh2d.o  utils.o list.o md5.o diode.o phototransistor.o $(srcdir)/MeshHasher.c
+	$(CC) -Og -g -Wall -fPIC -c -o mesh2d.o $(srcdir)/mesh2d.c
+	$(CC) -Og -g -Wall -fPIC -g -Wall  -o MeshHasher mesh2d.o  utils.o list.o md5.o diode.o phototransistor.o $(srcdir)/MeshHasher.c -lm
 	rm mesh2d.o
 @DMALLOC_TRUE@malloc-2.8.6.o:
 @DMALLOC_TRUE@	$(CC) -O  -finline-functions -frename-registers -foptimize-sibling-calls  -fstrength-reduce  -fcse-follow-jumps  -fcse-skip-blocks  -frerun-cse-after-loop  -frerun-loop-opt  -fgcse   -fgcse-lm   -fgcse-sm  -fdelete-null-pointer-checks  -fexpensive-optimizations  -fregmove  -fschedule-insns  -fschedule-insns2  -fsched-interblock -fsched-spec  -fcaller-saves  -fpeephole2  -freorder-blocks  -freorder-functions  -fstrict-aliasing  -falign-functions  -falign-jumps  -falign-loops  -falign-labels    -Wall -fPIC  -c -o malloc-2.8.6.o malloc-2.8.6.c

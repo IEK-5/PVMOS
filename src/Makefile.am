@@ -19,8 +19,8 @@ MeshHasher$(EXEEXT): $(MeshHasher_SOURCES) utils.o list.o md5.o diode.o phototra
 	echo '#define _HAS_MESHHASH' > meshhash.h
 	echo 'int NMESHHASH=1;' >> meshhash.h
 	echo 'unsigned char MESHHASH[] = { 0 };' >> meshhash.h
-	$(CC) -Og -g -Wall -fPIC -lm   -c -o mesh2d.o $(srcdir)/mesh2d.c
-	$(CC) -Og -g -Wall -fPIC -lm -g -Wall  -o MeshHasher mesh2d.o  utils.o list.o md5.o diode.o phototransistor.o $(srcdir)/MeshHasher.c
+	$(CC) -Og -g -Wall -fPIC -c -o mesh2d.o $(srcdir)/mesh2d.c
+	$(CC) -Og -g -Wall -fPIC -g -Wall  -o MeshHasher mesh2d.o  utils.o list.o md5.o diode.o phototransistor.o $(srcdir)/MeshHasher.c -lm
 	rm mesh2d.o
 
 
